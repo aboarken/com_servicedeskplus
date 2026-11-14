@@ -68,7 +68,8 @@ final class ApprovalService
         private readonly int $decidePerHour,
         private readonly string $pendingStatus = 'Pending Approval',
         private readonly int $scanLimit = 50,
-        private readonly string $approvalAccountEmail = ''
+        private readonly string $approvalAccountEmail = '',
+        private readonly array $modules = ApprovalModule::ALL
     ) {
     }
 
@@ -103,26 +104,62 @@ final class ApprovalService
             return $pending;
         }
 
-        // Fallback (and the only source on builds without a usable /api/v3/approvals):
-        // scan the most recent requests that are pending approval.
-        $requests = $client->listRequests(new ListInfo(
-            rowCount: max(1, min(ListInfo::MAX_ROW_COUNT, $this->scanLimit)),
-            sortField: 'created_time',
-            sortOrder: 'desc',
-            searchCriteria: ['field' => 'approval_status.name', 'condition' => 'is', 'value' => $this->pendingStatus]
-        ))->items;
-
+        // GET /api/v3/approvals only lists the key owner's approvals on some builds (16030): scan
+        // each enabled module's records that may be waiting for approval instead.
         $pending = [];
 
-        foreach ($requests as $request) {
-            $requestId = SdpFields::string($request, 'id');
+        foreach ($this->modules as $module) {
+            array_push($pending, ...$this->scanModule($client, $module, $sdpUserId));
+        }
 
-            if (!preg_match('/^[0-9]{1,20}$/', $requestId)) {
+        $this->cache->set($identity, 'approvals:pending', array_map(static fn (PendingApproval $p) => $p->toArray(), $pending));
+
+        return $pending;
+    }
+
+    /**
+     * Pending approvals of one approver in one module, found by reading the module's newest
+     * records that may be waiting for approval and their current approval level. A module the
+     * build or the API technician cannot read is skipped (logged); other modules still show.
+     *
+     * @return list<PendingApproval>
+     *
+     * @throws SdpException  network, authentication and configuration problems
+     */
+    private function scanModule(SdpClient $client, string $module, string $sdpUserId): array
+    {
+        $query = ApprovalModule::scanQuery($module, $this->pendingStatus, max(1, min(ListInfo::MAX_ROW_COUNT, $this->scanLimit)));
+        $fatal = [SdpException::NETWORK, SdpException::AUTH, SdpException::NOT_CONFIGURED];
+
+        try {
+            $records = $client->listModule($module, new ListInfo(
+                rowCount: $query['limit'],
+                sortField: $query['sort'],
+                sortOrder: 'desc',
+                searchCriteria: $query['criteria']
+            ))->items;
+        } catch (SdpException $e) {
+            if (\in_array($e->getKind(), $fatal, true)) {
+                throw $e;
+            }
+
+            $this->logger->warning(\sprintf('%s approvals could not be listed (%s); skipped', ucfirst(str_replace('_', ' ', $module)), $e->getKind()));
+
+            return [];
+        }
+
+        $fields  = ApprovalModule::fields($module);
+        $pending = [];
+
+        foreach ($records as $record) {
+            $entityId = SdpFields::string($record, 'id');
+
+            if (!preg_match('/^[0-9]{1,20}$/', $entityId) || self::isClosed($record)) {
                 continue;
             }
 
             try {
-                $level = $this->currentLevel($client->getApprovalLevels($requestId));
+                $level = $this->currentLevel($client->getApprovalLevels($entityId, $module));
 
                 if ($level === null) {
                     continue;
@@ -130,31 +167,30 @@ final class ApprovalService
 
                 $levelId = SdpFields::string($level, 'id');
 
-                foreach ($client->getApprovals($requestId, $levelId) as $approval) {
+                foreach ($client->getApprovals($entityId, $levelId, $module) as $approval) {
                     if ($this->isMine($approval, $sdpUserId) && $this->isPendingStatus($approval)) {
                         $pending[] = new PendingApproval(
-                            $requestId,
+                            $entityId,
                             $levelId,
                             SdpFields::string($approval, 'id'),
-                            SdpFields::string($request, 'subject'),
-                            SdpFields::name($request, 'requester'),
+                            self::firstText($record, $fields['title'], false),
+                            self::firstText($record, $fields['requester'], true),
                             SdpFields::timestamp($approval, 'sent_on'),
-                            SdpFields::string($level, 'level') ?: SdpFields::string($level, 'name')
+                            SdpFields::string($level, 'level') ?: SdpFields::string($level, 'name'),
+                            $module
                         );
                     }
                 }
             } catch (SdpException $e) {
-                if (\in_array($e->getKind(), [SdpException::NETWORK, SdpException::AUTH, SdpException::NOT_CONFIGURED], true)) {
+                if (\in_array($e->getKind(), $fatal, true)) {
                     throw $e;
                 }
 
-                $this->logger->warning(\sprintf('Approvals of request %s could not be read (%s)', $requestId, $e->getKind()));
+                $this->logger->warning(\sprintf('Approvals of %s %s could not be read (%s)', str_replace('_', ' ', $module), $entityId, $e->getKind()));
             } catch (\InvalidArgumentException) {
                 continue;
             }
         }
-
-        $this->cache->set($identity, 'approvals:pending', array_map(static fn (PendingApproval $p) => $p->toArray(), $pending));
 
         return $pending;
     }
@@ -203,7 +239,7 @@ final class ApprovalService
             $level  = \is_array($item['approval_level'] ?? null) ? $item['approval_level'] : [];
             $parent = $module !== null && \is_array($level[ApprovalModule::entityKey($module)] ?? null) ? $level[ApprovalModule::entityKey($module)] : null;
 
-            if ($module === null || $parent === null || !$this->isPendingStatus($item)) {
+            if ($module === null || $parent === null || !$this->isPendingStatus($item) || self::isClosed($parent)) {
                 continue;
             }
 
@@ -429,6 +465,11 @@ final class ApprovalService
             }
         } catch (SdpException $e) {
             $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:' . $e->getKind() . ':' . $e->getSdpMessage());
+
+            // Typically the record is closed: SDP lets nobody change its approvers.
+            if ($e->getKind() === SdpException::PERMISSION) {
+                throw new NotRecordable('The API technician could not be added to the approval level', 0, $e);
+            }
 
             throw $e;
         } catch (\InvalidArgumentException) {
@@ -682,6 +723,17 @@ final class ApprovalService
         }
 
         return '';
+    }
+
+    /**
+     * Closed or cancelled records keep a "pending" approval in SDP, but nobody can change their
+     * approvers any more, so the portal cannot record a decision on them.
+     *
+     * @param array<string, mixed> $record
+     */
+    private static function isClosed(array $record): bool
+    {
+        return \in_array(mb_strtolower(SdpFields::name($record, 'status')), ['closed', 'cancelled', 'canceled'], true);
     }
 
     /** @param list<array<string, mixed>> $levels */

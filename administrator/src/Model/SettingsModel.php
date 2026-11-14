@@ -15,6 +15,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\FormModel;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\ClientConfig;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SslPin;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Extension\ServiceDeskPlusComponent;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\KeyVault;
@@ -123,6 +124,13 @@ final class SettingsModel extends FormModel
         }
 
         $values['approval_account_email'] = $approvalEmail;
+
+        // Checkboxes: only known modules, in a fixed order. None ticked shows no approvals.
+        $modules = array_map('strval', \is_array($data['approval_modules'] ?? null) ? $data['approval_modules'] : []);
+        $values['approval_modules'] = implode(',', array_values(array_filter(
+            ApprovalModule::ALL,
+            static fn (string $m): bool => \in_array($m, $modules, true)
+        )));
 
         try {
             $values['ssl_pin'] = SslPin::normalize((string) ($data['ssl_pin'] ?? ''));

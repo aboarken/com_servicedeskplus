@@ -3,6 +3,19 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.9.1] - 2026-11-14
+
+### Fixed
+- **Changes, releases and purchase orders were not listed in My Approvals.** On build 16030, `GET /api/v3/approvals` only returns the API technician's own approvals and ignores the approver filter. My Approvals now scans each module like requests: requests and changes with approval status *Pending Approval* (up to 50 and 25), purchase orders with status *Pending Approval* (25), and the 10 newest releases.
+- **Approvals of closed records.** ServiceDesk Plus keeps a pending approval on a closed request, but lets nobody change its approvers, so the portal could not record a decision and showed a generic error. Closed and cancelled records are no longer listed, and if it happens anyway the message says the approval cannot be recorded from this site.
+
+### Added
+- **Integration Settings → Approvals → Show approvals for:** choose which modules My Approvals checks (requests, changes, releases, purchase orders; all by default). Each module adds ServiceDesk Plus calls when the list is built.
+
+### Changed
+- My Approvals: the type column is now **Approval For** and shows the type as a coloured label.
+- "ServiceDesk Plus did not allow this decision. Please contact IT." now ends with "Please contact the System Administrator."
+
 ## [1.9.0] - 2026-11-14
 
 ### Added

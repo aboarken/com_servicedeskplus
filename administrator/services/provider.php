@@ -163,7 +163,8 @@ return new class () implements ServiceProviderInterface {
                     $c->get(RateLimiter::class),
                     $c->get(JoomlaLogger::class),
                     $settings->rateDecidePerHour(),
-                    approvalAccountEmail: $settings->approvalAccountEmail()
+                    approvalAccountEmail: $settings->approvalAccountEmail(),
+                    modules: $settings->approvalModules()
                 );
             }
         );

@@ -20,6 +20,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalNotFound;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\InvalidDecision;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\NotRecordable;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\RateLimitExceeded;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SubmissionGuard;
 
@@ -87,6 +88,10 @@ final class ApprovalController extends BaseController
         try {
             $outcome = $this->sdpComponent()->getApprovalService()
                 ->decide($identity, $requestId, $levelId, $approvalId, $decision, $comment, (string) $user->name, $module);
+        } catch (NotRecordable) {
+            $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_APPROVAL_ERR_NOT_RECORDABLE'), 'error');
+
+            return;
         } catch (AlreadyDecided) {
             $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_APPROVAL_ERR_ALREADY_DECIDED'), 'warning');
 

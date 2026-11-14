@@ -10,6 +10,8 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Settings;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
+
 /**
  * Immutable view of the component settings stored in #__sdp_settings.
  */
@@ -30,6 +32,8 @@ final class Settings
         'request_statuses'     => 'Open,On Hold,Resolved,Closed',
         // E-mail of the SDP technician that owns the service key; empty = no approval fallback.
         'approval_account_email' => '',
+        // Modules whose approvals My Approvals checks.
+        'approval_modules'       => 'request,change,release,purchase_order',
     ];
 
     /** @param array<string, string> $values */
@@ -106,6 +110,22 @@ final class Settings
         return $this->get('approval_account_email');
     }
 
+    /**
+     * Modules whose approvals My Approvals checks, in display order. Each one costs extra
+     * ServiceDesk Plus calls when the list is built.
+     *
+     * @return list<string>
+     */
+    public function approvalModules(): array
+    {
+        $chosen = array_map(
+            static fn (string $m): ?string => ApprovalModule::normalize($m),
+            self::parseList($this->get('approval_modules'))
+        );
+
+        return array_values(array_filter(ApprovalModule::ALL, static fn (string $m): bool => \in_array($m, $chosen, true)));
+    }
+
     public function rateDecidePerHour(): int
     {
         return max(1, (int) $this->get('rate_decide_per_hour'));
@@ -150,6 +170,9 @@ final class Settings
     {
         $data = array_merge(self::DEFAULTS, $this->values);
         unset($data['service_key_enc']);
+
+        // Checkboxes field: a list of values.
+        $data['approval_modules'] = $this->approvalModules();
 
         return $data;
     }

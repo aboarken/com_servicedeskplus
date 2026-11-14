@@ -16,6 +16,7 @@ use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\AlreadyDecided;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\AutoDecided;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalNotFound;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
@@ -88,6 +89,10 @@ final class ApprovalController extends BaseController
         try {
             $outcome = $this->sdpComponent()->getApprovalService()
                 ->decide($identity, $requestId, $levelId, $approvalId, $decision, $comment, (string) $user->name, $module);
+        } catch (AutoDecided $e) {
+            $this->app->enqueueMessage(Text::_($e->entryRemoved ? 'COM_SERVICEDESKPLUS_APPROVAL_ERR_AUTO_DECIDED' : 'COM_SERVICEDESKPLUS_APPROVAL_ERR_AUTO_DECIDED_LEFT'), 'error');
+
+            return;
         } catch (NotRecordable) {
             $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_APPROVAL_ERR_NOT_RECORDABLE'), 'error');
 

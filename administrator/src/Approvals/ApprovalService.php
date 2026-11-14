@@ -499,7 +499,40 @@ final class ApprovalService
                 $this->logger->warning(\sprintf('Approval e-mail for approval %s of request %s could not be sent (%s)', $accountApprovalId, $requestId, $e->getKind()));
             }
 
-            $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment, $module);
+            // SDP may already have decided the added entry by itself ("Auto-approve requests if
+            // already approved by the same approver in the previous stages", "... when the requester
+            // is the approver"). Never let that stand for the opposite of the user's decision.
+            $state  = $this->approvalStatus($requestId, $levelId, $accountApprovalId, $module);
+            $wanted = $decision === 'approve' ? 'approved' : 'rejected';
+
+            if ($state !== null && !\in_array($state, [mb_strtolower($this->pendingStatus), 'to be sent'], true)) {
+                if ($state !== $wanted) {
+                    $removed = true;
+
+                    try {
+                        $client->deleteApproval($requestId, $levelId, $accountApprovalId, $module);
+                    } catch (SdpException $e) {
+                        $removed = false;
+                        $this->logger->error(\sprintf(
+                            'ServiceDesk Plus set the API technician\'s approval %s on %s %s to "%s" by itself although the user chose to %s; it could not be removed (%s). Fix it in ServiceDesk Plus and turn off the "Auto-approve" options under Admin > Advanced Portal Settings > Approval.',
+                            $accountApprovalId,
+                            $module,
+                            $requestId,
+                            $state,
+                            $decision,
+                            $e->getKind()
+                        ));
+                    }
+
+                    $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'auto_decided:' . $state . ($removed ? ':removed' : ':left'));
+
+                    throw new AutoDecided($removed);
+                }
+
+                $this->logger->info(\sprintf('ServiceDesk Plus already set approval %s on %s %s to "%s"', $accountApprovalId, $module, $requestId, $state));
+            } else {
+                $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment, $module);
+            }
         } catch (SdpException $e) {
             if ($added) {
                 // Do not leave an extra pending approver behind.
@@ -599,6 +632,22 @@ final class ApprovalService
                 $this->logger->warning(\sprintf('Note for the decision on %s %s could not be added (%s)', $module, $requestId, $e->getKind()));
             }
         }
+    }
+
+    /** Lower-case status name of one approval, or null when it cannot be read. */
+    private function approvalStatus(string $requestId, string $levelId, string $approvalId, string $module): ?string
+    {
+        try {
+            foreach ($this->client()->getApprovals($requestId, $levelId, $module) as $approval) {
+                if (SdpFields::string($approval, 'id') === $approvalId) {
+                    return mb_strtolower(SdpFields::name($approval, 'status'));
+                }
+            }
+        } catch (SdpException) {
+            // Unknown: the decision call below reports any problem.
+        }
+
+        return null;
     }
 
     /** True when the approval is still listed as pending; true as well when that cannot be read. */

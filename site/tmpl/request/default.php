@@ -14,6 +14,7 @@ use Joomla\CMS\Router\Route;
 
 $date = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC2')) : '—';
 $item = $this->item;
+$text = static fn (string $v): string => $v !== '' ? $v : '—';
 ?>
 <div class="com-servicedeskplus sdp-request">
     <p><a href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>">&larr; <?php echo Text::_('COM_SERVICEDESKPLUS_BACK_TO_REQUESTS'); ?></a></p>
@@ -28,11 +29,19 @@ $item = $this->item;
             <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></dt>
             <dd class="col-sm-9"><?php echo $this->escape($item->status); ?></dd>
             <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_PRIORITY'); ?></dt>
-            <dd class="col-sm-9"><?php echo $this->escape($item->priority !== '' ? $item->priority : '—'); ?></dd>
+            <dd class="col-sm-9"><?php echo $this->escape($text($item->priority)); ?></dd>
+            <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_URGENCY'); ?></dt>
+            <dd class="col-sm-9"><?php echo $this->escape($text($item->urgency)); ?></dd>
             <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_TECHNICIAN'); ?></dt>
             <dd class="col-sm-9"><?php echo $this->escape($item->technician !== '' ? $item->technician : Text::_('COM_SERVICEDESKPLUS_UNASSIGNED')); ?></dd>
+            <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_TECHNICIAN_GROUP'); ?></dt>
+            <dd class="col-sm-9"><?php echo $this->escape($item->technicianGroup !== '' ? $item->technicianGroup : Text::_('COM_SERVICEDESKPLUS_UNASSIGNED')); ?></dd>
             <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_CATEGORY'); ?></dt>
-            <dd class="col-sm-9"><?php echo $this->escape($item->category !== '' ? $item->category : '—'); ?></dd>
+            <dd class="col-sm-9"><?php echo $this->escape($text($item->category)); ?></dd>
+            <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBCATEGORY'); ?></dt>
+            <dd class="col-sm-9"><?php echo $this->escape($text($item->subcategory)); ?></dd>
+            <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ITEM'); ?></dt>
+            <dd class="col-sm-9"><?php echo $this->escape($text($item->item)); ?></dd>
             <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_CREATED'); ?></dt>
             <dd class="col-sm-9"><?php echo $date($item->createdAt); ?></dd>
             <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_UPDATED'); ?></dt>

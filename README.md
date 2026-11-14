@@ -15,11 +15,15 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 ## Features
 
 ### Service Requests
-- View and track submitted service requests.
-- Submit new service requests.
-- Create requests using only a subject and description.
-- View request details and status.
-- Access relevant request information.
+- View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, status filter and sorting.
+- Submit new service requests with the **Request Form** menu item (page title **New Request**).
+- Create requests using only a subject and description, with optional attachments.
+- View request details: status, priority, urgency, technician, technician group, category, subcategory, item, dates, description and resolution.
+
+### Attachments
+- Allowed types: JPG, PNG, PDF, Excel (.xlsx) and Word (.docx); the real file content is checked, not just the extension.
+- At most **3 files** per request, **1 MB per file** (3 MB in total).
+- The limits are enforced on the server; the form only checks early for convenience.
 
 ### IT Support
 - Access the user's support requests.
@@ -71,12 +75,14 @@ Joomla acts as the user-facing portal, while ServiceDesk Plus remains the primar
 
 ## Installation
 
-1. Download the latest component installation package from the [GitHub repository](https://github.com/aboarken/com_servicedeskplus).
+1. Download the latest installation package (`com_servicedeskplus-<version>.zip`) from the [Releases page](https://github.com/aboarken/com_servicedeskplus/releases).
 2. Log in to your Joomla Administrator.
 3. Navigate to **System → Install → Extensions**.
 4. Upload the component installation package.
 5. Complete the installation.
 6. Open the ServiceDesk Plus component from the Joomla Administrator.
+
+To upgrade, install the newer package over the existing one; settings and user mappings are kept.
 
 ## Configuration
 
@@ -137,6 +143,9 @@ com_servicedeskplus/
 │   ├── language/
 │   ├── src/
 │   └── tmpl/
+├── build/
+│   └── build-package.sh
+├── CHANGELOG.md
 ├── LICENSE
 ├── README.md
 ├── script.php
@@ -156,6 +165,18 @@ To contribute:
 3. Implement your changes.
 4. Test your changes in a Joomla development environment.
 5. Submit a pull request.
+
+### Building the installation package
+
+```bash
+build/build-package.sh
+```
+
+This writes `dist/com_servicedeskplus-<version>.zip`, taking the version from `servicedeskplus.xml`.
+
+### Releases
+
+Versions follow [Semantic Versioning](https://semver.org/) and are set in `servicedeskplus.xml`. Each version has an update file in `administrator/sql/updates/mysql/` and `administrator/sql/updates/postgresql/` (a comment-only file when the schema does not change). Releases are tagged `v<version>` and the installation ZIP is attached to the GitHub release. See [CHANGELOG.md](CHANGELOG.md) for the changes in each version.
 
 ## Roadmap
 

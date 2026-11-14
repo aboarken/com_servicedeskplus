@@ -16,12 +16,16 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Requests;
  * A file must have an allowed extension AND content that really is that type (checked from the
  * file's bytes, not from the browser's MIME type). XLSX/DOCX must be real Office Open XML
  * packages. The SDP content type is chosen from the checked type.
+ *
+ * Limits (enforced here on the server; the form's checks are only a convenience):
+ * at most MAX_FILES files, each at most MAX_FILE_BYTES, together at most MAX_TOTAL.
+ * The file count includes every file sent, valid or not, and is checked before any file is read.
  */
 final class AttachmentValidator
 {
-    public const MAX_FILES      = 5;
-    public const MAX_FILE_BYTES = 10 * 1024 * 1024;
-    public const MAX_TOTAL      = 20 * 1024 * 1024;
+    public const MAX_FILES      = 3;
+    public const MAX_FILE_BYTES = 1 * 1024 * 1024;
+    public const MAX_TOTAL      = self::MAX_FILES * self::MAX_FILE_BYTES;
 
     /** extension => content type sent to SDP */
     public const TYPES = [
@@ -57,6 +61,17 @@ final class AttachmentValidator
         $errors   = [];
         $total    = 0;
 
+        // Count every file actually sent (not just the valid ones) before touching any of them,
+        // so a crafted POST with many files is refused without reading their content.
+        $sent = \count(array_filter(
+            $files,
+            static fn ($f): bool => \is_array($f) && (int) ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE
+        ));
+
+        if ($sent > self::MAX_FILES) {
+            throw new InvalidRequestInput(['COM_SERVICEDESKPLUS_ATTACH_ERR_COUNT']);
+        }
+
         foreach ($files as $file) {
             if (!\is_array($file)) {
                 continue;
@@ -82,6 +97,8 @@ final class AttachmentValidator
                 continue;
             }
 
+            // The size of the stored file is used, never the size claimed by the browser.
+            clearstatcache(true, $path);
             $size = (int) filesize($path);
 
             if ($size <= 0) {
@@ -122,6 +139,16 @@ final class AttachmentValidator
         }
 
         return $accepted;
+    }
+
+    /**
+     * Values for the placeholders in the attachment messages: %1$d files, %2$d MB each, %3$d MB in total.
+     *
+     * @return array{0: int, 1: int, 2: int}
+     */
+    public static function limitsForMessages(): array
+    {
+        return [self::MAX_FILES, intdiv(self::MAX_FILE_BYTES, 1048576), intdiv(self::MAX_TOTAL, 1048576)];
     }
 
     /**

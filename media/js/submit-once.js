@@ -38,38 +38,46 @@
   };
 
   // Early check of chosen files (type by extension, count, sizes). The server checks again,
-  // including the real file content.
+  // including the real file content, so this is only a convenience.
+  const inputIsValid = (input) => {
+    const files = Array.from(input.files || []);
+    const allowed = (input.dataset.sdpExtensions || '').split(',');
+    const maxFiles = parseInt(input.dataset.sdpMaxFiles || '0', 10);
+    const maxBytes = parseInt(input.dataset.sdpMaxBytes || '0', 10);
+    const maxTotal = parseInt(input.dataset.sdpMaxTotal || '0', 10);
+    let total = 0;
+
+    if (maxFiles && files.length > maxFiles) {
+      return false;
+    }
+
+    for (const file of files) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      total += file.size;
+
+      if (!allowed.includes(ext) || file.size === 0 || (maxBytes && file.size > maxBytes)) {
+        return false;
+      }
+    }
+
+    return !(maxTotal && total > maxTotal);
+  };
+
+  const reportInvalid = (input) => {
+    if (input.dataset.sdpErrorText) {
+      window.alert(input.dataset.sdpErrorText);
+    }
+
+    input.focus();
+  };
+
   const filesAreValid = (form) => {
     let ok = true;
 
     form.querySelectorAll('input[type="file"][data-sdp-extensions]').forEach((input) => {
-      const files = Array.from(input.files || []);
-      const allowed = (input.dataset.sdpExtensions || '').split(',');
-      const maxFiles = parseInt(input.dataset.sdpMaxFiles || '0', 10);
-      const maxBytes = parseInt(input.dataset.sdpMaxBytes || '0', 10);
-      const maxTotal = parseInt(input.dataset.sdpMaxTotal || '0', 10);
-      let total = 0;
-
-      if (maxFiles && files.length > maxFiles) {
+      if (ok && !inputIsValid(input)) {
         ok = false;
-      }
-
-      files.forEach((file) => {
-        const ext = (file.name.split('.').pop() || '').toLowerCase();
-        total += file.size;
-
-        if (!allowed.includes(ext) || file.size === 0 || (maxBytes && file.size > maxBytes)) {
-          ok = false;
-        }
-      });
-
-      if (maxTotal && total > maxTotal) {
-        ok = false;
-      }
-
-      if (!ok && input.dataset.sdpErrorText) {
-        window.alert(input.dataset.sdpErrorText);
-        input.focus();
+        reportInvalid(input);
       }
     });
 
@@ -77,6 +85,16 @@
   };
 
   const init = () => {
+    // Check files as soon as they are chosen; clear the selection if it breaks the limits.
+    document.querySelectorAll('form[data-sdp-submit-once] input[type="file"][data-sdp-extensions]').forEach((input) => {
+      input.addEventListener('change', () => {
+        if (!inputIsValid(input)) {
+          reportInvalid(input);
+          input.value = '';
+        }
+      });
+    });
+
     document.querySelectorAll('form[data-sdp-submit-once]').forEach((form) => {
       form.addEventListener('submit', (event) => {
         if (form.dataset.sdpSubmitted === '1') {

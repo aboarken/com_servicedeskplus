@@ -7,3 +7,46 @@
 .com-servicedeskplus .sdp-overdue {
   border-inline-start: 4px solid var(--bs-danger, #dc3545);
 }
+
+/*
+ * Neutral grey button (Search, Cancel). Bootstrap 5 button variables are set explicitly so the
+ * buttons stay grey even when a site template recolours .btn-secondary.
+ */
+.com-servicedeskplus .sdp-btn-neutral {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #6c757d;
+  --bs-btn-border-color: #6c757d;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #5c636a;
+  --bs-btn-hover-border-color: #565e64;
+  --bs-btn-focus-shadow-rgb: 130, 138, 145;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #565e64;
+  --bs-btn-active-border-color: #51585e;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #6c757d;
+  --bs-btn-disabled-border-color: #6c757d;
+  color: var(--bs-btn-color);
+  background-color: var(--bs-btn-bg);
+  border-color: var(--bs-btn-border-color);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.com-servicedeskplus .sdp-btn-neutral:hover,
+.com-servicedeskplus .sdp-btn-neutral:focus-visible {
+  color: var(--bs-btn-hover-color);
+  background-color: var(--bs-btn-hover-bg);
+  border-color: var(--bs-btn-hover-border-color);
+}
+
+.com-servicedeskplus .sdp-btn-neutral:active {
+  color: var(--bs-btn-active-color);
+  background-color: var(--bs-btn-active-bg);
+  border-color: var(--bs-btn-active-border-color);
+}
+
+/* Filter bar on "My Requests": the button lines up with the inputs and never wraps or overflows. */
+.com-servicedeskplus .sdp-filter-submit .btn {
+  min-height: calc(1.5em + 0.75rem + 2px);
+}

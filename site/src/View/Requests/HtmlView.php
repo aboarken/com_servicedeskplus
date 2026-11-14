@@ -62,11 +62,16 @@ final class HtmlView extends BaseHtmlView
     {
         $q = $this->query;
 
-        return Route::_('index.php?option=com_servicedeskplus&view=requests&' . http_build_query(array_filter([
+        $params = array_filter([
             'search' => $q->search,
-            'status' => $q->status,
             'sort'   => $q->sort . '_' . $q->direction,
             'page'   => $page > 1 ? $page : null,
-        ], static fn ($v) => $v !== null && $v !== '')));
+        ], static fn ($v) => $v !== null && $v !== '');
+
+        // Always keep the status ("all" for all statuses), so paging does not fall back to the
+        // default "Open" filter.
+        $params['status'] = $q->status !== '' ? $q->status : RequestQuery::ALL_STATUSES;
+
+        return Route::_('index.php?option=com_servicedeskplus&view=requests&' . http_build_query($params));
     }
 }

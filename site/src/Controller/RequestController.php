@@ -96,7 +96,10 @@ final class RequestController extends BaseController
             $this->keepInput($subject, $description);
 
             foreach ($e->getKeys() as $key) {
-                $this->app->enqueueMessage(Text::_($key), 'error');
+                $message = str_starts_with($key, 'COM_SERVICEDESKPLUS_ATTACH_')
+                    ? Text::sprintf($key, ...AttachmentValidator::limitsForMessages())
+                    : Text::_($key);
+                $this->app->enqueueMessage($message, 'error');
             }
 
             if (array_filter($e->getKeys(), static fn (string $k) => str_starts_with($k, 'COM_SERVICEDESKPLUS_ATTACH_')) !== []) {

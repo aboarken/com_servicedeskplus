@@ -9,6 +9,7 @@
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestQuery;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Requests\HtmlView $this */
 
@@ -27,28 +28,28 @@ $currentSort = $q->sort . '_' . $q->direction;
         <h1 class="h2 mb-0"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTS_TITLE'); ?></h1>
         <?php if ($this->canCreate) : ?>
             <a class="btn btn-primary" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requestform'); ?>">
-                <?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTFORM_TITLE'); ?>
+                <?php echo Text::_('COM_SERVICEDESKPLUS_SUBMIT_A_REQUEST'); ?>
             </a>
         <?php endif; ?>
     </div>
 
-    <form class="row g-2 align-items-end mb-3" method="get" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>">
-        <div class="col-sm-5">
+    <form class="sdp-filters row g-2 align-items-end mb-3" method="get" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>">
+        <div class="col-12 col-lg-5">
             <label class="form-label" for="sdp-search"><?php echo Text::_('COM_SERVICEDESKPLUS_SEARCH'); ?></label>
             <input class="form-control" type="search" id="sdp-search" name="search" maxlength="100"
                    value="<?php echo $this->escape($q->search); ?>"
                    placeholder="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_SEARCH_HINT')); ?>">
         </div>
-        <div class="col-sm-3">
+        <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label" for="sdp-status"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></label>
             <select class="form-select" id="sdp-status" name="status">
-                <option value=""><?php echo Text::_('COM_SERVICEDESKPLUS_ALL_STATUSES'); ?></option>
+                <option value="<?php echo RequestQuery::ALL_STATUSES; ?>" <?php echo $q->status === '' ? 'selected' : ''; ?>><?php echo Text::_('COM_SERVICEDESKPLUS_ALL_STATUSES'); ?></option>
                 <?php foreach ($this->statuses as $status) : ?>
                     <option value="<?php echo $this->escape($status); ?>" <?php echo $status === $q->status ? 'selected' : ''; ?>><?php echo $this->escape($status); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-sm-3">
+        <div class="col-12 col-sm-6 col-lg-2">
             <label class="form-label" for="sdp-sort"><?php echo Text::_('COM_SERVICEDESKPLUS_SORT'); ?></label>
             <select class="form-select" id="sdp-sort" name="sort">
                 <?php foreach ($sorts as $value => $label) : ?>
@@ -56,8 +57,8 @@ $currentSort = $q->sort . '_' . $q->direction;
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-sm-1">
-            <button class="btn btn-secondary w-100" type="submit"><?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?></button>
+        <div class="col-12 col-lg-2 sdp-filter-submit">
+            <button class="btn btn-secondary sdp-btn-neutral w-100" type="submit"><?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?></button>
         </div>
     </form>
 

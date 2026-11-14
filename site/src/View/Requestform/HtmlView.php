@@ -39,6 +39,7 @@ final class HtmlView extends BaseHtmlView
         $wa = $document->getWebAssetManager();
         $wa->getRegistry()->addExtensionRegistryFile('com_servicedeskplus');
         $wa->useScript('com_servicedeskplus.submit-once');
+        $wa->useStyle('com_servicedeskplus.portal');
 
         parent::display($tpl);
     }

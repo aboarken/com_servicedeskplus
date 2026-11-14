@@ -28,6 +28,7 @@ Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic
 - The portal stylesheet is now loaded on the New Request page.
 - Web asset registry version raised to 1.5.0 so browsers load the new CSS and JavaScript.
 - No database schema changes (empty `1.5.0.sql` update files).
+- New **Release package** GitHub Actions workflow: builds and checks the installation package for every pull request and attaches `com_servicedeskplus.zip` to each GitHub release.
 
 ## [1.4.0]
 

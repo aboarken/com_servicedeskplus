@@ -1,0 +1,9 @@
+/* ServiceDesk Plus portal: minimal styles on top of the site template. */
+.com-servicedeskplus .sdp-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.com-servicedeskplus .sdp-overdue {
+  border-inline-start: 4px solid var(--bs-danger, #dc3545);
+}

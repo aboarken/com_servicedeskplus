@@ -1,0 +1,22 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "com_servicedeskplus",
+  "version": "1.0.0",
+  "description": "ServiceDesk Plus portal assets",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "com_servicedeskplus.submit-once",
+      "type": "script",
+      "uri": "com_servicedeskplus/submit-once.js",
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
+      "name": "com_servicedeskplus.portal",
+      "type": "style",
+      "uri": "com_servicedeskplus/portal.css"
+    }
+  ]
+}

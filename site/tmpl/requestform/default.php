@@ -13,6 +13,8 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\AttachmentValidat
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Requestform\HtmlView $this */
+
+$limits = AttachmentValidator::limitsForMessages();
 ?>
 <div class="com-servicedeskplus sdp-requestform">
     <h1 class="h2"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTFORM_TITLE'); ?></h1>
@@ -46,18 +48,20 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
                    data-sdp-max-bytes="<?php echo AttachmentValidator::MAX_FILE_BYTES; ?>"
                    data-sdp-max-total="<?php echo AttachmentValidator::MAX_TOTAL; ?>"
                    data-sdp-extensions="jpg,jpeg,png,pdf,xlsx,docx"
-                   data-sdp-error-text="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_ATTACH_CLIENT_ERROR')); ?>"
+                   data-sdp-error-text="<?php echo $this->escape(Text::sprintf('COM_SERVICEDESKPLUS_ATTACH_CLIENT_ERROR', ...$limits)); ?>"
                    aria-describedby="sdp-attachments-help">
             <div class="form-text" id="sdp-attachments-help">
-                <?php echo Text::sprintf('COM_SERVICEDESKPLUS_ATTACHMENTS_HELP', AttachmentValidator::MAX_FILES, (int) (AttachmentValidator::MAX_FILE_BYTES / 1048576), (int) (AttachmentValidator::MAX_TOTAL / 1048576)); ?>
+                <?php echo Text::sprintf('COM_SERVICEDESKPLUS_ATTACHMENTS_HELP', ...$limits); ?>
             </div>
         </div>
 
-        <button class="btn btn-primary" type="submit">
-            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" data-sdp-spinner></span>
-            <span data-sdp-label data-sdp-busy-text="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_SUBMITTING')); ?>"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBMIT_REQUEST'); ?></span>
-        </button>
-        <a class="btn btn-link" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>"><?php echo Text::_('JCANCEL'); ?></a>
+        <div class="sdp-form-actions d-flex flex-wrap gap-2">
+            <button class="btn btn-primary" type="submit">
+                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" data-sdp-spinner></span>
+                <span data-sdp-label data-sdp-busy-text="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_SUBMITTING')); ?>"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBMIT'); ?></span>
+            </button>
+            <a class="btn btn-secondary sdp-btn-neutral" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>"><?php echo Text::_('JCANCEL'); ?></a>
+        </div>
 
         <input type="hidden" name="task" value="request.create">
         <input type="hidden" name="submission" value="<?php echo $this->escape($this->submissionToken); ?>">

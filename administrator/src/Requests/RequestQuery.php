@@ -19,6 +19,12 @@ final class RequestQuery
     public const MAX_PAGE  = 500;
     public const SORTS     = ['created' => 'created_time', 'updated' => 'last_updated_time'];
 
+    /** Status selected when "My Requests" is opened without a status in the URL. */
+    public const DEFAULT_STATUS = 'Open';
+
+    /** URL value of the "All statuses" filter option. */
+    public const ALL_STATUSES = 'all';
+
     public readonly int $page;
     public readonly string $search;
     public readonly string $status;
@@ -43,6 +49,38 @@ final class RequestQuery
         $this->status    = \in_array($status, $allowedStatuses, true) ? $status : '';
         $this->sort      = isset(self::SORTS[$sort]) ? $sort : 'created';
         $this->direction = $direction === 'asc' ? 'asc' : 'desc';
+    }
+
+    /**
+     * Status filter from the raw URL value: null (absent) gives the default status,
+     * "all" or "" gives all statuses, anything else is checked against the allowed list later.
+     *
+     * @param  list<string>  $allowedStatuses
+     */
+    public static function statusFromInput(?string $raw, array $allowedStatuses): string
+    {
+        if ($raw === null) {
+            return self::defaultStatus($allowedStatuses);
+        }
+
+        return $raw === self::ALL_STATUSES ? '' : $raw;
+    }
+
+    /**
+     * The default status as spelled in the configured list ("Open", matched case-insensitively),
+     * or '' (all statuses) when that list has no such status.
+     *
+     * @param  list<string>  $allowedStatuses
+     */
+    public static function defaultStatus(array $allowedStatuses): string
+    {
+        foreach ($allowedStatuses as $status) {
+            if (strcasecmp($status, self::DEFAULT_STATUS) === 0) {
+                return $status;
+            }
+        }
+
+        return '';
     }
 
     public function sortField(): string

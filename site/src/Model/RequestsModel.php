@@ -31,13 +31,22 @@ final class RequestsModel extends BaseModel
 
         [$sort, $direction] = array_pad(explode('_', $input->getCmd('sort', 'created_desc'), 2), 2, 'desc');
 
+        $statuses = $this->getStatuses();
+
+        // No status in the URL (menu link, "Back to My Requests"): show open requests.
+        // "All statuses" is sent as status=all.
+        $status = RequestQuery::statusFromInput(
+            $input->exists('status') ? $input->getString('status', '') : null,
+            $statuses
+        );
+
         return $this->query = new RequestQuery(
             $input->getInt('page', 1),
             $input->getString('search', ''),
-            $input->getString('status', ''),
+            $status,
             $sort,
             $direction,
-            $this->getStatuses()
+            $statuses
         );
     }
 

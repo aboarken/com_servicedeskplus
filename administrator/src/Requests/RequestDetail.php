@@ -31,7 +31,11 @@ final class RequestDetail
         public readonly ?int $updatedAt,
         public readonly ?int $dueAt,
         public readonly ?int $resolvedAt,
-        public readonly ?int $completedAt
+        public readonly ?int $completedAt,
+        public readonly string $subcategory = '',
+        public readonly string $item = '',
+        public readonly string $urgency = '',
+        public readonly string $technicianGroup = ''
     ) {
     }
 
@@ -53,7 +57,12 @@ final class RequestDetail
             RequestSummary::updatedTime($r, $created),
             SdpFields::timestamp($r, 'due_by_time'),
             SdpFields::timestamp($r, 'resolved_time'),
-            SdpFields::timestamp($r, 'completed_time')
+            SdpFields::timestamp($r, 'completed_time'),
+            SdpFields::name($r, 'subcategory'),
+            SdpFields::name($r, 'item'),
+            SdpFields::name($r, 'urgency'),
+            // SDP v3 "group": the support group the request (and its technician) is assigned to.
+            SdpFields::name($r, 'group')
         );
     }
 
@@ -63,9 +72,20 @@ final class RequestDetail
         return get_object_vars($this);
     }
 
-    /** @param array<string, mixed> $a */
+    /**
+     * Rebuild from toArray() output (the per-user cache). Unknown keys are ignored and fields added
+     * in later versions fall back to their defaults, so entries cached by an older version still load.
+     *
+     * @param array<string, mixed> $a
+     */
     public static function fromArray(array $a): self
     {
-        return new self(...$a);
+        static $names = null;
+        $names ??= array_map(
+            static fn (\ReflectionParameter $p): string => $p->getName(),
+            (new \ReflectionMethod(self::class, '__construct'))->getParameters()
+        );
+
+        return new self(...array_intersect_key($a, array_flip($names)));
     }
 }

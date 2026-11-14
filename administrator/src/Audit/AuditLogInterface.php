@@ -25,6 +25,8 @@ interface AuditLogInterface
      * @param  string       $result       ok | denied | error
      * @param  string       $detail       Short, secret-free text (max 255 chars)
      * @param  int          $actorId      Joomla user who performed the action (admin), 0 = same as user
+     * @param  string       $module       Approvals: request, change, release or purchase_order
+     * @param  string       $subject      Approvals: title of the record decided on (max 255 chars)
      */
     public function record(
         int $userId,
@@ -33,6 +35,8 @@ interface AuditLogInterface
         ?string $sdpRequestId = null,
         ?string $approvalId = null,
         string $detail = '',
-        int $actorId = 0
+        int $actorId = 0,
+        string $module = '',
+        string $subject = ''
     ): void;
 }

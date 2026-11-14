@@ -76,6 +76,10 @@ final class ApprovalService
     /** SDP user id of the approval account, once looked up. */
     private ?string $approvalAccountId = null;
 
+    /** Module and title of the record of the decision in progress, for the audit rows. */
+    private string $decisionModule  = '';
+    private string $decisionSubject = '';
+
     /**
      * Pending approvals where the user is the approver at the current level.
      *
@@ -332,6 +336,9 @@ final class ApprovalService
         $userId = $identity->joomlaUserId;
         $module = ApprovalModule::normalize($module) ?? throw new ApprovalNotFound();
 
+        $this->decisionModule  = $module;
+        $this->decisionSubject = '';
+
         if (!\in_array($decision, ['approve', 'reject'], true)) {
             throw new InvalidDecision('COM_SERVICEDESKPLUS_APPROVAL_ERR_DECISION');
         }
@@ -345,7 +352,7 @@ final class ApprovalService
         }
 
         if (!$this->allowDecision($userId)) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'rate_limited');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'rate_limited');
 
             throw new RateLimitExceeded();
         }
@@ -354,18 +361,19 @@ final class ApprovalService
         try {
             [$approval, $level, $requestId, $levelId, $approvalId] = $this->locateOwn($identity, $requestId, $levelId, $approvalId, $module);
         } catch (ApprovalNotFound $e) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'not_approver_or_missing');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'not_approver_or_missing');
 
             throw $e;
         }
 
         if (!$this->isPending($approval, $level)) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_DENIED, $requestId, $approvalId, 'not_pending');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_DENIED, $requestId, $approvalId, 'not_pending');
 
             throw new AlreadyDecided();
         }
 
-        $sdpComment = self::sdpComment($decision, $approverName, $comment);
+        $this->decisionSubject = $this->recordTitle($module, $requestId);
+        $sdpComment            = self::sdpComment($decision, $approverName, $comment);
 
         try {
             // Comments are plain text (JSON-encoded by SdpClient), not HTML.
@@ -376,12 +384,12 @@ final class ApprovalService
             }
 
             if ($this->stillPending($identity, $requestId, $levelId, $approvalId, $module) === false) {
-                $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'already_decided');
+                $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'already_decided');
 
                 throw new AlreadyDecided();
             }
 
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, $e->getKind() . ':' . $e->getSdpMessage());
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, $e->getKind() . ':' . $e->getSdpMessage());
 
             throw $e;
         }
@@ -398,9 +406,28 @@ final class ApprovalService
             // The decision was accepted by SDP; the verification read is best effort.
         }
 
-        $this->audit->record($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, $outcome);
+        $this->recordDecision($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, $outcome);
 
         return $outcome;
+    }
+
+    /**
+     * Audit row of a decision, with the module and title of the record decided on, so
+     * "My past decisions" can show what each decision was about.
+     */
+    private function recordDecision(int $userId, string $action, string $result, ?string $entityId, ?string $approvalId, string $detail): void
+    {
+        $this->audit->record($userId, $action, $result, $entityId, $approvalId, $detail, 0, $this->decisionModule, $this->decisionSubject);
+    }
+
+    /** Title of a request, change, release or purchase order; '' when it cannot be read. */
+    private function recordTitle(string $module, string $entityId): string
+    {
+        try {
+            return self::firstText($this->client()->getModuleEntity($module, $entityId), ApprovalModule::fields($module)['title'], false);
+        } catch (SdpException | \InvalidArgumentException) {
+            return '';
+        }
     }
 
     /**
@@ -416,7 +443,7 @@ final class ApprovalService
         $verb    = $decision === 'approve' ? 'Approved' : 'Rejected';
         $line    = $name !== '' ? \sprintf('%s by %s via the Joomla portal.', $verb, $name) : $verb . ' via the Joomla portal.';
 
-        return mb_substr($comment !== '' ? $line . ' ' . $comment : $line, 0, self::SDP_COMMENT_MAX);
+        return mb_substr($comment !== '' ? $line . ' Custom comment: ' . $comment : $line, 0, self::SDP_COMMENT_MAX);
     }
 
     /**
@@ -442,7 +469,7 @@ final class ApprovalService
         $accountId = $this->approvalAccountId();
 
         if ($accountId === null || $accountId === $identity->sdpUserId()) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'refused:no_approval_account');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'refused:no_approval_account');
 
             throw $refusal;
         }
@@ -464,7 +491,7 @@ final class ApprovalService
                 $added             = true;
             }
         } catch (SdpException $e) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:' . $e->getKind() . ':' . $e->getSdpMessage());
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:' . $e->getKind() . ':' . $e->getSdpMessage());
 
             // Typically the record is closed: SDP lets nobody change its approvers.
             if ($e->getKind() === SdpException::PERMISSION) {
@@ -473,7 +500,7 @@ final class ApprovalService
 
             throw $e;
         } catch (\InvalidArgumentException) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:no_id');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:no_id');
 
             throw new SdpException(SdpException::BAD_RESPONSE, 'Added approval has no id');
         }
@@ -524,7 +551,7 @@ final class ApprovalService
                         ));
                     }
 
-                    $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'auto_decided:' . $state . ($removed ? ':removed' : ':left'));
+                    $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'auto_decided:' . $state . ($removed ? ':removed' : ':left'));
 
                     throw new AutoDecided($removed);
                 }
@@ -543,7 +570,7 @@ final class ApprovalService
                 }
             }
 
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_decide:' . $e->getKind() . ':' . $e->getSdpMessage());
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_decide:' . $e->getKind() . ':' . $e->getSdpMessage());
 
             throw $e;
         }
@@ -571,7 +598,7 @@ final class ApprovalService
             default                                        => self::OUTCOME_CONFIRMED,
         };
 
-        $this->audit->record($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, 'via_account:' . $accountApprovalId . ':' . $outcome);
+        $this->recordDecision($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, 'via_account:' . $accountApprovalId . ':' . $outcome);
 
         return $outcome;
     }

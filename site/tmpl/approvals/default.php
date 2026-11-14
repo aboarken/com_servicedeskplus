@@ -88,16 +88,24 @@ $resultLabel = [
                 <thead>
                     <tr>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_DATE'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_DECISION'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_RESULT'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($this->history as $h) : ?>
+                <?php foreach ($this->history as $h) :
+                    // Decisions recorded before 1.10.0 have no module (they were all requests) and no subject.
+                    $hModule = ApprovalModule::normalize((string) ($h['module'] ?? '')) ?? ApprovalModule::REQUEST;
+                    $hSubject = trim((string) ($h['subject'] ?? ''));
+                    ?>
                     <tr>
                         <td><?php echo HTMLHelper::_('date', $h['created'], Text::_('DATE_FORMAT_LC5')); ?></td>
+                        <td><span class="badge <?php echo $badge[$hModule] ?? 'text-bg-secondary'; ?>"><?php echo Text::_(ApprovalModule::labelKey($hModule)); ?></span></td>
                         <td><?php echo $this->escape((string) $h['sdp_request_id']); ?></td>
+                        <td><?php echo $hSubject !== '' ? $this->escape($hSubject) : '—'; ?></td>
                         <td><?php echo Text::_($decisionLabel[$h['action']] ?? 'JNONE'); ?></td>
                         <td><?php echo Text::_($resultLabel[$h['result']] ?? 'JNONE'); ?></td>
                     </tr>

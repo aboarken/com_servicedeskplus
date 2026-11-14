@@ -24,7 +24,7 @@ final class DbAuditLog implements AuditLogInterface, AuditCounterInterface, Audi
         }
 
         $query = $this->db->getQuery(true)
-            ->select($this->db->quoteName(['created', 'action', 'result', 'sdp_request_id', 'approval_id', 'detail']))
+            ->select($this->db->quoteName(['created', 'action', 'result', 'sdp_request_id', 'approval_id', 'module', 'subject', 'detail']))
             ->from($this->db->quoteName('#__sdp_audit'))
             ->where($this->db->quoteName('user_id') . ' = :uid')
             ->whereIn($this->db->quoteName('action'), $actions, ParameterType::STRING)
@@ -69,7 +69,9 @@ final class DbAuditLog implements AuditLogInterface, AuditCounterInterface, Audi
         ?string $sdpRequestId = null,
         ?string $approvalId = null,
         string $detail = '',
-        int $actorId = 0
+        int $actorId = 0,
+        string $module = '',
+        string $subject = ''
     ): void {
         $row = (object) [
             'user_id'        => max(0, $userId),
@@ -77,6 +79,8 @@ final class DbAuditLog implements AuditLogInterface, AuditCounterInterface, Audi
             'action'         => substr($action, 0, 50),
             'sdp_request_id' => $sdpRequestId,
             'approval_id'    => $approvalId,
+            'module'         => substr(preg_replace('/[^a-z_]/', '', $module) ?? '', 0, 20),
+            'subject'        => mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $subject) ?? ''), 0, 255),
             'result'         => substr($result, 0, 20),
             'detail'         => Redactor::scrub($detail, [], 250),
             'created'        => gmdate('Y-m-d H:i:s'),

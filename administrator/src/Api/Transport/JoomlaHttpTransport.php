@@ -41,8 +41,9 @@ final class JoomlaHttpTransport implements TransportInterface
         } catch (\InvalidArgumentException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            // Never pass on the original message verbatim: some adapters echo request headers.
-            throw new TransportException('Could not reach ServiceDesk Plus (' . $this->describe($e) . ')', 0, $e);
+            // Only the cURL adapter is used, and cURL error texts never contain request headers.
+            // The text is still shortened and cleaned, and SdpClient removes secrets before logging.
+            throw new TransportException('Could not reach ServiceDesk Plus (' . $this->describe($e) . ': ' . self::detail($e) . ')', 0, $e);
         }
 
         return new TransportResponse($response->getStatusCode(), (string) $response->getBody());
@@ -91,6 +92,19 @@ final class JoomlaHttpTransport implements TransportInterface
         $this->http = (new HttpFactory())->getHttp($options, ['curl']);
 
         return $this->http;
+    }
+
+    /**
+     * The cURL error text (e.g. "SSL certificate problem: unable to get local issuer certificate"),
+     * one line, at most 200 characters, without the query string of any URL it mentions.
+     */
+    private static function detail(\Throwable $e): string
+    {
+        $text = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $e->getMessage()) ?? '';
+        $text = preg_replace('/\?[^\s\'"]*/u', '', $text) ?? '';
+        $text = trim($text);
+
+        return $text !== '' ? mb_substr($text, 0, 200) : 'no details';
     }
 
     private function describe(\Throwable $e): string

@@ -1,0 +1,1 @@
+-- No schema changes in 1.6.0. Obsolete settings rows are removed by script.php.

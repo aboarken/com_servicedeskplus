@@ -57,6 +57,9 @@ return new class () implements ServiceProviderInterface {
                     'loan_start_field',
                     'loan_due_field',
                     'loan_returned_field',
+                    // Approval scan settings (removed in 1.6.0; built-in defaults are used).
+                    'approval_pending_status',
+                    'approval_scan_limit',
                 ];
 
                 /** Front-end views that no longer exist; menu items pointing to them are trashed. */

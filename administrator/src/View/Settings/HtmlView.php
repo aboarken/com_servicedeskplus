@@ -66,11 +66,6 @@ final class HtmlView extends BaseHtmlView
             ->icon('icon-lock')
             ->listCheck(false);
 
-        $toolbar->standardButton('testassets', 'COM_SERVICEDESKPLUS_TEST_ASSETS')
-            ->task('settings.testAssets')
-            ->icon('icon-search')
-            ->listCheck(false);
-
         $toolbar->preferences('com_servicedeskplus');
     }
 }

@@ -28,9 +28,6 @@ final class Settings
         'rate_create_per_hour' => '10',
         'rate_decide_per_hour' => '30',
         'request_statuses'     => 'Open,On Hold,Resolved,Closed',
-        // Approvals.
-        'approval_pending_status' => 'Pending Approval',
-        'approval_scan_limit'     => '50',
     ];
 
     /** @param array<string, string> $values */
@@ -101,16 +98,6 @@ final class Settings
     public function rateDecidePerHour(): int
     {
         return max(1, (int) $this->get('rate_decide_per_hour'));
-    }
-
-    public function approvalPendingStatus(): string
-    {
-        return $this->get('approval_pending_status') ?: 'Pending Approval';
-    }
-
-    public function approvalScanLimit(): int
-    {
-        return max(1, min(100, (int) $this->get('approval_scan_limit')));
     }
 
     /**

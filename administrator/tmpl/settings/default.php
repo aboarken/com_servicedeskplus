@@ -67,11 +67,6 @@ $secretLabel = match ($this->secretSource) {
     </fieldset>
 
     <fieldset class="options-form">
-        <legend><?php echo Text::_('COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_APPROVALS'); ?></legend>
-        <?php echo $this->form->renderFieldset('approvals'); ?>
-    </fieldset>
-
-    <fieldset class="options-form">
         <legend><?php echo Text::_('COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_LIMITS'); ?></legend>
         <?php echo $this->form->renderFieldset('limits'); ?>
     </fieldset>

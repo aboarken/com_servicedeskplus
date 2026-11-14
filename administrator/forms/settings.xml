@@ -96,6 +96,19 @@
         />
     </fieldset>
 
+    <fieldset name="approvals" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_APPROVALS">
+        <field
+            name="approval_account_email"
+            type="email"
+            label="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_ACCOUNT_EMAIL"
+            description="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_ACCOUNT_EMAIL_DESC"
+            hint="apiadmin@example.com"
+            validate="email"
+            filter="string"
+            size="60"
+        />
+    </fieldset>
+
     <fieldset name="limits" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_LIMITS">
         <field
             name="cache_ttl"

@@ -30,15 +30,30 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Support\SdpFields;
  * this class enforces it: a decision is sent only after re-fetching the approval and confirming
  * that its approver is the logged-in user's mapped SDP user and that it is still pending at the
  * current level. The user's name is written into the SDP comment and every decision is audited.
+ *
+ * SDP only accepts a decision from the assigned approver. When it refuses the service key
+ * (code 4201, "not authorized to take action on this approval") and the API technician's e-mail
+ * is configured, the decision is recorded through that technician instead ("approval account"):
+ * it is added as approver on the same level, takes the decision with the real approver's name
+ * in the comment, the real approver's pending entry is removed and a private request note
+ * records who decided. The ownership check above always runs first.
  */
 final class ApprovalService
 {
     public const ACTION_APPROVE = 'approval.approve';
     public const ACTION_REJECT  = 'approval.reject';
-    public const COMMENT_MAX    = 2000;
+    /** Longest comment the user can type; SDP stores at most SDP_COMMENT_MAX on one line. */
+    public const COMMENT_MAX     = 200;
+    public const SDP_COMMENT_MAX = 250;
 
     public const OUTCOME_CONFIRMED   = 'confirmed';
     public const OUTCOME_UNCONFIRMED = 'unconfirmed';
+
+    /** Recorded through the approval account; SDP still waits for other approvers on the level. */
+    public const OUTCOME_LEVEL_PENDING = 'level_pending';
+
+    /** Recorded through the approval account, but the approver's own pending entry could not be removed. */
+    public const OUTCOME_ORIGINAL_LEFT = 'original_left';
 
     /**
      * @param  \Closure(): SdpClient  $clientFactory
@@ -52,9 +67,13 @@ final class ApprovalService
         private readonly LoggerInterface $logger,
         private readonly int $decidePerHour,
         private readonly string $pendingStatus = 'Pending Approval',
-        private readonly int $scanLimit = 50
+        private readonly int $scanLimit = 50,
+        private readonly string $approvalAccountEmail = ''
     ) {
     }
+
+    /** SDP user id of the approval account, once looked up. */
+    private ?string $approvalAccountId = null;
 
     /**
      * Pending approvals where the user is the approver at the current level.
@@ -222,10 +241,16 @@ final class ApprovalService
             throw new AlreadyDecided();
         }
 
+        $sdpComment = self::sdpComment($decision, $approverName, $comment);
+
         try {
             // Comments are plain text (JSON-encoded by SdpClient), not HTML.
-            $this->client()->decideApproval($requestId, $levelId, $approvalId, $decision, self::sdpComment($decision, $approverName, $comment));
+            $this->client()->decideApproval($requestId, $levelId, $approvalId, $decision, $sdpComment);
         } catch (SdpException $e) {
+            if ($e->getKind() === SdpException::PERMISSION && $this->approvalAccountEmail !== '') {
+                return $this->decideThroughAccount($identity, $action, $requestId, $levelId, $approvalId, $decision, $sdpComment, $approverName, $e);
+            }
+
             if ($this->stillPending($identity, $requestId, $levelId, $approvalId) === false) {
                 $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'already_decided');
 
@@ -256,14 +281,203 @@ final class ApprovalService
 
     /**
      * Comment sent to SDP: who decided in Joomla, then the user's own comment.
+     * SDP accepts plain text on one line, at most SDP_COMMENT_MAX characters.
      */
     public static function sdpComment(string $decision, string $approverName, string $comment): string
     {
-        $name = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $approverName) ?? '');
-        $verb = $decision === 'approve' ? 'Approved' : 'Rejected';
-        $line = $name !== '' ? \sprintf('%s by %s via the Joomla portal.', $verb, mb_substr($name, 0, 200)) : $verb . ' via the Joomla portal.';
+        $oneLine = static fn (string $t): string => trim(preg_replace('/\s+/u', ' ', preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $t) ?? '') ?? '');
 
-        return $comment !== '' ? $line . "\n\n" . $comment : $line;
+        $name    = mb_substr($oneLine($approverName), 0, 100);
+        $comment = $oneLine($comment);
+        $verb    = $decision === 'approve' ? 'Approved' : 'Rejected';
+        $line    = $name !== '' ? \sprintf('%s by %s via the Joomla portal.', $verb, $name) : $verb . ' via the Joomla portal.';
+
+        return mb_substr($comment !== '' ? $line . ' ' . $comment : $line, 0, self::SDP_COMMENT_MAX);
+    }
+
+    /**
+     * Record the decision through the approval account after SDP refused the direct decision.
+     * The caller has already checked that the user is the approver and the approval is pending.
+     *
+     * @throws SdpException  the original refusal when the account cannot be used, or the failure
+     */
+    private function decideThroughAccount(
+        Identity $identity,
+        string $action,
+        string $requestId,
+        string $levelId,
+        string $approvalId,
+        string $decision,
+        string $sdpComment,
+        string $approverName,
+        SdpException $refusal
+    ): string {
+        $userId    = $identity->joomlaUserId;
+        $client    = $this->client();
+        $accountId = $this->approvalAccountId();
+
+        if ($accountId === null || $accountId === $identity->sdpUserId()) {
+            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'refused:no_approval_account');
+
+            throw $refusal;
+        }
+
+        // Reuse a pending entry of the account left by an earlier attempt, otherwise add one.
+        $accountApprovalId = null;
+        $added             = false;
+
+        try {
+            foreach ($client->getApprovals($requestId, $levelId) as $candidate) {
+                if (SdpFields::id($candidate, 'approver') === $accountId && $this->isPendingStatus($candidate)) {
+                    $accountApprovalId = SdpFields::string($candidate, 'id');
+                    break;
+                }
+            }
+
+            if ($accountApprovalId === null) {
+                $accountApprovalId = SdpClient::id(SdpFields::string($client->addApproval($requestId, $levelId, $accountId), 'id'));
+                $added             = true;
+            }
+        } catch (SdpException $e) {
+            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:' . $e->getKind() . ':' . $e->getSdpMessage());
+
+            throw $e;
+        } catch (\InvalidArgumentException) {
+            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:no_id');
+
+            throw new SdpException(SdpException::BAD_RESPONSE, 'Added approval has no id');
+        }
+
+        try {
+            $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment);
+        } catch (SdpException $e) {
+            if ($added) {
+                // Do not leave an extra pending approver behind.
+                try {
+                    $client->deleteApproval($requestId, $levelId, $accountApprovalId);
+                } catch (SdpException) {
+                    $this->logger->warning(\sprintf('Approval %s added for the approval account on request %s could not be removed', $accountApprovalId, $requestId));
+                }
+            }
+
+            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_decide:' . $e->getKind() . ':' . $e->getSdpMessage());
+
+            throw $e;
+        }
+
+        // The decision is recorded. Remove the approver's own pending entry so only one remains.
+        $originalRemoved = true;
+
+        try {
+            $client->deleteApproval($requestId, $levelId, $approvalId);
+        } catch (SdpException $e) {
+            // Fine when SDP already closed the entry itself (e.g. the level completed).
+            $originalRemoved = $e->getKind() === SdpException::NOT_FOUND || !$this->approvalStillPending($requestId, $levelId, $approvalId);
+
+            if (!$originalRemoved) {
+                $this->logger->warning(\sprintf('Pending approval %s of request %s could not be removed after the decision (%s)', $approvalId, $requestId, $e->getKind()));
+            }
+        }
+
+        $this->addDecisionNote($requestId, $decision, $approverName, $sdpComment);
+        $this->cache->clear($identity, 'approvals:');
+
+        $outcome = match (true) {
+            !$originalRemoved                              => self::OUTCOME_ORIGINAL_LEFT,
+            $this->levelStillPending($requestId, $levelId) => self::OUTCOME_LEVEL_PENDING,
+            default                                        => self::OUTCOME_CONFIRMED,
+        };
+
+        $this->audit->record($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, 'via_account:' . $accountApprovalId . ':' . $outcome);
+
+        return $outcome;
+    }
+
+    /**
+     * SDP user id of the approval account (exact e-mail match), or null when it is not found.
+     */
+    private function approvalAccountId(): ?string
+    {
+        if ($this->approvalAccountId !== null) {
+            return $this->approvalAccountId !== '' ? $this->approvalAccountId : null;
+        }
+
+        $email = mb_strtolower(trim($this->approvalAccountEmail));
+        $found = [];
+
+        try {
+            foreach ($this->client()->findUsersByEmail($email) as $user) {
+                $id = SdpFields::string($user, 'id');
+
+                if (mb_strtolower(trim(SdpFields::string($user, 'email_id'))) === $email && preg_match('/^[0-9]{1,20}$/', $id)) {
+                    $found[$id] = true;
+                }
+            }
+        } catch (SdpException | \InvalidArgumentException $e) {
+            $this->logger->warning('The approval account could not be looked up: ' . ($e instanceof SdpException ? $e->getKind() : 'invalid e-mail'));
+
+            return null;
+        }
+
+        if (\count($found) !== 1) {
+            $this->logger->warning(\sprintf('The approval account e-mail matches %d ServiceDesk Plus users; it must match exactly one', \count($found)));
+            $this->approvalAccountId = '';
+
+            return null;
+        }
+
+        return $this->approvalAccountId = (string) array_key_first($found);
+    }
+
+    /** Private request note naming the person who decided. Best effort. */
+    private function addDecisionNote(string $requestId, string $decision, string $approverName, string $sdpComment): void
+    {
+        $name = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $approverName) ?? '') ?: 'the assigned approver';
+        $text = \sprintf(
+            '%s on behalf of %s via the Joomla portal on %s UTC. ServiceDesk Plus records the decision under the API technician because it only accepts approvals from that account. Comment: %s',
+            $decision === 'approve' ? 'Approved' : 'Rejected',
+            $name,
+            gmdate('Y-m-d H:i'),
+            $sdpComment
+        );
+
+        try {
+            $this->client()->addRequestNote($requestId, HtmlText::fromPlain($text));
+        } catch (SdpException $e) {
+            $this->logger->warning(\sprintf('Note for the decision on request %s could not be added (%s)', $requestId, $e->getKind()));
+        }
+    }
+
+    /** True when the approval is still listed as pending; true as well when that cannot be read. */
+    private function approvalStillPending(string $requestId, string $levelId, string $approvalId): bool
+    {
+        try {
+            foreach ($this->client()->getApprovals($requestId, $levelId) as $approval) {
+                if (SdpFields::string($approval, 'id') === $approvalId) {
+                    return $this->isPendingStatus($approval);
+                }
+            }
+
+            return false;
+        } catch (SdpException) {
+            return true;
+        }
+    }
+
+    /** True when the level is still waiting for approvals (e.g. it needs all approvers). */
+    private function levelStillPending(string $requestId, string $levelId): bool
+    {
+        try {
+            foreach ($this->client()->getApprovalLevels($requestId) as $level) {
+                if (SdpFields::string($level, 'id') === $levelId) {
+                    return mb_strtolower(SdpFields::name($level, 'status')) === mb_strtolower($this->pendingStatus);
+                }
+            }
+        } catch (SdpException) {
+            // Unknown: report success; the user can check the request.
+        }
+
+        return false;
     }
 
     /**

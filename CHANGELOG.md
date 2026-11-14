@@ -3,6 +3,21 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.8.0] - 2026-11-14
+
+### Added
+- **Approve and reject from Joomla, even though ServiceDesk Plus only accepts the assigned approver.** ServiceDesk Plus refuses decisions sent with the API technician's key for approvals assigned to someone else (code 4201). With the new **Integration Settings → Approvals → API technician e-mail** set, the portal then:
+  1. checks, as before, that the logged-in user is the assigned approver and the approval is pending;
+  2. adds the API technician as approver on the same approval level (or reuses its pending entry);
+  3. approves or rejects as the API technician, with "Approved by *name* via the Joomla portal." and the user's comment as approval comment;
+  4. removes the user's own pending entry, so the level shows one decision;
+  5. adds a private request note (not shown to the requester) naming the person who decided.
+  If the decision fails, the added entry is removed again. When the level also needs other approvers, or the user's entry cannot be removed, the user is told so. Leave the e-mail empty to keep the previous behaviour.
+- The portal still tries the direct decision first, so nothing changes where ServiceDesk Plus already accepts it.
+
+### Changed
+- Approval comments are sent as one line of at most 250 characters, as ServiceDesk Plus requires; the comment box allows 200 characters.
+
 ## [1.7.1] - 2026-11-14
 
 ### Fixed

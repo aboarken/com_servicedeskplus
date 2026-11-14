@@ -210,6 +210,60 @@ final class SdpClient
     }
 
     /**
+     * Add an approver to an approval level of a request.
+     *
+     * POST /api/v3/requests/{request_id}/approval_levels/{level_id}/approvals with
+     * input_data {"approval": {"approver": {"id": ...}}} ("Add Request Approval" in the v3 reference;
+     * the On-Premises reference documents the same shape for changes only).
+     *
+     * @return array<string, mixed>  The added approval
+     */
+    public function addApproval(string $requestId, string $levelId, string $approverId): array
+    {
+        $data = $this->post(
+            '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals',
+            ['approval' => ['approver' => ['id' => self::id($approverId)]]]
+        );
+
+        // Builds answer with {"approval": {...}} or, for bulk adds, {"approvals": [{...}]}.
+        if (\is_array($data['approvals'] ?? null) && array_is_list($data['approvals']) && \is_array($data['approvals'][0] ?? null)) {
+            return $data['approvals'][0];
+        }
+
+        return $this->entity($data, 'approval');
+    }
+
+    /**
+     * DELETE /api/v3/requests/{request_id}/approval_levels/{level_id}/approvals/{approval_id}.
+     */
+    public function deleteApproval(string $requestId, string $levelId, string $approvalId): void
+    {
+        $this->call(
+            'DELETE',
+            '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals/' . self::id($approvalId),
+            null,
+            $this->serviceKey
+        );
+    }
+
+    /**
+     * POST /api/v3/requests/{request_id}/notes (requests/request_note.html, "Add Note").
+     *
+     * @param  string  $descriptionHtml  Already escaped HTML
+     *
+     * @return array<string, mixed>
+     */
+    public function addRequestNote(string $requestId, string $descriptionHtml, bool $showToRequester = false): array
+    {
+        return $this->post('/api/v3/requests/' . self::id($requestId) . '/notes', ['note' => [
+            'description'            => $descriptionHtml,
+            'show_to_requester'      => $showToRequester,
+            'mark_first_response'    => false,
+            'add_to_linked_requests' => false,
+        ]]);
+    }
+
+    /**
      * GET /api/v3/assets.
      *
      * UNVERIFIED: assets are not in the On-Premises v3 reference (see docs/ENDPOINTS.md).

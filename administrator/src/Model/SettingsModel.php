@@ -116,6 +116,14 @@ final class SettingsModel extends FormModel
             'request_statuses'     => implode(',', Settings::parseList((string) ($filtered['request_statuses'] ?? ''))),
         ];
 
+        $approvalEmail = trim((string) ($filtered['approval_account_email'] ?? ''));
+
+        if ($approvalEmail !== '' && (\strlen($approvalEmail) > 320 || filter_var($approvalEmail, FILTER_VALIDATE_EMAIL) === false)) {
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_APPROVAL_EMAIL')]);
+        }
+
+        $values['approval_account_email'] = $approvalEmail;
+
         try {
             $values['ssl_pin'] = SslPin::normalize((string) ($data['ssl_pin'] ?? ''));
         } catch (\InvalidArgumentException) {

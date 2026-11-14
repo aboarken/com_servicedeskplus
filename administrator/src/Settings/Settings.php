@@ -28,6 +28,8 @@ final class Settings
         'rate_create_per_hour' => '10',
         'rate_decide_per_hour' => '30',
         'request_statuses'     => 'Open,On Hold,Resolved,Closed',
+        // E-mail of the SDP technician that owns the service key; empty = no approval fallback.
+        'approval_account_email' => '',
     ];
 
     /** @param array<string, string> $values */
@@ -93,6 +95,15 @@ final class Settings
     public function rateCreatePerHour(): int
     {
         return max(1, (int) $this->get('rate_create_per_hour'));
+    }
+
+    /**
+     * E-mail address of the technician that owns the service key, used to approve on behalf of
+     * the assigned approver when SDP refuses a direct decision. Empty when not configured.
+     */
+    public function approvalAccountEmail(): string
+    {
+        return $this->get('approval_account_email');
     }
 
     public function rateDecidePerHour(): int

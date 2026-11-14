@@ -115,8 +115,15 @@ final class ApprovalController extends BaseController
         $message = $decision === 'approve' ? 'COM_SERVICEDESKPLUS_APPROVAL_APPROVED' : 'COM_SERVICEDESKPLUS_APPROVAL_REJECTED';
         $this->app->enqueueMessage(Text::_($message), 'success');
 
-        if ($outcome === ApprovalService::OUTCOME_UNCONFIRMED) {
-            $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_APPROVAL_UNCONFIRMED'), 'info');
+        $notice = match ($outcome) {
+            ApprovalService::OUTCOME_UNCONFIRMED   => 'COM_SERVICEDESKPLUS_APPROVAL_UNCONFIRMED',
+            ApprovalService::OUTCOME_LEVEL_PENDING => 'COM_SERVICEDESKPLUS_APPROVAL_LEVEL_PENDING',
+            ApprovalService::OUTCOME_ORIGINAL_LEFT => 'COM_SERVICEDESKPLUS_APPROVAL_ORIGINAL_LEFT',
+            default                                => null,
+        };
+
+        if ($notice !== null) {
+            $this->app->enqueueMessage(Text::_($notice), 'info');
         }
 
         $this->setRedirect(Route::_($listUrl, false));

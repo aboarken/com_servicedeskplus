@@ -96,27 +96,6 @@
         />
     </fieldset>
 
-    <fieldset name="approvals" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_APPROVALS">
-        <field
-            name="approval_pending_status"
-            type="text"
-            label="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_PENDING_STATUS"
-            description="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_PENDING_STATUS_DESC"
-            default="Pending Approval"
-            filter="string"
-        />
-        <field
-            name="approval_scan_limit"
-            type="number"
-            label="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_SCAN_LIMIT"
-            description="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_SCAN_LIMIT_DESC"
-            default="50"
-            min="1"
-            max="100"
-            filter="integer"
-        />
-    </fieldset>
-
     <fieldset name="limits" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_LIMITS">
         <field
             name="cache_ttl"

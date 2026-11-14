@@ -15,9 +15,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\FormModel;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\ClientConfig;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\ListInfo;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SslPin;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\AssetPath;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Extension\ServiceDeskPlusComponent;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\KeyVault;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\KeyVaultException;
@@ -136,11 +134,6 @@ final class SettingsModel extends FormModel
         }
 
 
-        $pendingStatus = trim(preg_replace('/[\x00-\x1F\x7F]+/u', '', (string) ($filtered['approval_pending_status'] ?? '')) ?? '');
-
-        $values['approval_pending_status'] = mb_substr($pendingStatus !== '' ? $pendingStatus : 'Pending Approval', 0, 100);
-        $values['approval_scan_limit']     = (string) max(1, min(100, (int) ($filtered['approval_scan_limit'] ?? 50)));
-
         // The key is read from the raw post so no filter can alter it; it is validated by pattern.
         $key = trim((string) ($data['service_key'] ?? ''));
 
@@ -187,22 +180,6 @@ final class SettingsModel extends FormModel
         }
 
         return SslPin::readFromServer($settings->baseUrl(), $settings->connectTimeout(), $settings->connectVia());
-    }
-
-    /**
-     * Reads one asset with the service key and returns its field paths (names only, no values),
-     * so the admin can see how this SDP build names the fields needed for loan assets.
-     *
-     * @return list<string>
-     *
-     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
-     */
-    public function sampleAssetFieldPaths(): array
-    {
-        $page = $this->component()->getSdpClientFactory()->createServiceClient()
-            ->listAssets(new ListInfo(rowCount: 1));
-
-        return $page->items === [] ? [] : AssetPath::listPaths($page->items[0]);
     }
 
     private function component(): ServiceDeskPlusComponent

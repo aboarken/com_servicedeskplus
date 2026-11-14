@@ -94,35 +94,6 @@ final class SettingsController extends BaseController
         $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=settings', false));
     }
 
-    /**
-     * Checks the (undocumented) asset endpoint on this build and lists the asset field names.
-     */
-    public function testAssets(): void
-    {
-        $this->guard();
-
-        /** @var SettingsModel $model */
-        $model = $this->getModel('Settings', 'Administrator', ['ignore_request' => true]);
-
-        try {
-            $paths = $model->sampleAssetFieldPaths();
-        } catch (SdpException $e) {
-            $this->app->enqueueMessage(Text::sprintf('COM_SERVICEDESKPLUS_TEST_ASSETS_FAILED', Text::_($e->getLanguageKey())), 'error');
-            $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=settings', false));
-
-            return;
-        }
-
-        if ($paths === []) {
-            $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_TEST_ASSETS_EMPTY'), 'warning');
-        } else {
-            $list = implode(', ', array_map(static fn (string $p) => htmlspecialchars($p, ENT_QUOTES, 'UTF-8'), $paths));
-            $this->app->enqueueMessage(Text::sprintf('COM_SERVICEDESKPLUS_TEST_ASSETS_OK', $list), 'success');
-        }
-
-        $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=settings', false));
-    }
-
     private function guard(): void
     {
         $this->checkToken();

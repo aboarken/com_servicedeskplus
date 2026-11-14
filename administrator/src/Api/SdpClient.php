@@ -209,7 +209,7 @@ final class SdpClient
      * GET /api/v3/assets.
      *
      * UNVERIFIED: assets are not in the On-Premises v3 reference (see docs/ENDPOINTS.md).
-     * Confirm with "Test asset endpoint" in Settings. Only these two methods name the path.
+     * Only these methods name the path.
      */
     public function listAssets(ListInfo $listInfo): ListPage
     {

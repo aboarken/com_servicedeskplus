@@ -79,32 +79,4 @@ final class AssetPath
     {
         return self::timestamp($data, $path) !== null || self::text($data, $path) !== '';
     }
-
-    /**
-     * Field paths of an asset (names only), up to three levels deep, for the admin test.
-     *
-     * @param  array<string, mixed>  $data
-     *
-     * @return list<string>
-     */
-    public static function listPaths(array $data, string $prefix = '', int $depth = 0): array
-    {
-        $paths = [];
-
-        foreach ($data as $key => $value) {
-            if (!\is_string($key) || !preg_match('/^[a-z0-9_]{1,64}$/', $key)) {
-                continue;
-            }
-
-            $path = $prefix === '' ? $key : $prefix . '.' . $key;
-
-            if (\is_array($value) && !array_is_list($value) && $depth < 2) {
-                $paths = [...$paths, ...self::listPaths($value, $path, $depth + 1)];
-            } else {
-                $paths[] = $path;
-            }
-        }
-
-        return $paths;
-    }
 }

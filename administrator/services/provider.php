@@ -162,9 +162,7 @@ return new class () implements ServiceProviderInterface {
                     $c->get(DbAuditLog::class),
                     $c->get(RateLimiter::class),
                     $c->get(JoomlaLogger::class),
-                    $settings->rateDecidePerHour(),
-                    $settings->approvalPendingStatus(),
-                    $settings->approvalScanLimit()
+                    $settings->rateDecidePerHour()
                 );
             }
         );

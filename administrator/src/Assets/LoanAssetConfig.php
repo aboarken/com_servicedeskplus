@@ -12,7 +12,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Assets;
 
 /**
  * How loan assets are read from SDP. Fixed to the fields SDP build 16030 returns from
- * GET /api/v3/assets (confirmed with "Test asset endpoint"): user, is_loaned, loan_start, loan_end.
+ * GET /api/v3/assets (confirmed on the target build): user, is_loaned, loan_start, loan_end.
  */
 final class LoanAssetConfig
 {

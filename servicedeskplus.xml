@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="component" method="upgrade">
+    <name>com_servicedeskplus</name>
+    <author>SDP Portal</author>
+    <creationDate>2026-11</creationDate>
+    <copyright>(C) 2026</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <version>1.4.0</version>
+    <description>COM_SERVICEDESKPLUS_XML_DESCRIPTION</description>
+    <namespace path="src">SdpPortal\Component\ServiceDeskPlus</namespace>
+
+    <scriptfile>script.php</scriptfile>
+
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+            <file driver="postgresql" charset="utf8">sql/install.postgresql.utf8.sql</file>
+        </sql>
+    </install>
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+            <file driver="postgresql" charset="utf8">sql/uninstall.postgresql.utf8.sql</file>
+        </sql>
+    </uninstall>
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+            <schemapath type="postgresql">sql/updates/postgresql</schemapath>
+        </schemas>
+    </update>
+
+    <files folder="site">
+        <folder>language</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+    </files>
+
+    <media destination="com_servicedeskplus" folder="media">
+        <filename>joomla.asset.json</filename>
+        <folder>css</folder>
+        <folder>js</folder>
+    </media>
+
+    <administration>
+        <menu img="class:cog">COM_SERVICEDESKPLUS</menu>
+        <submenu>
+            <menu link="option=com_servicedeskplus&amp;view=settings">COM_SERVICEDESKPLUS_SUBMENU_SETTINGS</menu>
+            <menu link="option=com_servicedeskplus&amp;view=usermaps">COM_SERVICEDESKPLUS_SUBMENU_MAPPINGS</menu>
+        </submenu>
+        <files folder="administrator">
+            <filename>access.xml</filename>
+            <filename>config.xml</filename>
+            <folder>forms</folder>
+            <folder>language</folder>
+            <folder>services</folder>
+            <folder>sql</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+        </files>
+    </administration>
+</extension>

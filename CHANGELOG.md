@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.8.2] - 2026-11-14
+
+### Fixed
+- **Sending the approval e-mail on ServiceDesk Plus On-Premises.** 1.8.1 used the Cloud addresses (`…/approvals/{id}/_send_notification`), which On-Premises answers with "Invalid URL". The portal now uses the On-Premises form first: `PUT …/approval_levels/{level}/approvals/send_notification?ids={approval_id}` with `{"approval": {"notification": {"title", "description"}}}`, as documented in the On-Premises v3 reference for change approvals. The Cloud forms remain as fallbacks.
+
 ## [1.8.1] - 2026-11-14
 
 ### Fixed

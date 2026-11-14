@@ -237,27 +237,37 @@ final class SdpClient
      * Send the approval e-mail for one approval. SDP accepts no decision on an approval whose
      * e-mail has not been sent ("Recommendation mail is not yet sent.").
      *
-     * PUT .../approvals/{approval_id}/_send_notification with input_data
-     * {"notification": {"subject": ..., "description": ...}} ("Send Notification For Request Approval"
-     * in the v3 reference). Builds that use paths without the leading underscore (as for
-     * .../approve) are tried first; the documented path is used when that one is not found.
+     * Tried in this order, moving on only when SDP answers "not found":
+     *  1. On-Premises: PUT .../approval_levels/{level_id}/approvals/send_notification?ids={approval_id}
+     *     with {"approval": {"notification": {"title", "description"}}} (documented for change
+     *     approvals in the On-Premises v3 reference);
+     *  2. Cloud: PUT .../approvals/{approval_id}/_send_notification with
+     *     {"notification": {"subject", "description"}} ("Send Notification For Request Approval"),
+     *     also without the leading underscore.
      */
     public function sendApprovalNotification(string $requestId, string $levelId, string $approvalId, string $subject, string $descriptionHtml): void
     {
-        $base  = '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals/' . self::id($approvalId);
-        $input = ['notification' => ['subject' => $subject, 'description' => $descriptionHtml]];
+        $level    = '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals';
+        $approval = $level . '/' . self::id($approvalId);
+        $attempts = [
+            [$level . '/send_notification', ['approval' => ['notification' => ['title' => $subject, 'description' => $descriptionHtml]]], ['ids' => self::id($approvalId)]],
+            [$approval . '/_send_notification', ['notification' => ['subject' => $subject, 'description' => $descriptionHtml]], []],
+            [$approval . '/send_notification', ['notification' => ['subject' => $subject, 'description' => $descriptionHtml]], []],
+        ];
 
-        try {
-            $this->call('PUT', $base . '/send_notification', $input, $this->serviceKey);
+        foreach ($attempts as $n => [$path, $input, $query]) {
+            try {
+                $this->call('PUT', $path, $input, $this->serviceKey, null, $query);
 
-            return;
-        } catch (SdpException $e) {
-            if ($e->getKind() !== SdpException::NOT_FOUND && !\in_array($e->getHttpStatus(), [404, 405], true)) {
-                throw $e;
+                return;
+            } catch (SdpException $e) {
+                $notFound = $e->getKind() === SdpException::NOT_FOUND || \in_array($e->getHttpStatus(), [404, 405], true);
+
+                if (!$notFound || $n === \count($attempts) - 1) {
+                    throw $e;
+                }
             }
         }
-
-        $this->call('PUT', $base . '/_send_notification', $input, $this->serviceKey);
     }
 
     /**
@@ -509,10 +519,11 @@ final class SdpClient
     /**
      * @param  array<string, mixed>|null               $input
      * @param  array{0: string, 1: string}|null        $raw    Prebuilt [body, Content-Type] (uploads)
+     * @param  array<string, string>                   $query  Extra query parameters (e.g. ids=...)
      *
      * @return array<string, mixed>
      */
-    private function call(string $method, string $path, ?array $input, #[\SensitiveParameter] string $authtoken, ?array $raw = null): array
+    private function call(string $method, string $path, ?array $input, #[\SensitiveParameter] string $authtoken, ?array $raw = null, array $query = []): array
     {
         if (!preg_match('#^/api/v3(/[a-z0-9_]+)+$#', $path)) {
             throw new \InvalidArgumentException('Invalid SDP API path');
@@ -520,6 +531,10 @@ final class SdpClient
 
         $url     = $this->config->baseUrl . $path;
         $headers = ['Accept' => self::ACCEPT, 'authtoken' => $authtoken];
+
+        if ($query !== []) {
+            $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        }
         $body    = null;
 
         if ($raw !== null) {
@@ -529,7 +544,7 @@ final class SdpClient
                 $json = json_encode($input, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
                 if ($method === 'GET') {
-                    $url .= '?' . http_build_query(['input_data' => $json], '', '&', PHP_QUERY_RFC3986);
+                    $url .= ($query !== [] ? '&' : '?') . http_build_query(['input_data' => $json], '', '&', PHP_QUERY_RFC3986);
                 } else {
                     $body = http_build_query(['input_data' => $json], '', '&', PHP_QUERY_RFC1738);
                 }

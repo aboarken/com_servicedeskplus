@@ -22,7 +22,8 @@ final class ApprovalDetail
         public readonly ?int $sentOn,
         public readonly string $comments,
         public readonly string $status,
-        public readonly bool $pending
+        public readonly bool $pending,
+        public readonly string $module = ApprovalModule::REQUEST
     ) {
     }
 }

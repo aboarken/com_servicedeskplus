@@ -16,6 +16,7 @@ use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\AlreadyDecided;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalNotFound;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\InvalidDecision;
@@ -49,12 +50,14 @@ final class ApprovalController extends BaseController
         $requestId  = $post->getString('request_id', '');
         $levelId    = $post->getString('level_id', '');
         $approvalId = $post->getString('approval_id', '');
+        $module     = ApprovalModule::normalize($post->getCmd('module', '')) ?? ApprovalModule::REQUEST;
         $decision   = $post->getCmd('decision', '');
         $comment    = (string) $post->getRaw('comment', '');
         $token      = $post->getAlnum('submission', '');
 
         $detailUrl = 'index.php?option=com_servicedeskplus&view=approval&id=' . rawurlencode($approvalId)
-            . '&request_id=' . rawurlencode($requestId) . '&level_id=' . rawurlencode($levelId);
+            . '&request_id=' . rawurlencode($requestId) . '&level_id=' . rawurlencode($levelId)
+            . ($module !== ApprovalModule::REQUEST ? '&module=' . $module : '');
         $listUrl   = 'index.php?option=com_servicedeskplus&view=approvals';
 
         $this->setRedirect(Route::_(preg_match('/^[0-9]{1,20}$/', $approvalId . $requestId . $levelId) ? $detailUrl : $listUrl, false));
@@ -83,7 +86,7 @@ final class ApprovalController extends BaseController
 
         try {
             $outcome = $this->sdpComponent()->getApprovalService()
-                ->decide($identity, $requestId, $levelId, $approvalId, $decision, $comment, (string) $user->name);
+                ->decide($identity, $requestId, $levelId, $approvalId, $decision, $comment, (string) $user->name, $module);
         } catch (AlreadyDecided) {
             $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_APPROVAL_ERR_ALREADY_DECIDED'), 'warning');
 

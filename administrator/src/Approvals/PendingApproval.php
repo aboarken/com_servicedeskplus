@@ -19,7 +19,8 @@ final class PendingApproval
         public readonly string $subject,
         public readonly string $requester,
         public readonly ?int $sentOn,
-        public readonly string $level
+        public readonly string $level,
+        public readonly string $module = ApprovalModule::REQUEST
     ) {
     }
 
@@ -32,6 +33,9 @@ final class PendingApproval
     /** @param array<string, mixed> $a */
     public static function fromArray(array $a): self
     {
-        return new self(...$a);
+        // Entries cached by an older version have no "module": they are requests.
+        $names = ['requestId', 'levelId', 'approvalId', 'subject', 'requester', 'sentOn', 'level', 'module'];
+
+        return new self(...array_intersect_key($a, array_flip($names)));
     }
 }

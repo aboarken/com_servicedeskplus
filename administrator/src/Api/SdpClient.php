@@ -13,6 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Api;
 use Psr\Log\LoggerInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\Transport\TransportException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\Transport\TransportInterface;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 
 /**
  * The single gateway to ServiceDesk Plus On-Premises REST API v3.
@@ -147,15 +148,28 @@ final class SdpClient
     }
 
     /**
-     * GET /api/v3/requests/{request_id}/approval_levels (named in the project spec).
-     * UNVERIFIED for requests: the On-Premises reference documents this shape for changes only.
+     * GET /api/v3/approvals: approvals of all modules in one list. The documented filter
+     * "my_pending_approvals" returns the approvals of the key's owner; ApprovalService asks for
+     * one approver with search_criteria and checks every returned item itself.
+     *
+     * @param  array<string, mixed>  $listInfo  list_info as sent to SDP
      *
      * @return list<array<string, mixed>>
      */
-    public function getApprovalLevels(string $requestId): array
+    public function listApprovals(array $listInfo): array
+    {
+        return $this->collection($this->get('/api/v3/approvals', ['list_info' => $listInfo]), 'approvals');
+    }
+
+    /**
+     * GET /api/v3/{module}/{id}/approval_levels.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getApprovalLevels(string $entityId, string $module = ApprovalModule::REQUEST): array
     {
         $data = $this->get(
-            '/api/v3/requests/' . self::id($requestId) . '/approval_levels',
+            self::modulePath($module, $entityId) . '/approval_levels',
             ['list_info' => ['row_count' => ListInfo::MAX_ROW_COUNT, 'start_index' => 1]]
         );
 
@@ -163,15 +177,14 @@ final class SdpClient
     }
 
     /**
-     * GET /api/v3/requests/{request_id}/approval_levels/{level_id}/approvals (named in the spec).
-     * UNVERIFIED for requests, see getApprovalLevels().
+     * GET /api/v3/{module}/{id}/approval_levels/{level_id}/approvals.
      *
      * @return list<array<string, mixed>>
      */
-    public function getApprovals(string $requestId, string $levelId): array
+    public function getApprovals(string $entityId, string $levelId, string $module = ApprovalModule::REQUEST): array
     {
         $data = $this->get(
-            '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals',
+            self::modulePath($module, $entityId) . '/approval_levels/' . self::id($levelId) . '/approvals',
             ['list_info' => ['row_count' => ListInfo::MAX_ROW_COUNT, 'start_index' => 1]]
         );
 
@@ -179,12 +192,20 @@ final class SdpClient
     }
 
     /**
-     * Approve or reject one request approval with the service (technician) key.
+     * GET /api/v3/{module}/{id}: the request, change, release or purchase order itself.
      *
-     * PUT /api/v3/requests/{request_id}/approval_levels/{level_id}/approvals/{approval_id}/approve|reject
-     * with input_data {"approval": {"comments": "..."}}.
-     * UNVERIFIED for requests: mirrors the documented change-approval endpoint
-     * (changes/change_approval.html). Confirm on build 16030 before production use.
+     * @return array<string, mixed>
+     */
+    public function getModuleEntity(string $module, string $entityId): array
+    {
+        return $this->entity($this->get(self::modulePath($module, $entityId)), ApprovalModule::entityKey($module));
+    }
+
+    /**
+     * Approve or reject one approval with the service (technician) key.
+     *
+     * PUT /api/v3/{module}/{id}/approval_levels/{level_id}/approvals/{approval_id}/approve|reject
+     * (or _approve|_reject) with input_data {"approval": {"comments": "..."}}.
      *
      * SDP records the technician as the actor; ApprovalService only calls this after confirming
      * that the logged-in user is the approver, and puts the user's name in the comment.
@@ -193,39 +214,38 @@ final class SdpClient
      *
      * @return array<string, mixed>
      */
-    public function decideApproval(string $requestId, string $levelId, string $approvalId, string $decision, string $comment): array
+    public function decideApproval(string $entityId, string $levelId, string $approvalId, string $decision, string $comment, string $module = ApprovalModule::REQUEST): array
     {
         if (!\in_array($decision, ['approve', 'reject'], true)) {
             throw new \InvalidArgumentException('Decision must be approve or reject');
         }
 
-        $path = '/api/v3/requests/' . self::id($requestId)
-            . '/approval_levels/' . self::id($levelId)
-            . '/approvals/' . self::id($approvalId)
-            . '/' . $decision;
-
+        $base     = self::modulePath($module, $entityId) . '/approval_levels/' . self::id($levelId) . '/approvals/' . self::id($approvalId) . '/';
         $approval = $comment !== '' ? ['comments' => $comment] : [];
+        $attempts = array_map(
+            static fn (string $segment): array => [$base . $segment, ['approval' => (object) $approval], []],
+            ApprovalModule::decisionSegments($module, $decision)
+        );
 
-        return $this->call('PUT', $path, ['approval' => (object) $approval], $this->serviceKey);
+        return $this->firstFound('PUT', $attempts);
     }
 
     /**
-     * Add an approver to an approval level of a request.
-     *
-     * POST /api/v3/requests/{request_id}/approval_levels/{level_id}/approvals with
-     * input_data {"approval": {"approver": {"id": ...}}} ("Add Request Approval" in the v3 reference;
-     * the On-Premises reference documents the same shape for changes only).
+     * Add an approver to an approval level: POST /api/v3/{module}/{id}/approval_levels/{level_id}/approvals.
      *
      * @return array<string, mixed>  The added approval
      */
-    public function addApproval(string $requestId, string $levelId, string $approverId): array
+    public function addApproval(string $entityId, string $levelId, string $approverId, string $module = ApprovalModule::REQUEST): array
     {
-        $data = $this->post(
-            '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals',
-            ['approval' => ['approver' => ['id' => self::id($approverId)]]]
+        $path     = self::modulePath($module, $entityId) . '/approval_levels/' . self::id($levelId) . '/approvals';
+        $attempts = array_map(
+            static fn (array $input): array => [$path, $input, []],
+            ApprovalModule::addApprovalInputs($module, self::id($approverId))
         );
 
-        // Builds answer with {"approval": {...}} or, for bulk adds, {"approvals": [{...}]}.
+        $data = $this->firstFound('POST', $attempts, true);
+
+        // Builds answer with {"approval": {...}} or, for list adds, {"approvals": [{...}]}.
         if (\is_array($data['approvals'] ?? null) && array_is_list($data['approvals']) && \is_array($data['approvals'][0] ?? null)) {
             return $data['approvals'][0];
         }
@@ -237,50 +257,96 @@ final class SdpClient
      * Send the approval e-mail for one approval. SDP accepts no decision on an approval whose
      * e-mail has not been sent ("Recommendation mail is not yet sent.").
      *
-     * Tried in this order, moving on only when SDP answers "not found":
      *  1. On-Premises: PUT .../approval_levels/{level_id}/approvals/send_notification?ids={approval_id}
-     *     with {"approval": {"notification": {"title", "description"}}} (documented for change
-     *     approvals in the On-Premises v3 reference);
-     *  2. Cloud: PUT .../approvals/{approval_id}/_send_notification with
-     *     {"notification": {"subject", "description"}} ("Send Notification For Request Approval"),
-     *     also without the leading underscore.
+     *     (or _send_notification) with {"approval": {"notification": {"title", "description"}}};
+     *  2. requests only, Cloud: PUT .../approvals/{approval_id}/_send_notification with
+     *     {"notification": {"subject", "description"}}.
      */
-    public function sendApprovalNotification(string $requestId, string $levelId, string $approvalId, string $subject, string $descriptionHtml): void
+    public function sendApprovalNotification(string $entityId, string $levelId, string $approvalId, string $subject, string $descriptionHtml, string $module = ApprovalModule::REQUEST): void
     {
-        $level    = '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals';
+        $level    = self::modulePath($module, $entityId) . '/approval_levels/' . self::id($levelId) . '/approvals';
         $approval = $level . '/' . self::id($approvalId);
-        $attempts = [
-            [$level . '/send_notification', ['approval' => ['notification' => ['title' => $subject, 'description' => $descriptionHtml]]], ['ids' => self::id($approvalId)]],
-            [$approval . '/_send_notification', ['notification' => ['subject' => $subject, 'description' => $descriptionHtml]], []],
-            [$approval . '/send_notification', ['notification' => ['subject' => $subject, 'description' => $descriptionHtml]], []],
-        ];
+        $levelIn  = ['approval' => ['notification' => ['title' => $subject, 'description' => $descriptionHtml]]];
+        $cloudIn  = ['notification' => ['subject' => $subject, 'description' => $descriptionHtml]];
+        $attempts = [];
 
+        foreach (ApprovalModule::notificationSegments($module) as $segment) {
+            $attempts[] = [$level . '/' . $segment, $levelIn, ['ids' => self::id($approvalId)]];
+        }
+
+        if ($module === ApprovalModule::REQUEST) {
+            $attempts[] = [$approval . '/_send_notification', $cloudIn, []];
+            $attempts[] = [$approval . '/send_notification', $cloudIn, []];
+        }
+
+        $this->firstFound('PUT', $attempts);
+    }
+
+    /**
+     * DELETE /api/v3/{module}/{id}/approval_levels/{level_id}/approvals/{approval_id}.
+     */
+    public function deleteApproval(string $entityId, string $levelId, string $approvalId, string $module = ApprovalModule::REQUEST): void
+    {
+        $this->call(
+            'DELETE',
+            self::modulePath($module, $entityId) . '/approval_levels/' . self::id($levelId) . '/approvals/' . self::id($approvalId),
+            null,
+            $this->serviceKey
+        );
+    }
+
+    /**
+     * Private note on a request, change or release: POST /api/v3/{module}/{id}/notes.
+     * Purchase orders have no notes in the v3 API.
+     *
+     * @param  string  $descriptionHtml  Already escaped HTML
+     *
+     * @return array<string, mixed>
+     */
+    public function addModuleNote(string $module, string $entityId, string $descriptionHtml): array
+    {
+        if ($module === ApprovalModule::REQUEST) {
+            return $this->addRequestNote($entityId, $descriptionHtml);
+        }
+
+        if ($module === ApprovalModule::PURCHASE_ORDER) {
+            throw new SdpException(SdpException::NOT_FOUND, 'Purchase orders have no notes');
+        }
+
+        return $this->post(self::modulePath($module, $entityId) . '/notes', ['note' => ['description' => $descriptionHtml]]);
+    }
+
+    /**
+     * Run the first of several equivalent calls that SDP knows. A "not found" answer (unknown
+     * path) moves on to the next form; with $onValidation also a "validation" answer (other
+     * input shape). Any other error, or the last attempt's error, is thrown.
+     *
+     * @param  list<array{0: string, 1: array<string, mixed>|null, 2: array<string, string>}>  $attempts
+     *
+     * @return array<string, mixed>
+     */
+    private function firstFound(string $method, array $attempts, bool $onValidation = false): array
+    {
         foreach ($attempts as $n => [$path, $input, $query]) {
             try {
-                $this->call('PUT', $path, $input, $this->serviceKey, null, $query);
-
-                return;
+                return $this->call($method, $path, $input, $this->serviceKey, null, $query);
             } catch (SdpException $e) {
-                $notFound = $e->getKind() === SdpException::NOT_FOUND || \in_array($e->getHttpStatus(), [404, 405], true);
+                $retry = $e->getKind() === SdpException::NOT_FOUND
+                    || \in_array($e->getHttpStatus(), [404, 405], true)
+                    || ($onValidation && $e->getKind() === SdpException::VALIDATION);
 
-                if (!$notFound || $n === \count($attempts) - 1) {
+                if (!$retry || $n === \count($attempts) - 1) {
                     throw $e;
                 }
             }
         }
+
+        throw new \LogicException('No attempts given');
     }
 
-    /**
-     * DELETE /api/v3/requests/{request_id}/approval_levels/{level_id}/approvals/{approval_id}.
-     */
-    public function deleteApproval(string $requestId, string $levelId, string $approvalId): void
+    private static function modulePath(string $module, string $entityId): string
     {
-        $this->call(
-            'DELETE',
-            '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals/' . self::id($approvalId),
-            null,
-            $this->serviceKey
-        );
+        return '/api/v3/' . ApprovalModule::collection($module) . '/' . self::id($entityId);
     }
 
     /**

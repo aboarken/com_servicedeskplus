@@ -94,7 +94,17 @@ final class ApprovalService
             return array_map(static fn (array $a) => PendingApproval::fromArray($a), $cached);
         }
 
-        $client   = $this->client();
+        $client  = $this->client();
+        $pending = $this->listFromApprovalsEndpoint($sdpUserId);
+
+        if ($pending !== null && $pending !== []) {
+            $this->cache->set($identity, 'approvals:pending', array_map(static fn (PendingApproval $p) => $p->toArray(), $pending));
+
+            return $pending;
+        }
+
+        // Fallback (and the only source on builds without a usable /api/v3/approvals):
+        // scan the most recent requests that are pending approval.
         $requests = $client->listRequests(new ListInfo(
             rowCount: max(1, min(ListInfo::MAX_ROW_COUNT, $this->scanLimit)),
             sortField: 'created_time',
@@ -150,6 +160,78 @@ final class ApprovalService
     }
 
     /**
+     * Pending approvals of one approver from GET /api/v3/approvals, across requests, changes,
+     * releases and purchase orders. Returns null when the endpoint cannot be used: it fails, or
+     * it ignores the approver criteria (any item of another approver; SDP's documented filter
+     * "my_pending_approvals" only covers the key's owner). Every item is checked here again.
+     *
+     * @return list<PendingApproval>|null
+     *
+     * @throws SdpException  network, authentication and configuration problems
+     */
+    private function listFromApprovalsEndpoint(string $sdpUserId): ?array
+    {
+        try {
+            $items = $this->client()->listApprovals([
+                'row_count'       => ListInfo::MAX_ROW_COUNT,
+                'start_index'     => 1,
+                'search_criteria' => [
+                    ['field' => 'approver.id', 'condition' => 'is', 'value' => $sdpUserId],
+                    ['field' => 'status.name', 'condition' => 'is', 'value' => $this->pendingStatus, 'logical_operator' => 'AND'],
+                ],
+            ]);
+        } catch (SdpException $e) {
+            if (\in_array($e->getKind(), [SdpException::NETWORK, SdpException::AUTH, SdpException::NOT_CONFIGURED], true)) {
+                throw $e;
+            }
+
+            $this->logger->info(\sprintf('GET /api/v3/approvals is not usable on this build (%s); scanning requests instead', $e->getKind()));
+
+            return null;
+        }
+
+        $pending = [];
+
+        foreach ($items as $item) {
+            if (!$this->isMine($item, $sdpUserId)) {
+                $this->logger->warning('GET /api/v3/approvals ignored the approver criteria; scanning requests instead');
+
+                return null;
+            }
+
+            $module = ApprovalModule::normalize(SdpFields::string($item, 'associated_entity'));
+            $level  = \is_array($item['approval_level'] ?? null) ? $item['approval_level'] : [];
+            $parent = $module !== null && \is_array($level[ApprovalModule::entityKey($module)] ?? null) ? $level[ApprovalModule::entityKey($module)] : null;
+
+            if ($module === null || $parent === null || !$this->isPendingStatus($item)) {
+                continue;
+            }
+
+            $entityId   = SdpFields::string($parent, 'id');
+            $levelId    = SdpFields::string($level, 'id');
+            $approvalId = SdpFields::string($item, 'id');
+
+            if (!preg_match('/^[0-9]{1,20}$/', $entityId . '') || !preg_match('/^[0-9]{1,20}$/', $levelId) || !preg_match('/^[0-9]{1,20}$/', $approvalId)) {
+                continue;
+            }
+
+            $fields    = ApprovalModule::fields($module);
+            $pending[] = new PendingApproval(
+                $entityId,
+                $levelId,
+                $approvalId,
+                self::firstText($parent, $fields['title'], false),
+                self::firstText($parent, $fields['requester'], true),
+                SdpFields::timestamp($item, 'sent_on'),
+                SdpFields::string($level, 'name'),
+                $module
+            );
+        }
+
+        return $pending;
+    }
+
+    /**
      * Decisions this user made through the portal (from the audit table).
      *
      * @return list<array{created: string, action: string, result: string, sdp_request_id: ?string, approval_id: ?string, detail: string}>
@@ -164,12 +246,14 @@ final class ApprovalService
     /**
      * @throws ApprovalNotFound|SdpException
      */
-    public function getForUser(Identity $identity, string $requestId, string $levelId, string $approvalId): ApprovalDetail
+    public function getForUser(Identity $identity, string $requestId, string $levelId, string $approvalId, string $module = ApprovalModule::REQUEST): ApprovalDetail
     {
-        [$approval, $level, $requestId, $levelId, $approvalId] = $this->locateOwn($identity, $requestId, $levelId, $approvalId);
+        $module = ApprovalModule::normalize($module) ?? throw new ApprovalNotFound();
+
+        [$approval, $level, $requestId, $levelId, $approvalId] = $this->locateOwn($identity, $requestId, $levelId, $approvalId, $module);
 
         try {
-            $request = $this->client()->getRequest($requestId);
+            $request = $this->client()->getModuleEntity($module, $requestId);
         } catch (SdpException $e) {
             if ($e->getKind() === SdpException::NOT_FOUND) {
                 throw new ApprovalNotFound();
@@ -178,17 +262,20 @@ final class ApprovalService
             throw $e;
         }
 
+        $fields = ApprovalModule::fields($module);
+
         return new ApprovalDetail(
             $requestId,
             $levelId,
             $approvalId,
-            SdpFields::string($request, 'subject'),
-            HtmlText::toPlain(SdpFields::string($request, 'description')),
-            SdpFields::name($request, 'requester'),
+            self::firstText($request, $fields['title'], false),
+            HtmlText::toPlain(self::firstText($request, $fields['description'], false)),
+            self::firstText($request, $fields['requester'], true),
             SdpFields::timestamp($approval, 'sent_on'),
             HtmlText::toPlain(SdpFields::string($approval, 'comments')),
             SdpFields::name($approval, 'status'),
-            $this->isPending($approval, $level)
+            $this->isPending($approval, $level),
+            $module
         );
     }
 
@@ -203,10 +290,11 @@ final class ApprovalService
      *
      * @throws ApprovalNotFound|AlreadyDecided|InvalidDecision|RateLimitExceeded|SdpException
      */
-    public function decide(Identity $identity, string $requestId, string $levelId, string $approvalId, string $decision, string $comment, string $approverName = ''): string
+    public function decide(Identity $identity, string $requestId, string $levelId, string $approvalId, string $decision, string $comment, string $approverName = '', string $module = ApprovalModule::REQUEST): string
     {
         $identity->sdpUserId();
         $userId = $identity->joomlaUserId;
+        $module = ApprovalModule::normalize($module) ?? throw new ApprovalNotFound();
 
         if (!\in_array($decision, ['approve', 'reject'], true)) {
             throw new InvalidDecision('COM_SERVICEDESKPLUS_APPROVAL_ERR_DECISION');
@@ -228,7 +316,7 @@ final class ApprovalService
 
         // Fresh read with the service key: approver must be the user, approval still pending.
         try {
-            [$approval, $level, $requestId, $levelId, $approvalId] = $this->locateOwn($identity, $requestId, $levelId, $approvalId);
+            [$approval, $level, $requestId, $levelId, $approvalId] = $this->locateOwn($identity, $requestId, $levelId, $approvalId, $module);
         } catch (ApprovalNotFound $e) {
             $this->audit->record($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'not_approver_or_missing');
 
@@ -245,13 +333,13 @@ final class ApprovalService
 
         try {
             // Comments are plain text (JSON-encoded by SdpClient), not HTML.
-            $this->client()->decideApproval($requestId, $levelId, $approvalId, $decision, $sdpComment);
+            $this->client()->decideApproval($requestId, $levelId, $approvalId, $decision, $sdpComment, $module);
         } catch (SdpException $e) {
             if ($e->getKind() === SdpException::PERMISSION && $this->approvalAccountEmail !== '') {
-                return $this->decideThroughAccount($identity, $action, $requestId, $levelId, $approvalId, $decision, $sdpComment, $approverName, $e);
+                return $this->decideThroughAccount($identity, $action, $requestId, $levelId, $approvalId, $decision, $sdpComment, $approverName, $e, $module);
             }
 
-            if ($this->stillPending($identity, $requestId, $levelId, $approvalId) === false) {
+            if ($this->stillPending($identity, $requestId, $levelId, $approvalId, $module) === false) {
                 $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'already_decided');
 
                 throw new AlreadyDecided();
@@ -268,7 +356,7 @@ final class ApprovalService
         $outcome = self::OUTCOME_UNCONFIRMED;
 
         try {
-            [$after] = $this->locateOwn($identity, $requestId, $levelId, $approvalId);
+            [$after] = $this->locateOwn($identity, $requestId, $levelId, $approvalId, $module);
             $outcome = $this->isPendingStatus($after) ? self::OUTCOME_UNCONFIRMED : self::OUTCOME_CONFIRMED;
         } catch (ApprovalNotFound | SdpException) {
             // The decision was accepted by SDP; the verification read is best effort.
@@ -310,7 +398,8 @@ final class ApprovalService
         string $decision,
         string $sdpComment,
         string $approverName,
-        SdpException $refusal
+        SdpException $refusal,
+        string $module
     ): string {
         $userId    = $identity->joomlaUserId;
         $client    = $this->client();
@@ -327,7 +416,7 @@ final class ApprovalService
         $added             = false;
 
         try {
-            foreach ($client->getApprovals($requestId, $levelId) as $candidate) {
+            foreach ($client->getApprovals($requestId, $levelId, $module) as $candidate) {
                 if (SdpFields::id($candidate, 'approver') === $accountId && $this->isPendingStatus($candidate)) {
                     $accountApprovalId = SdpFields::string($candidate, 'id');
                     break;
@@ -335,7 +424,7 @@ final class ApprovalService
             }
 
             if ($accountApprovalId === null) {
-                $accountApprovalId = SdpClient::id(SdpFields::string($client->addApproval($requestId, $levelId, $accountId), 'id'));
+                $accountApprovalId = SdpClient::id(SdpFields::string($client->addApproval($requestId, $levelId, $accountId, $module), 'id'));
                 $added             = true;
             }
         } catch (SdpException $e) {
@@ -352,27 +441,29 @@ final class ApprovalService
             // SDP only accepts a decision once the approval e-mail was sent. It goes to the API
             // technician's mailbox; a failure here (e.g. already sent) is left to the decision.
             try {
+                $what = str_replace('_', ' ', ApprovalModule::entityKey($module)) . ' ' . $requestId;
                 $client->sendApprovalNotification(
                     $requestId,
                     $levelId,
                     $accountApprovalId,
-                    \sprintf('Request %s: approval recorded via the Joomla portal', $requestId),
+                    \sprintf('%s: approval recorded via the Joomla portal', ucfirst($what)),
                     HtmlText::fromPlain(\sprintf(
-                        'The assigned approver (%s) decided on request %s via the Joomla portal. The decision is recorded under this account. No action is needed.',
+                        'The assigned approver (%s) decided on %s via the Joomla portal. The decision is recorded under this account. No action is needed.',
                         trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $approverName) ?? '') ?: 'unknown',
-                        $requestId
-                    ))
+                        $what
+                    )),
+                    $module
                 );
             } catch (SdpException $e) {
                 $this->logger->warning(\sprintf('Approval e-mail for approval %s of request %s could not be sent (%s)', $accountApprovalId, $requestId, $e->getKind()));
             }
 
-            $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment);
+            $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment, $module);
         } catch (SdpException $e) {
             if ($added) {
                 // Do not leave an extra pending approver behind.
                 try {
-                    $client->deleteApproval($requestId, $levelId, $accountApprovalId);
+                    $client->deleteApproval($requestId, $levelId, $accountApprovalId, $module);
                 } catch (SdpException) {
                     $this->logger->warning(\sprintf('Approval %s added for the approval account on request %s could not be removed', $accountApprovalId, $requestId));
                 }
@@ -387,22 +478,22 @@ final class ApprovalService
         $originalRemoved = true;
 
         try {
-            $client->deleteApproval($requestId, $levelId, $approvalId);
+            $client->deleteApproval($requestId, $levelId, $approvalId, $module);
         } catch (SdpException $e) {
             // Fine when SDP already closed the entry itself (e.g. the level completed).
-            $originalRemoved = $e->getKind() === SdpException::NOT_FOUND || !$this->approvalStillPending($requestId, $levelId, $approvalId);
+            $originalRemoved = $e->getKind() === SdpException::NOT_FOUND || !$this->approvalStillPending($requestId, $levelId, $approvalId, $module);
 
             if (!$originalRemoved) {
                 $this->logger->warning(\sprintf('Pending approval %s of request %s could not be removed after the decision (%s)', $approvalId, $requestId, $e->getKind()));
             }
         }
 
-        $this->addDecisionNote($requestId, $decision, $approverName, $sdpComment);
+        $this->addDecisionNote($requestId, $decision, $approverName, $sdpComment, $module);
         $this->cache->clear($identity, 'approvals:');
 
         $outcome = match (true) {
             !$originalRemoved                              => self::OUTCOME_ORIGINAL_LEFT,
-            $this->levelStillPending($requestId, $levelId) => self::OUTCOME_LEVEL_PENDING,
+            $this->levelStillPending($requestId, $levelId, $module) => self::OUTCOME_LEVEL_PENDING,
             default                                        => self::OUTCOME_CONFIRMED,
         };
 
@@ -448,7 +539,7 @@ final class ApprovalService
     }
 
     /** Private request note naming the person who decided. Best effort. */
-    private function addDecisionNote(string $requestId, string $decision, string $approverName, string $sdpComment): void
+    private function addDecisionNote(string $requestId, string $decision, string $approverName, string $sdpComment, string $module): void
     {
         $name = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $approverName) ?? '') ?: 'the assigned approver';
         $text = \sprintf(
@@ -460,17 +551,20 @@ final class ApprovalService
         );
 
         try {
-            $this->client()->addRequestNote($requestId, HtmlText::fromPlain($text));
+            $this->client()->addModuleNote($module, $requestId, HtmlText::fromPlain($text));
         } catch (SdpException $e) {
-            $this->logger->warning(\sprintf('Note for the decision on request %s could not be added (%s)', $requestId, $e->getKind()));
+            // Purchase orders have no notes; the approval comment names the approver.
+            if ($module !== ApprovalModule::PURCHASE_ORDER) {
+                $this->logger->warning(\sprintf('Note for the decision on %s %s could not be added (%s)', $module, $requestId, $e->getKind()));
+            }
         }
     }
 
     /** True when the approval is still listed as pending; true as well when that cannot be read. */
-    private function approvalStillPending(string $requestId, string $levelId, string $approvalId): bool
+    private function approvalStillPending(string $requestId, string $levelId, string $approvalId, string $module): bool
     {
         try {
-            foreach ($this->client()->getApprovals($requestId, $levelId) as $approval) {
+            foreach ($this->client()->getApprovals($requestId, $levelId, $module) as $approval) {
                 if (SdpFields::string($approval, 'id') === $approvalId) {
                     return $this->isPendingStatus($approval);
                 }
@@ -483,10 +577,10 @@ final class ApprovalService
     }
 
     /** True when the level is still waiting for approvals (e.g. it needs all approvers). */
-    private function levelStillPending(string $requestId, string $levelId): bool
+    private function levelStillPending(string $requestId, string $levelId, string $module): bool
     {
         try {
-            foreach ($this->client()->getApprovalLevels($requestId) as $level) {
+            foreach ($this->client()->getApprovalLevels($requestId, $module) as $level) {
                 if (SdpFields::string($level, 'id') === $levelId) {
                     return mb_strtolower(SdpFields::name($level, 'status')) === mb_strtolower($this->pendingStatus);
                 }
@@ -505,7 +599,7 @@ final class ApprovalService
      *
      * @throws ApprovalNotFound|SdpException
      */
-    private function locateOwn(Identity $identity, string $requestId, string $levelId, string $approvalId): array
+    private function locateOwn(Identity $identity, string $requestId, string $levelId, string $approvalId, string $module = ApprovalModule::REQUEST): array
     {
         try {
             $requestId  = SdpClient::id($requestId);
@@ -520,7 +614,7 @@ final class ApprovalService
         try {
             $level = null;
 
-            foreach ($client->getApprovalLevels($requestId) as $candidate) {
+            foreach ($client->getApprovalLevels($requestId, $module) as $candidate) {
                 if (SdpFields::string($candidate, 'id') === $levelId) {
                     $level = $candidate;
                     break;
@@ -533,7 +627,7 @@ final class ApprovalService
 
             $approval = null;
 
-            foreach ($client->getApprovals($requestId, $levelId) as $candidate) {
+            foreach ($client->getApprovals($requestId, $levelId, $module) as $candidate) {
                 if (SdpFields::string($candidate, 'id') === $approvalId) {
                     $approval = $candidate;
                     break;
@@ -560,15 +654,34 @@ final class ApprovalService
         return [$approval, $level, $requestId, $levelId, $approvalId];
     }
 
-    private function stillPending(Identity $identity, string $requestId, string $levelId, string $approvalId): ?bool
+    private function stillPending(Identity $identity, string $requestId, string $levelId, string $approvalId, string $module): ?bool
     {
         try {
-            [$approval, $level] = $this->locateOwn($identity, $requestId, $levelId, $approvalId);
+            [$approval, $level] = $this->locateOwn($identity, $requestId, $levelId, $approvalId, $module);
 
             return $this->isPending($approval, $level);
         } catch (ApprovalNotFound | SdpException) {
             return null;
         }
+    }
+
+    /**
+     * First non-empty text among the given fields; lookup objects ({id, name}) give their name.
+     *
+     * @param array<string, mixed> $entity
+     * @param list<string>         $keys
+     */
+    private static function firstText(array $entity, array $keys, bool $lookup): string
+    {
+        foreach ($keys as $key) {
+            $value = $lookup || \is_array($entity[$key] ?? null) ? SdpFields::name($entity, $key) : SdpFields::string($entity, $key);
+
+            if (trim($value) !== '') {
+                return trim($value);
+            }
+        }
+
+        return '';
     }
 
     /** @param list<array<string, mixed>> $levels */

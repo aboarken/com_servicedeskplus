@@ -13,6 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\Model;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseModel;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalDetail;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 
 final class ApprovalModel extends BaseModel
 {
@@ -32,7 +33,8 @@ final class ApprovalModel extends BaseModel
             $this->identity(),
             $input->getString('request_id', ''),
             $input->getString('level_id', ''),
-            $input->getString('id', '')
+            $input->getString('id', ''),
+            $input->getCmd('module', '') ?: ApprovalModule::REQUEST
         );
     }
 

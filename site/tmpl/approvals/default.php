@@ -9,6 +9,7 @@
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Approvals\HtmlView $this */
 
@@ -40,6 +41,7 @@ $resultLabel = [
                 <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_PENDING'); ?></caption>
                 <thead>
                     <tr>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTER'); ?></th>
@@ -50,9 +52,11 @@ $resultLabel = [
                 <tbody>
                 <?php foreach ($this->pending as $p) :
                     $url = Route::_('index.php?option=com_servicedeskplus&view=approval&id=' . rawurlencode($p->approvalId)
-                        . '&request_id=' . rawurlencode($p->requestId) . '&level_id=' . rawurlencode($p->levelId));
+                        . '&request_id=' . rawurlencode($p->requestId) . '&level_id=' . rawurlencode($p->levelId)
+                        . ($p->module !== ApprovalModule::REQUEST ? '&module=' . rawurlencode($p->module) : ''));
                     ?>
                     <tr>
+                        <td><?php echo Text::_(ApprovalModule::labelKey($p->module)); ?></td>
                         <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->requestId); ?></a></td>
                         <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->subject); ?></a></td>
                         <td><?php echo $this->escape($p->requester); ?></td>

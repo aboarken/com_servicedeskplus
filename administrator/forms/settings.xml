@@ -107,6 +107,19 @@
             filter="string"
             size="60"
         />
+        <field
+            name="approval_modules"
+            type="checkboxes"
+            label="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_MODULES"
+            description="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_MODULES_DESC"
+            default="request,change,release,purchase_order"
+            filter="array"
+        >
+            <option value="request">COM_SERVICEDESKPLUS_SETTINGS_MODULE_REQUEST</option>
+            <option value="change">COM_SERVICEDESKPLUS_SETTINGS_MODULE_CHANGE</option>
+            <option value="release">COM_SERVICEDESKPLUS_SETTINGS_MODULE_RELEASE</option>
+            <option value="purchase_order">COM_SERVICEDESKPLUS_SETTINGS_MODULE_PURCHASE_ORDER</option>
+        </field>
     </fieldset>
 
     <fieldset name="limits" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_LIMITS">

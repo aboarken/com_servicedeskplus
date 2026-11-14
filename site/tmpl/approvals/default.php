@@ -18,6 +18,13 @@ $decisionLabel = [
     'approval.approve' => 'COM_SERVICEDESKPLUS_APPROVAL_HISTORY_APPROVE',
     'approval.reject'  => 'COM_SERVICEDESKPLUS_APPROVAL_HISTORY_REJECT',
 ];
+// One colour per type, so users can tell a request approval from a change, release or purchase order approval.
+$badge = [
+    ApprovalModule::REQUEST        => 'text-bg-primary',
+    ApprovalModule::CHANGE         => 'text-bg-warning',
+    ApprovalModule::RELEASE        => 'text-bg-info',
+    ApprovalModule::PURCHASE_ORDER => 'text-bg-success',
+];
 $resultLabel = [
     'ok'     => 'COM_SERVICEDESKPLUS_APPROVAL_RESULT_OK',
     'denied' => 'COM_SERVICEDESKPLUS_APPROVAL_RESULT_DENIED',
@@ -56,7 +63,7 @@ $resultLabel = [
                         . ($p->module !== ApprovalModule::REQUEST ? '&module=' . rawurlencode($p->module) : ''));
                     ?>
                     <tr>
-                        <td><?php echo Text::_(ApprovalModule::labelKey($p->module)); ?></td>
+                        <td><span class="badge <?php echo $badge[$p->module] ?? 'text-bg-secondary'; ?>"><?php echo Text::_(ApprovalModule::labelKey($p->module)); ?></span></td>
                         <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->requestId); ?></a></td>
                         <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->subject); ?></a></td>
                         <td><?php echo $this->escape($p->requester); ?></td>

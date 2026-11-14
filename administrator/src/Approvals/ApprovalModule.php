@@ -128,6 +128,24 @@ final class ApprovalModule
         };
     }
 
+    /**
+     * How to find the records of a module that may have a pending approval, for the scan used
+     * when GET /api/v3/approvals cannot list another user's approvals (it only covers the key's
+     * owner on build 16030). Requests and changes have approval_status, purchase orders show
+     * "Pending Approval" as their status; releases have neither, so the newest ones are checked.
+     *
+     * @return array{criteria: array<string, string>|null, sort: string, limit: int}
+     */
+    public static function scanQuery(string $module, string $pendingStatus, int $requestLimit): array
+    {
+        return match (self::require($module)) {
+            self::REQUEST        => ['criteria' => ['field' => 'approval_status.name', 'condition' => 'is', 'value' => $pendingStatus], 'sort' => 'created_time', 'limit' => $requestLimit],
+            self::CHANGE         => ['criteria' => ['field' => 'approval_status.name', 'condition' => 'is', 'value' => $pendingStatus], 'sort' => 'id', 'limit' => 25],
+            self::PURCHASE_ORDER => ['criteria' => ['field' => 'status.name', 'condition' => 'is', 'value' => $pendingStatus], 'sort' => 'id', 'limit' => 25],
+            self::RELEASE        => ['criteria' => null, 'sort' => 'id', 'limit' => 10],
+        };
+    }
+
     private static function require(string $module): string
     {
         if (!isset(self::DEFS[$module])) {

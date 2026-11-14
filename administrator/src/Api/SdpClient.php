@@ -162,6 +162,16 @@ final class SdpClient
     }
 
     /**
+     * GET /api/v3/{requests|changes|releases|purchase_orders}: one page of a module's records.
+     */
+    public function listModule(string $module, ListInfo $listInfo): ListPage
+    {
+        $collection = ApprovalModule::collection($module);
+
+        return $this->listPage('/api/v3/' . $collection, $collection, $listInfo);
+    }
+
+    /**
      * GET /api/v3/{module}/{id}/approval_levels.
      *
      * @return list<array<string, mixed>>

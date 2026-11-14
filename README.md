@@ -75,7 +75,7 @@ Joomla acts as the user-facing portal, while ServiceDesk Plus remains the primar
 
 ## Installation
 
-1. Download the latest installation package (`com_servicedeskplus-<version>.zip`) from the [Releases page](https://github.com/aboarken/com_servicedeskplus/releases).
+1. Download `com_servicedeskplus.zip` from the latest release on the [Releases page](https://github.com/aboarken/com_servicedeskplus/releases).
 2. Log in to your Joomla Administrator.
 3. Navigate to **System → Install → Extensions**.
 4. Upload the component installation package.
@@ -143,8 +143,11 @@ com_servicedeskplus/
 │   ├── language/
 │   ├── src/
 │   └── tmpl/
+├── .github/workflows/
+│   └── release.yml
 ├── build/
-│   └── build-package.sh
+│   ├── build-package.sh
+│   └── verify-package.py
 ├── CHANGELOG.md
 ├── LICENSE
 ├── README.md
@@ -172,11 +175,18 @@ To contribute:
 build/build-package.sh
 ```
 
-This writes `dist/com_servicedeskplus-<version>.zip`, taking the version from `servicedeskplus.xml`.
+This writes `dist/com_servicedeskplus-<version>.zip`, taking the version from `servicedeskplus.xml`. Check a package with `build/verify-package.py <zip> [version]`.
 
 ### Releases
 
-Versions follow [Semantic Versioning](https://semver.org/) and are set in `servicedeskplus.xml`. Each version has an update file in `administrator/sql/updates/mysql/` and `administrator/sql/updates/postgresql/` (a comment-only file when the schema does not change). Releases are tagged `v<version>` and the installation ZIP is attached to the GitHub release. See [CHANGELOG.md](CHANGELOG.md) for the changes in each version.
+Versions follow [Semantic Versioning](https://semver.org/) and are set in `servicedeskplus.xml`. Each version has an update file in `administrator/sql/updates/mysql/` and `administrator/sql/updates/postgresql/` (a comment-only file when the schema does not change), release notes in `docs/release-notes/<version>.md` and an entry in [CHANGELOG.md](CHANGELOG.md).
+
+The **Release package** GitHub Actions workflow (`.github/workflows/release.yml`) builds and checks the package for every pull request and attaches **`com_servicedeskplus.zip`** to each release:
+
+- **From the Actions tab:** run *Release package* on `main`. It creates the release `v<version>` with the release notes and the package.
+- **From the Releases page:** publish a release tagged `v<version>` (it must match the manifest version); the workflow then attaches the package.
+
+The latest package can always be downloaded from `https://github.com/aboarken/com_servicedeskplus/releases/latest/download/com_servicedeskplus.zip`.
 
 ## Roadmap
 

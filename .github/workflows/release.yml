@@ -1,0 +1,100 @@
+# Builds the Joomla installation package (com_servicedeskplus.zip) and attaches it to GitHub releases.
+#
+# - Pull requests and pushes to main: build and check the package, keep it as a workflow artifact.
+# - Release published in the GitHub UI (tag v<version>): build from that tag, check that the tag
+#   matches the manifest version, and attach com_servicedeskplus.zip to the release.
+# - Run manually (Actions > Release package > Run workflow): create release v<manifest version>
+#   from main with docs/release-notes/<version>.md as notes, and attach the package.
+name: Release package
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - name: Read version from manifest
+        id: version
+        run: |
+          version="$(sed -n 's:.*<version>\(.*\)</version>.*:\1:p' servicedeskplus.xml | head -n1)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Manifest version: $version"
+
+      - name: Check release tag matches the manifest
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ "${TAG#v}" != "$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match manifest version $VERSION (expected v$VERSION)."
+            exit 1
+          fi
+
+      - name: Lint PHP
+        run: |
+          php -v | head -n1
+          find administrator site script.php -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Build package
+        run: |
+          build/build-package.sh
+          cp "dist/com_servicedeskplus-${{ steps.version.outputs.version }}.zip" dist/com_servicedeskplus.zip
+
+      - name: Check package structure
+        run: python3 -I build/verify-package.py dist/com_servicedeskplus.zip "${{ steps.version.outputs.version }}"
+
+      - name: Keep package as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: com_servicedeskplus-${{ steps.version.outputs.version }}
+          path: dist/com_servicedeskplus.zip
+          if-no-files-found: error
+
+      - name: Attach package to the published release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" dist/com_servicedeskplus.zip --clobber --repo "$GITHUB_REPOSITORY"
+
+      - name: Create release with package
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tag="v$VERSION"
+          notes="docs/release-notes/$VERSION.md"
+          if [ ! -f "$notes" ]; then
+            # Fall back to this version's section of the changelog.
+            awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > /tmp/notes.md
+            notes=/tmp/notes.md
+          fi
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $tag exists; replacing its package."
+            gh release upload "$tag" dist/com_servicedeskplus.zip --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" dist/com_servicedeskplus.zip \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "com_servicedeskplus $VERSION" \
+              --notes-file "$notes"
+          fi

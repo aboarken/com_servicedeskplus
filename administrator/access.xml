@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<access component="com_servicedeskplus">
+    <section name="component">
+        <action name="core.admin" title="JACTION_ADMIN" />
+        <action name="core.options" title="JACTION_OPTIONS" />
+        <action name="core.manage" title="JACTION_MANAGE" />
+        <action name="sdp.request.create" title="COM_SERVICEDESKPLUS_ACCESS_REQUEST_CREATE" description="COM_SERVICEDESKPLUS_ACCESS_REQUEST_CREATE_DESC" />
+        <action name="sdp.request.view" title="COM_SERVICEDESKPLUS_ACCESS_REQUEST_VIEW" description="COM_SERVICEDESKPLUS_ACCESS_REQUEST_VIEW_DESC" />
+        <action name="sdp.asset.view" title="COM_SERVICEDESKPLUS_ACCESS_ASSET_VIEW" description="COM_SERVICEDESKPLUS_ACCESS_ASSET_VIEW_DESC" />
+        <action name="sdp.approval.view" title="COM_SERVICEDESKPLUS_ACCESS_APPROVAL_VIEW" description="COM_SERVICEDESKPLUS_ACCESS_APPROVAL_VIEW_DESC" />
+        <action name="sdp.approval.decide" title="COM_SERVICEDESKPLUS_ACCESS_APPROVAL_DECIDE" description="COM_SERVICEDESKPLUS_ACCESS_APPROVAL_DECIDE_DESC" />
+    </section>
+</access>

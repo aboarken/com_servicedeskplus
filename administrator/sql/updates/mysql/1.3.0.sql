@@ -1,0 +1,1 @@
+-- No schema changes in 1.3.0. Obsolete files, menu items and settings are cleaned up by script.php.

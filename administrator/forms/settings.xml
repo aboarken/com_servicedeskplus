@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+    <fieldset name="connection" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_CONNECTION">
+        <field
+            name="base_url"
+            type="url"
+            label="COM_SERVICEDESKPLUS_SETTINGS_BASE_URL"
+            description="COM_SERVICEDESKPLUS_SETTINGS_BASE_URL_DESC"
+            hint="https://servicedesk.example.com:8080"
+            required="true"
+            validate="url"
+            scheme="https,http"
+            filter="url"
+            size="60"
+        />
+        <field
+            name="connect_via"
+            type="text"
+            label="COM_SERVICEDESKPLUS_SETTINGS_CONNECT_VIA"
+            description="COM_SERVICEDESKPLUS_SETTINGS_CONNECT_VIA_DESC"
+            hint="api.sdp.example.com:8080"
+            filter="string"
+            size="60"
+        />
+        <field
+            name="service_key"
+            type="password"
+            label="COM_SERVICEDESKPLUS_SETTINGS_SERVICE_KEY"
+            description="COM_SERVICEDESKPLUS_SETTINGS_SERVICE_KEY_DESC"
+            autocomplete="new-password"
+            filter="unset"
+            lock="false"
+        />
+        <field
+            name="verify_ssl"
+            type="radio"
+            label="COM_SERVICEDESKPLUS_SETTINGS_VERIFY_SSL"
+            description="COM_SERVICEDESKPLUS_SETTINGS_VERIFY_SSL_DESC"
+            layout="joomla.form.field.radio.switcher"
+            default="1"
+            filter="integer"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <field
+            name="ca_bundle"
+            type="text"
+            label="COM_SERVICEDESKPLUS_SETTINGS_CA_BUNDLE"
+            description="COM_SERVICEDESKPLUS_SETTINGS_CA_BUNDLE_DESC"
+            filter="path"
+            size="60"
+        />
+        <field
+            name="ssl_pin"
+            type="text"
+            label="COM_SERVICEDESKPLUS_SETTINGS_SSL_PIN"
+            description="COM_SERVICEDESKPLUS_SETTINGS_SSL_PIN_DESC"
+            hint="sha256//..."
+            filter="raw"
+            size="60"
+        />
+        <field
+            name="timeout"
+            type="number"
+            label="COM_SERVICEDESKPLUS_SETTINGS_TIMEOUT"
+            description="COM_SERVICEDESKPLUS_SETTINGS_TIMEOUT_DESC"
+            default="20"
+            min="1"
+            max="300"
+            filter="integer"
+            required="true"
+        />
+        <field
+            name="connect_timeout"
+            type="number"
+            label="COM_SERVICEDESKPLUS_SETTINGS_CONNECT_TIMEOUT"
+            description="COM_SERVICEDESKPLUS_SETTINGS_CONNECT_TIMEOUT_DESC"
+            default="5"
+            min="1"
+            max="60"
+            filter="integer"
+            required="true"
+        />
+    </fieldset>
+
+    <fieldset name="requests" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_REQUESTS">
+        <field
+            name="request_statuses"
+            type="textarea"
+            label="COM_SERVICEDESKPLUS_SETTINGS_REQUEST_STATUSES"
+            description="COM_SERVICEDESKPLUS_SETTINGS_REQUEST_STATUSES_DESC"
+            rows="3"
+            filter="string"
+            default="Open,On Hold,Resolved,Closed"
+        />
+    </fieldset>
+
+    <fieldset name="approvals" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_APPROVALS">
+        <field
+            name="approval_pending_status"
+            type="text"
+            label="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_PENDING_STATUS"
+            description="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_PENDING_STATUS_DESC"
+            default="Pending Approval"
+            filter="string"
+        />
+        <field
+            name="approval_scan_limit"
+            type="number"
+            label="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_SCAN_LIMIT"
+            description="COM_SERVICEDESKPLUS_SETTINGS_APPROVAL_SCAN_LIMIT_DESC"
+            default="50"
+            min="1"
+            max="100"
+            filter="integer"
+        />
+    </fieldset>
+
+    <fieldset name="limits" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_LIMITS">
+        <field
+            name="cache_ttl"
+            type="number"
+            label="COM_SERVICEDESKPLUS_SETTINGS_CACHE_TTL"
+            description="COM_SERVICEDESKPLUS_SETTINGS_CACHE_TTL_DESC"
+            default="60"
+            min="0"
+            max="600"
+            filter="integer"
+        />
+        <field
+            name="rate_create_per_hour"
+            type="number"
+            label="COM_SERVICEDESKPLUS_SETTINGS_RATE_CREATE"
+            description="COM_SERVICEDESKPLUS_SETTINGS_RATE_CREATE_DESC"
+            default="10"
+            min="1"
+            max="1000"
+            filter="integer"
+        />
+        <field
+            name="rate_decide_per_hour"
+            type="number"
+            label="COM_SERVICEDESKPLUS_SETTINGS_RATE_DECIDE"
+            description="COM_SERVICEDESKPLUS_SETTINGS_RATE_DECIDE_DESC"
+            default="30"
+            min="1"
+            max="1000"
+            filter="integer"
+        />
+    </fieldset>
+</form>

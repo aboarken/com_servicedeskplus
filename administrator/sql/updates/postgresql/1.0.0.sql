@@ -1,0 +1,1 @@
+-- First PostgreSQL release. Tables are created by install.postgresql.utf8.sql.

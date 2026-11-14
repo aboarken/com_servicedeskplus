@@ -1,0 +1,218 @@
+<?php
+
+/**
+ * @license GNU General Public License version 2 or later
+ */
+
+namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Model;
+
+// phpcs:disable PSR1.Files.SideEffects
+\defined('_JEXEC') or die;
+// phpcs:enable PSR1.Files.SideEffects
+
+use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\Model\FormModel;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\ClientConfig;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\ListInfo;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SslPin;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\AssetPath;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Extension\ServiceDeskPlusComponent;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\KeyVault;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\KeyVaultException;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Settings\Settings;
+
+final class SettingsModel extends FormModel
+{
+    /** Characters accepted in an SDP authtoken. */
+    public const KEY_PATTERN = '/^[A-Za-z0-9._-]{16,128}$/';
+
+    public function getForm($data = [], $loadData = true)
+    {
+        $form = $this->loadForm(
+            'com_servicedeskplus.settings',
+            'settings',
+            ['control' => 'jform', 'load_data' => $loadData]
+        );
+
+        return $form ?: false;
+    }
+
+    protected function loadFormData()
+    {
+        $state = Factory::getApplication()->getUserState('com_servicedeskplus.edit.settings.data', []);
+        $data  = \is_array($state) && $state !== [] ? $state : $this->settings()->toFormData();
+
+        // The key field is always empty: a stored key is never sent back to the browser.
+        $data['service_key'] = '';
+
+        return $data;
+    }
+
+    public function settings(): Settings
+    {
+        return $this->component()->getSettingsRepository()->load();
+    }
+
+    public function secretSource(): string
+    {
+        return $this->component()->getSdpClientFactory()->secretSource();
+    }
+
+    /**
+     * Validate, encrypt the key if a new one was entered, and store.
+     *
+     * @param  array<string, mixed>  $data  Raw posted jform data
+     *
+     * @throws ValidationFailed
+     */
+    public function save(array $data): void
+    {
+        $form = $this->getForm($data, false);
+
+        if (!$form instanceof Form) {
+            throw new ValidationFailed([Text::_('JLIB_FORM_ERROR_FORM_NOT_LOADED')]);
+        }
+
+        $filtered = $form->filter($data);
+
+        if ($form->validate($filtered) !== true) {
+            $messages = [];
+
+            foreach ($form->getErrors() as $error) {
+                $messages[] = $error instanceof \Throwable ? $error->getMessage() : (string) $error;
+            }
+
+            throw new ValidationFailed($messages ?: [Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED')]);
+        }
+
+        try {
+            $baseUrl = ClientConfig::normalizeBaseUrl((string) ($filtered['base_url'] ?? ''));
+        } catch (\InvalidArgumentException) {
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_BASE_URL')]);
+        }
+
+        $timeout        = (int) ($filtered['timeout'] ?? 20);
+        $connectTimeout = (int) ($filtered['connect_timeout'] ?? 5);
+
+        if ($connectTimeout > $timeout) {
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_TIMEOUTS')]);
+        }
+
+        $caBundle = trim((string) ($filtered['ca_bundle'] ?? ''));
+
+        if ($caBundle !== '' && !is_file($caBundle)) {
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_CA_BUNDLE')]);
+        }
+
+        $values = [
+            'base_url'             => $baseUrl,
+            'timeout'              => (string) $timeout,
+            'connect_timeout'      => (string) $connectTimeout,
+            'verify_ssl'           => ((string) ($filtered['verify_ssl'] ?? '1')) === '0' ? '0' : '1',
+            'ca_bundle'            => $caBundle,
+            'cache_ttl'            => (string) max(0, min(600, (int) ($filtered['cache_ttl'] ?? 60))),
+            'rate_create_per_hour' => (string) max(1, min(1000, (int) ($filtered['rate_create_per_hour'] ?? 10))),
+            'rate_decide_per_hour' => (string) max(1, min(1000, (int) ($filtered['rate_decide_per_hour'] ?? 30))),
+            'request_statuses'     => implode(',', Settings::parseList((string) ($filtered['request_statuses'] ?? ''))),
+        ];
+
+        try {
+            $values['ssl_pin'] = SslPin::normalize((string) ($data['ssl_pin'] ?? ''));
+        } catch (\InvalidArgumentException) {
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_PIN')]);
+        }
+
+        try {
+            $basePort              = (int) (parse_url($baseUrl, PHP_URL_PORT) ?: (str_starts_with($baseUrl, 'https://') ? 443 : 80));
+            $values['connect_via'] = ClientConfig::normalizeConnectVia((string) ($filtered['connect_via'] ?? ''), $basePort);
+        } catch (\InvalidArgumentException) {
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_CONNECT_VIA')]);
+        }
+
+        if ($values['ssl_pin'] !== '' && !str_starts_with($baseUrl, 'https://')) {
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_PIN_HTTPS')]);
+        }
+
+
+        $pendingStatus = trim(preg_replace('/[\x00-\x1F\x7F]+/u', '', (string) ($filtered['approval_pending_status'] ?? '')) ?? '');
+
+        $values['approval_pending_status'] = mb_substr($pendingStatus !== '' ? $pendingStatus : 'Pending Approval', 0, 100);
+        $values['approval_scan_limit']     = (string) max(1, min(100, (int) ($filtered['approval_scan_limit'] ?? 50)));
+
+        // The key is read from the raw post so no filter can alter it; it is validated by pattern.
+        $key = trim((string) ($data['service_key'] ?? ''));
+
+        if ($key !== '') {
+            if (!preg_match(self::KEY_PATTERN, $key)) {
+                throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_KEY_FORMAT')]);
+            }
+
+            try {
+                $values['service_key_enc'] = $this->component()->getSdpClientFactory()->vault()
+                    ->encrypt($key, KeyVault::CONTEXT_SERVICE_KEY);
+            } catch (KeyVaultException) {
+                throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_NO_SECRET')]);
+            }
+        } elseif (!$this->settings()->hasServiceKey()) {
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_KEY_REQUIRED')]);
+        }
+
+        $this->component()->getSettingsRepository()->save($values);
+    }
+
+    /**
+     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
+     */
+    public function testConnection(): void
+    {
+        $this->component()->getSdpClientFactory()->createServiceClient()->testConnection();
+    }
+
+    /**
+     * Read the certificate the saved base URL presents (no verification) so the admin can compare
+     * its pin with the value computed on the SDP server.
+     *
+     * @return array{pin: string, subject: string, issuer: string, expires: ?int}
+     *
+     * @throws \RuntimeException
+     */
+    public function readServerPin(): array
+    {
+        $settings = $this->settings();
+
+        if ($settings->baseUrl() === '') {
+            throw new \RuntimeException('No base URL saved');
+        }
+
+        return SslPin::readFromServer($settings->baseUrl(), $settings->connectTimeout(), $settings->connectVia());
+    }
+
+    /**
+     * Reads one asset with the service key and returns its field paths (names only, no values),
+     * so the admin can see how this SDP build names the fields needed for loan assets.
+     *
+     * @return list<string>
+     *
+     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
+     */
+    public function sampleAssetFieldPaths(): array
+    {
+        $page = $this->component()->getSdpClientFactory()->createServiceClient()
+            ->listAssets(new ListInfo(rowCount: 1));
+
+        return $page->items === [] ? [] : AssetPath::listPaths($page->items[0]);
+    }
+
+    private function component(): ServiceDeskPlusComponent
+    {
+        $component = Factory::getApplication()->bootComponent('com_servicedeskplus');
+
+        if (!$component instanceof ServiceDeskPlusComponent) {
+            throw new \LogicException('Unexpected component class');
+        }
+
+        return $component;
+    }
+}

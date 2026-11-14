@@ -1,0 +1,1 @@
+-- No schema changes in 0.3.0.

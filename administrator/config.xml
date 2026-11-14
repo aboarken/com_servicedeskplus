@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Only permissions live here. Connection settings are stored in #__sdp_settings through the
+    component's own Settings page, because com_config replaces all component params on save and
+    the service key must be encrypted before it is stored.
+-->
+<config>
+    <fieldset name="permissions" label="JCONFIG_PERMISSIONS_LABEL" description="JCONFIG_PERMISSIONS_DESC">
+        <field
+            name="rules"
+            type="rules"
+            label="JCONFIG_PERMISSIONS_LABEL"
+            filter="rules"
+            validate="rules"
+            component="com_servicedeskplus"
+            section="component"
+        />
+    </fieldset>
+</config>

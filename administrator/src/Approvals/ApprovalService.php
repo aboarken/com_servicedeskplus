@@ -349,6 +349,24 @@ final class ApprovalService
         }
 
         try {
+            // SDP only accepts a decision once the approval e-mail was sent. It goes to the API
+            // technician's mailbox; a failure here (e.g. already sent) is left to the decision.
+            try {
+                $client->sendApprovalNotification(
+                    $requestId,
+                    $levelId,
+                    $accountApprovalId,
+                    \sprintf('Request %s: approval recorded via the Joomla portal', $requestId),
+                    HtmlText::fromPlain(\sprintf(
+                        'The assigned approver (%s) decided on request %s via the Joomla portal. The decision is recorded under this account. No action is needed.',
+                        trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $approverName) ?? '') ?: 'unknown',
+                        $requestId
+                    ))
+                );
+            } catch (SdpException $e) {
+                $this->logger->warning(\sprintf('Approval e-mail for approval %s of request %s could not be sent (%s)', $accountApprovalId, $requestId, $e->getKind()));
+            }
+
             $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment);
         } catch (SdpException $e) {
             if ($added) {

@@ -24,7 +24,9 @@ $resultLabel = [
 ];
 ?>
 <div class="com-servicedeskplus sdp-approvals">
-    <h1 class="h2"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_TITLE'); ?></h1>
+    <?php if ($this->showPageHeading) : ?>
+        <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
+    <?php endif; ?>
 
     <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_PENDING'); ?></h2>
 

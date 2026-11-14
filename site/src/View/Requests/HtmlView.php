@@ -18,9 +18,12 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestListResult;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestQuery;
 use SdpPortal\Component\ServiceDeskPlus\Site\Model\RequestsModel;
+use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 final class HtmlView extends BaseHtmlView
 {
+    use MenuPageTrait;
+
     public ?RequestListResult $result = null;
 
     public RequestQuery $query;
@@ -47,7 +50,7 @@ final class HtmlView extends BaseHtmlView
             $this->error = Text::_($e->getLanguageKey());
         }
 
-        $this->getDocument()->setTitle(Text::_('COM_SERVICEDESKPLUS_REQUESTS_TITLE'));
+        $this->prepareMenuPage('requests', 'COM_SERVICEDESKPLUS_REQUESTS_TITLE');
         $this->getDocument()->setMetaData('robots', 'noindex, nofollow');
         $this->getDocument()->getWebAssetManager()->getRegistry()->addExtensionRegistryFile('com_servicedeskplus');
         $this->getDocument()->getWebAssetManager()->useStyle('com_servicedeskplus.portal');

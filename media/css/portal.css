@@ -50,3 +50,12 @@
 .com-servicedeskplus .sdp-filter-submit .btn {
   min-height: calc(1.5em + 0.75rem + 2px);
 }
+
+/* "Submit a Request" on My Requests: same width and height as the Search button. */
+.com-servicedeskplus .sdp-btn-nowrap {
+  white-space: nowrap;
+}
+
+.com-servicedeskplus .sdp-page-header .btn {
+  min-height: calc(1.5em + 0.75rem + 2px);
+}

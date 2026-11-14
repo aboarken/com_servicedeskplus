@@ -82,7 +82,17 @@ Joomla acts as the user-facing portal, while ServiceDesk Plus remains the primar
 5. Complete the installation.
 6. Open the ServiceDesk Plus component from the Joomla Administrator.
 
-To upgrade, install the newer package over the existing one; settings and user mappings are kept.
+### Updating
+
+From version 1.7.0, Joomla finds new versions by itself: open **System → Update → Extensions** (or **System → Update Sites** to check that "ServiceDesk Plus" is enabled), then select the component and choose **Update**. Settings and user mappings are kept.
+
+Sites on 1.6.0 or older have no update server yet: install 1.7.0 once by uploading `com_servicedeskplus.zip`, and later updates arrive through Joomla.
+
+You can always upgrade by installing a newer package over the existing one.
+
+### Menu items
+
+Create front-end pages with **Menus → Add New Menu Item → ServiceDesk Plus**: *My Requests*, *Request Form*, *My Loans* and *My Approvals*. The menu item title is shown as the page heading and browser title; the menu item's *Page Display* settings (*Browser Page Title*, *Show Page Heading*, *Page Heading*) are respected.
 
 ## Configuration
 
@@ -147,6 +157,7 @@ com_servicedeskplus/
 │   └── release.yml
 ├── build/
 │   ├── build-package.sh
+│   ├── make-update-xml.py
 │   └── verify-package.py
 ├── CHANGELOG.md
 ├── LICENSE
@@ -181,7 +192,7 @@ This writes `dist/com_servicedeskplus-<version>.zip`, taking the version from `s
 
 Versions follow [Semantic Versioning](https://semver.org/) and are set in `servicedeskplus.xml`. Each version has an update file in `administrator/sql/updates/mysql/` and `administrator/sql/updates/postgresql/` (a comment-only file when the schema does not change), release notes in `docs/release-notes/<version>.md` and an entry in [CHANGELOG.md](CHANGELOG.md).
 
-The **Release package** GitHub Actions workflow (`.github/workflows/release.yml`) builds and checks the package for every pull request and attaches **`com_servicedeskplus.zip`** to each release:
+The **Release package** GitHub Actions workflow (`.github/workflows/release.yml`) builds and checks the package for every pull request and attaches **`com_servicedeskplus.zip`** and the Joomla update file **`updates.xml`** (made by `build/make-update-xml.py`) to each release. Joomla sites read `releases/latest/download/updates.xml`, so publishing a release is all it takes to offer an update:
 
 - **From the Actions tab:** run *Release package* on `main`. It creates the release `v<version>` with the release notes and the package.
 - **From the Releases page:** publish a release tagged `v<version>` (it must match the manifest version); the workflow then attaches the package.

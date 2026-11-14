@@ -10,12 +10,14 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\View\Requestform;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use SdpPortal\Component\ServiceDeskPlus\Site\Model\RequestformModel;
+use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 final class HtmlView extends BaseHtmlView
 {
+    use MenuPageTrait;
+
     public ?string $createdId = null;
 
     /** @var array{subject: string, description: string} */
@@ -33,7 +35,7 @@ final class HtmlView extends BaseHtmlView
         $this->submissionToken = $model->issueSubmissionToken();
 
         $document = $this->getDocument();
-        $document->setTitle(Text::_('COM_SERVICEDESKPLUS_REQUESTFORM_TITLE'));
+        $this->prepareMenuPage('requestform', 'COM_SERVICEDESKPLUS_REQUESTFORM_TITLE');
         $document->setMetaData('robots', 'noindex, nofollow');
 
         $wa = $document->getWebAssetManager();

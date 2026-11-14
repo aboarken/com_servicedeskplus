@@ -3,6 +3,18 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.7.0] - 2026-11-14
+
+### Added
+- **Updates from the Joomla backend.** The component now has an update server, so new versions appear under **System → Update → Extensions** and install with one click. Every GitHub release carries `updates.xml` (version, download link and SHA-256 checksum), which Joomla reads from `releases/latest/download/updates.xml`. Sites on 1.6.0 or older install 1.7.0 once by hand; later versions then arrive through Joomla.
+
+### Changed
+- **Page titles follow the menu item.** My Requests, New Request, My Loans and My Approvals show the menu item's title as page heading and browser title. The menu item's *Page Heading*, *Browser Page Title* and *Show Page Heading* settings are respected. Without a menu item, the component's own titles are used.
+- **My Requests:** the *Submit a Request* button has the same size as the *Search* button and lines up with it.
+- **Request details:** *Technician Group* is shown before *Technician*. Priority, Urgency, Technician Group, Technician, Category, Subcategory and Item now all show "Not assigned" when empty (Subcategory and Item showed "—").
+- **Backend:** "Settings" is now **Integration Settings** and "User mappings" is **User Mappings**.
+- **Extension description** (shown after installing): "Integrate ManageEngine ServiceDesk Plus with Joomla to provide a centralized IT self-service portal for users."
+
 ## [1.6.0] - 2026-11-14
 
 ### Removed

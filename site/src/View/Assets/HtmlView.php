@@ -15,9 +15,12 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\LoanAsset;
 use SdpPortal\Component\ServiceDeskPlus\Site\Model\AssetsModel;
+use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 final class HtmlView extends BaseHtmlView
 {
+    use MenuPageTrait;
+
     /** @var list<LoanAsset> */
     public array $items = [];
 
@@ -39,7 +42,7 @@ final class HtmlView extends BaseHtmlView
         }
 
         $document = $this->getDocument();
-        $document->setTitle(Text::_('COM_SERVICEDESKPLUS_ASSETS_TITLE'));
+        $this->prepareMenuPage('assets', 'COM_SERVICEDESKPLUS_ASSETS_TITLE');
         $document->setMetaData('robots', 'noindex, nofollow');
         $document->getWebAssetManager()->getRegistry()->addExtensionRegistryFile('com_servicedeskplus');
         $document->getWebAssetManager()->useStyle('com_servicedeskplus.portal');

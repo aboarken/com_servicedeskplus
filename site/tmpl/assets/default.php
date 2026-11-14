@@ -16,7 +16,9 @@ $date = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-
 $text = fn (string $v): string => $v !== '' ? $this->escape($v) : '—';
 ?>
 <div class="com-servicedeskplus sdp-assets">
-    <h1 class="h2"><?php echo Text::_('COM_SERVICEDESKPLUS_ASSETS_TITLE'); ?></h1>
+    <?php if ($this->showPageHeading) : ?>
+        <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
+    <?php endif; ?>
 
     <?php if ($this->error !== '') : ?>
         <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->error); ?></div>

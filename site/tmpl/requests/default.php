@@ -24,12 +24,19 @@ $sorts  = [
 $currentSort = $q->sort . '_' . $q->direction;
 ?>
 <div class="com-servicedeskplus sdp-requests">
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-        <h1 class="h2 mb-0"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTS_TITLE'); ?></h1>
+    <?php /* Same grid as the filter bar below, so "Submit a Request" lines up with and has the size of "Search". */ ?>
+    <div class="sdp-page-header row g-2 align-items-center mb-3">
+        <div class="col">
+            <?php if ($this->showPageHeading) : ?>
+                <h1 class="h2 mb-0"><?php echo $this->escape($this->pageHeading); ?></h1>
+            <?php endif; ?>
+        </div>
         <?php if ($this->canCreate) : ?>
-            <a class="btn btn-primary" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requestform'); ?>">
-                <?php echo Text::_('COM_SERVICEDESKPLUS_SUBMIT_A_REQUEST'); ?>
-            </a>
+            <div class="col-12 col-sm-auto col-lg-2">
+                <a class="btn btn-primary w-100 sdp-btn-nowrap" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requestform'); ?>">
+                    <?php echo Text::_('COM_SERVICEDESKPLUS_SUBMIT_A_REQUEST'); ?>
+                </a>
+            </div>
         <?php endif; ?>
     </div>
 

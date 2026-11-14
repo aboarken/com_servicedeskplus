@@ -16,9 +16,12 @@ use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\PendingApproval;
 use SdpPortal\Component\ServiceDeskPlus\Site\Model\ApprovalsModel;
+use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 final class HtmlView extends BaseHtmlView
 {
+    use MenuPageTrait;
+
     /** @var list<PendingApproval> */
     public array $pending = [];
 
@@ -44,7 +47,7 @@ final class HtmlView extends BaseHtmlView
         }
 
         $document = $this->getDocument();
-        $document->setTitle(Text::_('COM_SERVICEDESKPLUS_APPROVALS_TITLE'));
+        $this->prepareMenuPage('approvals', 'COM_SERVICEDESKPLUS_APPROVALS_TITLE');
         $document->setMetaData('robots', 'noindex, nofollow');
 
         parent::display($tpl);

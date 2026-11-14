@@ -17,7 +17,9 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
 $limits = AttachmentValidator::limitsForMessages();
 ?>
 <div class="com-servicedeskplus sdp-requestform">
-    <h1 class="h2"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTFORM_TITLE'); ?></h1>
+    <?php if ($this->showPageHeading) : ?>
+        <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
+    <?php endif; ?>
 
     <?php if ($this->createdId !== null) :
         $url = Route::_('index.php?option=com_servicedeskplus&view=request&id=' . rawurlencode($this->createdId));

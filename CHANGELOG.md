@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.8.1] - 2026-11-14
+
+### Fixed
+- **Approving through the API technician failed with "Recommendation mail is not yet sent."** ServiceDesk Plus accepts no decision on an approval until its approval e-mail has been sent. After adding the API technician as approver, the portal now sends that e-mail (to the API technician's mailbox) before recording the decision. Both the `send_notification` and the documented `_send_notification` paths are supported.
+
 ## [1.8.0] - 2026-11-14
 
 ### Added

@@ -234,6 +234,33 @@ final class SdpClient
     }
 
     /**
+     * Send the approval e-mail for one approval. SDP accepts no decision on an approval whose
+     * e-mail has not been sent ("Recommendation mail is not yet sent.").
+     *
+     * PUT .../approvals/{approval_id}/_send_notification with input_data
+     * {"notification": {"subject": ..., "description": ...}} ("Send Notification For Request Approval"
+     * in the v3 reference). Builds that use paths without the leading underscore (as for
+     * .../approve) are tried first; the documented path is used when that one is not found.
+     */
+    public function sendApprovalNotification(string $requestId, string $levelId, string $approvalId, string $subject, string $descriptionHtml): void
+    {
+        $base  = '/api/v3/requests/' . self::id($requestId) . '/approval_levels/' . self::id($levelId) . '/approvals/' . self::id($approvalId);
+        $input = ['notification' => ['subject' => $subject, 'description' => $descriptionHtml]];
+
+        try {
+            $this->call('PUT', $base . '/send_notification', $input, $this->serviceKey);
+
+            return;
+        } catch (SdpException $e) {
+            if ($e->getKind() !== SdpException::NOT_FOUND && !\in_array($e->getHttpStatus(), [404, 405], true)) {
+                throw $e;
+            }
+        }
+
+        $this->call('PUT', $base . '/_send_notification', $input, $this->serviceKey);
+    }
+
+    /**
      * DELETE /api/v3/requests/{request_id}/approval_levels/{level_id}/approvals/{approval_id}.
      */
     public function deleteApproval(string $requestId, string $levelId, string $approvalId): void

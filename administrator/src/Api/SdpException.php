@@ -45,7 +45,8 @@ final class SdpException extends \RuntimeException
     {
         $kind = match (true) {
             $sdpCode === 4022, $httpStatus === 401 => self::AUTH,
-            $sdpCode === 4002, $httpStatus === 403 => self::PERMISSION,
+            // 4201 is sent with HTTP 400, e.g. "You are not authorized to take action on this approval".
+            $sdpCode === 4002, $sdpCode === 4201, $httpStatus === 403 => self::PERMISSION,
             $sdpCode === 4007, $httpStatus === 404 => self::NOT_FOUND,
             $sdpCode === 4015, $httpStatus === 429 => self::RATE_LIMITED,
             $sdpCode === 7001                      => self::LICENSE,

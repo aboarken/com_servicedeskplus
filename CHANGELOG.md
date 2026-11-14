@@ -3,6 +3,16 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.7.1] - 2026-11-14
+
+### Fixed
+- **Approvals refused by ServiceDesk Plus** (SDP code 4201, "You are not authorized to take action on this approval") now show "ServiceDesk Plus did not allow this decision. Please contact IT." instead of the generic "did not accept the data" message.
+- **Short connection drops:** a read from ServiceDesk Plus that fails to connect (for example a dropped TLS handshake) is tried once more after 0.3 seconds. Creating requests and approving or rejecting are never repeated.
+
+### Changed
+- The message "The service desk did not accept the data that was sent." now reads "ServiceDesk Plus did not accept the data that was sent."
+- Connection failures in `administrator/logs/com_servicedeskplus.php` now include the cURL error text (for example "SSL certificate problem: unable to get local issuer certificate"), so TLS problems can be diagnosed.
+
 ## [1.7.0] - 2026-11-14
 
 ### Added

@@ -27,6 +27,10 @@ final class SdpClient
 {
     public const ACCEPT = 'application/vnd.manageengine.sdp.v3+json';
 
+    /** Extra attempts for a GET that fails to connect, and the pause before it (microseconds). */
+    private const GET_RETRIES    = 1;
+    private const RETRY_DELAY_US = 300_000;
+
     /** Safety cap for listAll() so a bad has_more_rows value cannot loop forever. */
     private const MAX_PAGES = 50;
 
@@ -458,12 +462,32 @@ final class SdpClient
         $secrets = array_values(array_unique([...$this->secrets, $authtoken]));
         $started = hrtime(true);
 
-        try {
-            $response = $this->transport->send($method, $url, $headers, $body);
-        } catch (TransportException $e) {
-            $this->logger->warning(\sprintf('SDP %s %s failed: %s', $method, $path, Redactor::scrub($e->getMessage(), $secrets)));
+        // A read that fails to connect (e.g. a dropped TLS handshake) is tried once more.
+        // Writes are never repeated: the first attempt may have reached SDP.
+        $attempts = $method === 'GET' ? 1 + self::GET_RETRIES : 1;
 
-            throw new SdpException(SdpException::NETWORK, 'Could not reach ServiceDesk Plus', 0, null, '', $e);
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                $response = $this->transport->send($method, $url, $headers, $body);
+
+                break;
+            } catch (TransportException $e) {
+                $retry = $attempt < $attempts;
+
+                $this->logger->warning(\sprintf(
+                    'SDP %s %s failed%s: %s',
+                    $method,
+                    $path,
+                    $retry ? ' (trying again)' : '',
+                    Redactor::scrub($e->getMessage(), $secrets)
+                ));
+
+                if (!$retry) {
+                    throw new SdpException(SdpException::NETWORK, 'Could not reach ServiceDesk Plus', 0, null, '', $e);
+                }
+
+                usleep(self::RETRY_DELAY_US);
+            }
         }
 
         $elapsed = (int) ((hrtime(true) - $started) / 1_000_000);

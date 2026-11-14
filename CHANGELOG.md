@@ -3,6 +3,16 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] - 2026-11-14
+
+### Added
+- **My Approvals covers changes, releases and purchase orders** as well as requests. A new *Type* column shows the module; the approval page shows the change, release or purchase order with its title, description and requester. Approve and reject work for all four, including the API technician workaround (adding the API technician, sending the approval e-mail, recording the decision, removing the approver's pending entry). Problems are not included: ServiceDesk Plus has no approvals for problems.
+  - Calls follow ManageEngine's ServiceDesk Plus On-Premises Postman collection: `approve`/`reject` for requests and changes, `_approve`/`_reject` for releases and purchase orders; adding approvers with `{"approvals": [...]}` for changes, releases and purchase orders; `send_notification?ids=` (requests, changes) and `_send_notification` (releases, purchase orders). The other form is tried when ServiceDesk Plus answers "not found".
+  - Private notes naming the approver are added to requests, changes and releases. Purchase orders have no notes in the API; the approval comment names the approver.
+
+### Changed
+- **Faster My Approvals.** The list now comes from one call, `GET /api/v3/approvals`, filtered by the user's approver id and the pending status, instead of up to 101 calls scanning recent requests. Every returned item is checked to belong to the user. If the build does not support this call, ignores the filter, or returns nothing, the previous request scan runs, so request approvals keep working as before.
+
 ## [1.8.2] - 2026-11-14
 
 ### Fixed

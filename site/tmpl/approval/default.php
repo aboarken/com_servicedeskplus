@@ -9,6 +9,7 @@
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Approval\HtmlView $this */
@@ -23,7 +24,7 @@ $item = $this->item;
         <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->error); ?></div>
     <?php else : ?>
         <h1 class="h2"><?php echo $this->escape($item->subject); ?></h1>
-        <p class="text-muted"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_REQUEST_TITLE', $this->escape($item->requestId)); ?></p>
+        <p class="text-muted"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_APPROVAL_ITEM', Text::_(ApprovalModule::labelKey($item->module)), $this->escape($item->requestId)); ?></p>
 
         <dl class="row">
             <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTER'); ?></dt>
@@ -67,6 +68,7 @@ $item = $this->item;
                 <input type="hidden" name="request_id" value="<?php echo $this->escape($item->requestId); ?>">
                 <input type="hidden" name="level_id" value="<?php echo $this->escape($item->levelId); ?>">
                 <input type="hidden" name="approval_id" value="<?php echo $this->escape($item->approvalId); ?>">
+                <input type="hidden" name="module" value="<?php echo $this->escape($item->module); ?>">
                 <input type="hidden" name="submission" value="<?php echo $this->escape($this->submissionToken); ?>">
                 <?php echo HTMLHelper::_('form.token'); ?>
             </form>

@@ -32,11 +32,11 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 - Access relevant IT service information.
 
 ### Approvals
-- View pending approval requests.
+- View pending approvals for **requests, changes, releases and purchase orders** in one list (ServiceDesk Plus has no approvals for problems).
 - Review approval details.
 - Approve or reject from Joomla, for example while away from the company network.
 
-ServiceDesk Plus only accepts an approval decision from the assigned approver, while the portal talks to ServiceDesk Plus with a single API technician key. To let approvers decide from Joomla anyway, enter the API technician's e-mail under **Integration Settings → Approvals → API technician e-mail**. When ServiceDesk Plus refuses a decision, the portal adds the API technician as approver on the same level, records the decision under that account with the real approver's name in the comment and in a private request note, and removes the approver's pending entry. In ServiceDesk Plus the decision therefore appears under the API technician. Approval levels that need all approvers still wait for the others. Purchase request and purchase order approvals are not supported.
+ServiceDesk Plus only accepts an approval decision from the assigned approver, while the portal talks to ServiceDesk Plus with a single API technician key. To let approvers decide from Joomla anyway, enter the API technician's e-mail under **Integration Settings → Approvals → API technician e-mail**. When ServiceDesk Plus refuses a decision, the portal adds the API technician as approver on the same level, records the decision under that account with the real approver's name in the comment and in a private request note, and removes the approver's pending entry. In ServiceDesk Plus the decision therefore appears under the API technician. Approval levels that need all approvers still wait for the others. The API technician's role needs permission to edit and manage approvals in each module used (requests, changes, releases, purchase orders).
 
 ### Dashboard
 - Centralized user dashboard.

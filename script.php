@@ -34,10 +34,8 @@ return new class () implements ServiceProviderInterface {
                  * Paths are relative to the component's site / administrator folder.
                  */
                 private const OBSOLETE_SITE = [
-                    // 1.11.0: "My Dashboard" page (removed in 1.12.0)
-                    'tmpl/dashboard',
-                    'src/View/Dashboard',
-                    'src/Model/DashboardModel.php',
+                    // 1.13.0: links between portal pages (removed in 1.14.0)
+                    'layouts/nav.php',
                     // 1.0: "My approval key" page (removed in 1.1.0)
                     'tmpl/approvalkey',
                     'src/View/Approvalkey',
@@ -46,7 +44,7 @@ return new class () implements ServiceProviderInterface {
                 ];
 
                 private const OBSOLETE_ADMIN = [
-                    // 1.11.0: request counts for "My Dashboard" (removed in 1.12.0)
+                    // 1.11.0: request counts of the first dashboard (removed in 1.12.0)
                     'src/Requests/RequestStats.php',
                     // 1.11.0: views renamed to integrationsettings and usermappings
                     'src/View/Settings',
@@ -76,7 +74,7 @@ return new class () implements ServiceProviderInterface {
                 ];
 
                 /** Front-end views that no longer exist; menu items pointing to them are trashed. */
-                private const OBSOLETE_VIEWS = ['approvalkey', 'dashboard'];
+                private const OBSOLETE_VIEWS = ['approvalkey'];
 
                 public function install(InstallerAdapter $adapter): bool
                 {

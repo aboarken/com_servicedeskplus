@@ -26,8 +26,9 @@ final class DisplayController extends BaseController
 {
     use IdentityGuardTrait;
 
-    /** view => required permission */
+    /** view => required permission; a list means any one of them */
     private const VIEWS = [
+        'dashboard'     => ['sdp.request.view', 'sdp.approval.view', 'sdp.asset.view', 'sdp.announcement.view'],
         'requests'      => 'sdp.request.view',
         'request'       => 'sdp.request.view',
         'requestform'   => 'sdp.request.create',
@@ -53,7 +54,10 @@ final class DisplayController extends BaseController
             throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
         }
 
-        if (!$this->app->getIdentity()->authorise(self::VIEWS[$view], 'com_servicedeskplus')) {
+        $user    = $this->app->getIdentity();
+        $allowed = array_filter((array) self::VIEWS[$view], static fn (string $action): bool => $user->authorise($action, 'com_servicedeskplus'));
+
+        if ($allowed === []) {
             throw new NotAllowed(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
 

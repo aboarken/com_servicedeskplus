@@ -3,6 +3,20 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.14.0] - 2026-11-15
+
+### Added
+- **Dashboard** (new menu item type): figures for the logged-in user, each opening its page with the matching filter. *Requests:* all and one per status of the My Requests filter (counted by ServiceDesk Plus, one call per status). *Approvals:* waiting for my approval, approved by me, rejected by me (decisions made through the portal). *Loans:* all, to return within 30 days (including overdue), overdue. *Announcements:* current announcements. Each section only for users with that page's permission; a section that cannot be read shows its error while the others still show. The Dashboard needs any one of the portal permissions.
+
+### Changed
+- **My Approvals** and **My Loans** work like My Requests: one filter bar (search, *Show*, type for approvals, sort, Search button), striped table with the ID first and ID and subject/name as links, and pages of 25.
+  - My Approvals *Show*: waiting for my approval, approved by me, rejected by me, all my decisions (replaces the separate "My past decisions" table). Up to the user's 200 latest decisions are listed.
+  - My Loans *Show*: all my loans, to return within 30 days, overdue. Sort by due date or name.
+- Announcements use the same list code (no visible change).
+
+### Removed
+- The links between portal pages added in 1.13.0. The file is removed on update.
+
 ## [1.13.0] - 2026-11-15
 
 ### Added

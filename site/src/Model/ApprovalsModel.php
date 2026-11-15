@@ -32,4 +32,14 @@ final class ApprovalsModel extends BaseModel
     {
         return $this->sdp()->getApprovalService()->history($this->identity());
     }
+
+    /**
+     * Modules My Approvals checks (Integration Settings), for the type filter.
+     *
+     * @return list<string>
+     */
+    public function getModules(): array
+    {
+        return $this->sdp()->getSettingsRepository()->load()->approvalModules();
+    }
 }

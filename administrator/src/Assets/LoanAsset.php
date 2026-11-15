@@ -44,6 +44,17 @@ final class LoanAsset
         );
     }
 
+    /** Days before the due date from which a loan counts as "to return soon". */
+    public const DUE_SOON_DAYS = 30;
+
+    /**
+     * To be returned soon: due within $days days from now, or already overdue.
+     */
+    public function isDueSoon(int $now, int $days = self::DUE_SOON_DAYS): bool
+    {
+        return $this->loanEnd !== null && $this->loanEnd <= $now + $days * 86400;
+    }
+
     /**
      * Still on loan (it is listed only while SDP marks it loaned) and past the loan end.
      */

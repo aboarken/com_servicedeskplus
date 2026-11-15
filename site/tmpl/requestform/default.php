@@ -8,7 +8,6 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\AttachmentValidator;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
@@ -18,8 +17,6 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
 $limits = AttachmentValidator::limitsForMessages();
 ?>
 <div class="com-servicedeskplus sdp-requestform">
-    <?php echo LayoutHelper::render('nav', ['active' => 'requestform'], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
-
     <?php if ($this->showPageHeading) : ?>
         <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
     <?php endif; ?>

@@ -23,8 +23,6 @@ $sorts = [
 ];
 ?>
 <div class="com-servicedeskplus sdp-announcements">
-    <?php echo LayoutHelper::render('nav', ['active' => 'announcements'], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
-
     <?php if ($this->showPageHeading) : ?>
         <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
     <?php endif; ?>
@@ -96,19 +94,5 @@ $sorts = [
         </div>
     <?php endif; ?>
 
-    <?php if ($this->pages > 1) : ?>
-        <nav aria-label="<?php echo $this->escape(Text::_('JLIB_HTML_PAGINATION')); ?>">
-            <ul class="pagination">
-                <li class="page-item <?php echo $this->page <= 1 ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="<?php echo $this->pageUrl($this->page - 1); ?>"><?php echo Text::_('JPREV'); ?></a>
-                </li>
-                <li class="page-item disabled">
-                    <span class="page-link"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_PAGE_N_OF_M', $this->page, $this->pages); ?></span>
-                </li>
-                <li class="page-item <?php echo $this->page < $this->pages ? '' : 'disabled'; ?>">
-                    <a class="page-link" href="<?php echo $this->pageUrl($this->page + 1); ?>"><?php echo Text::_('JNEXT'); ?></a>
-                </li>
-            </ul>
-        </nav>
-    <?php endif; ?>
+    <?php echo LayoutHelper::render('pagination', ['page' => $this->page, 'pages' => $this->pages, 'url' => fn (int $p): string => $this->pageUrl($p)], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
 </div>

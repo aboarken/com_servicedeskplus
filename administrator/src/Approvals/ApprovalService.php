@@ -14,6 +14,7 @@ use Psr\Log\LoggerInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\ListInfo;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpClient;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditCounterInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditHistoryInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Cache\UserCacheInterface;
@@ -278,11 +279,34 @@ final class ApprovalService
      *
      * @return list<array{created: string, action: string, result: string, sdp_request_id: ?string, approval_id: ?string, detail: string}>
      */
-    public function history(Identity $identity, int $limit = 50): array
+    public function history(Identity $identity, int $limit = 200): array
     {
         $identity->sdpUserId();
 
         return $this->history->recent($identity->joomlaUserId, [self::ACTION_APPROVE, self::ACTION_REJECT], $limit);
+    }
+
+    /**
+     * How many approvals the user approved and rejected through the portal (recorded decisions;
+     * decisions made directly in ServiceDesk Plus are not known to the portal). Null when the
+     * audit store cannot count.
+     *
+     * @return array{approved: int|null, rejected: int|null}
+     */
+    public function decisionCounts(Identity $identity): array
+    {
+        $identity->sdpUserId();
+
+        if (!$this->history instanceof AuditCounterInterface) {
+            return ['approved' => null, 'rejected' => null];
+        }
+
+        $since = new \DateTimeImmutable('@0');
+
+        return [
+            'approved' => $this->history->countSince($identity->joomlaUserId, self::ACTION_APPROVE, $since, [AuditLogInterface::RESULT_OK]),
+            'rejected' => $this->history->countSince($identity->joomlaUserId, self::ACTION_REJECT, $since, [AuditLogInterface::RESULT_OK]),
+        ];
     }
 
     /**

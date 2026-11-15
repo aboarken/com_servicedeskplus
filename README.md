@@ -14,6 +14,14 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 
 ## Features
 
+### Dashboard
+- One page of figures for the logged-in user. Each figure opens its page with the matching filter:
+  - **Requests:** all requests and one figure per status of the My Requests filter (*Integration Settings → Request statuses*, e.g. Open, On Hold, Resolved, Closed, Canceled).
+  - **Approvals:** waiting for my approval, approved by me, rejected by me (decisions made through the portal).
+  - **Loans:** all loans, to return within 30 days (including overdue), overdue.
+  - **Announcements:** current announcements.
+- Each section is shown only to users with the permission for its page.
+
 ### Service Requests
 - View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, status filter and sorting.
 - Submit new service requests with the **Request Form** menu item (page title **New Request**).
@@ -32,7 +40,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 - Access relevant IT service information.
 
 ### Approvals
-- View pending approvals for **requests, changes, releases and purchase orders** in one list (ServiceDesk Plus has no approvals for problems).
+- View pending approvals for **requests, changes, releases and purchase orders** in one list (ServiceDesk Plus has no approvals for problems), and the decisions made through the portal. The list works like My Requests: search, *Show* (waiting for my approval, approved by me, rejected by me, all my decisions), type, sort and pages.
 - Review approval details.
 - Approve or reject from Joomla, for example while away from the company network.
 
@@ -50,6 +58,7 @@ ServiceDesk Plus only accepts an approval decision from the assigned approver, w
 - View assets associated with the user.
 - Access assigned equipment information.
 - View equipment and loan records in read-only mode.
+- *My Loans* works like My Requests: search, *Show* (all, to return within 30 days, overdue), sort and pages.
 
 **Note:** Equipment and loan information is provided for viewing only. Submitting loan requests, requesting loan extensions, and requesting equipment returns are not part of this component.
 
@@ -96,9 +105,7 @@ You can always upgrade by installing a newer package over the existing one.
 
 ### Menu items
 
-Create front-end pages with **Menus → Add New Menu Item → ServiceDesk Plus**: *My Requests*, *Request Form*, *My Loans*, *My Approvals* and *Announcements*. The menu item title is shown as the page heading and browser title; the menu item's *Page Display* settings (*Browser Page Title*, *Show Page Heading*, *Page Heading*) are respected.
-
-Each portal page shows links to the other portal pages the user may open (My Requests, New Request, My Approvals, My Loans, Announcements). A link uses the title of its menu item when the page has one.
+Create front-end pages with **Menus → Add New Menu Item → ServiceDesk Plus**: *Dashboard*, *My Requests*, *Request Form*, *My Loans*, *My Approvals* and *Announcements*. The menu item title is shown as the page heading and browser title; the menu item's *Page Display* settings (*Browser Page Title*, *Show Page Heading*, *Page Heading*) are respected.
 
 ## Configuration
 

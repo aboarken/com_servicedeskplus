@@ -6,9 +6,10 @@ Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic
 ## [1.10.0] - 2026-11-14
 
 ### Added
-- **"My past decisions" shows what each decision was about:** new *Approval For* and *Subject* columns. The subject and module are stored with each decision (two new columns in `#__sdp_audit`, added by the 1.10.0 database update). Decisions made before this version show "—" as subject.
+- **"My past decisions" shows what each decision was about:** new *Type* and *Subject* columns. The subject and module are stored with each decision (two new columns in `#__sdp_audit`, added by the 1.10.0 database update). Decisions made before this version show "—" as subject.
 
 ### Changed
+- The type column in My Approvals is back to **Type** with plain text, as in 1.9.0 (1.9.1's "Approval For" heading and coloured labels are removed; the labels did not suit the site template).
 - **Approval comment format** in ServiceDesk Plus: `Rejected by (username) Full Name via the Joomla portal. Custom comment: <the user's comment>`. The user's Joomla username is shown in brackets before their name; "Custom comment:" is added only when the user wrote a comment. The private request note uses the same name.
 
 ## [1.9.1] - 2026-11-14

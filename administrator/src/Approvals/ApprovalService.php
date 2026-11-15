@@ -76,6 +76,10 @@ final class ApprovalService
     /** SDP user id of the approval account, once looked up. */
     private ?string $approvalAccountId = null;
 
+    /** Module and title of the record of the decision in progress, for the audit rows. */
+    private string $decisionModule  = '';
+    private string $decisionSubject = '';
+
     /**
      * Pending approvals where the user is the approver at the current level.
      *
@@ -99,6 +103,7 @@ final class ApprovalService
         $pending = $this->listFromApprovalsEndpoint($sdpUserId);
 
         if ($pending !== null && $pending !== []) {
+            $pending = self::onePerLevel($pending);
             $this->cache->set($identity, 'approvals:pending', array_map(static fn (PendingApproval $p) => $p->toArray(), $pending));
 
             return $pending;
@@ -112,6 +117,7 @@ final class ApprovalService
             array_push($pending, ...$this->scanModule($client, $module, $sdpUserId));
         }
 
+        $pending = self::onePerLevel($pending);
         $this->cache->set($identity, 'approvals:pending', array_map(static fn (PendingApproval $p) => $p->toArray(), $pending));
 
         return $pending;
@@ -332,6 +338,9 @@ final class ApprovalService
         $userId = $identity->joomlaUserId;
         $module = ApprovalModule::normalize($module) ?? throw new ApprovalNotFound();
 
+        $this->decisionModule  = $module;
+        $this->decisionSubject = '';
+
         if (!\in_array($decision, ['approve', 'reject'], true)) {
             throw new InvalidDecision('COM_SERVICEDESKPLUS_APPROVAL_ERR_DECISION');
         }
@@ -345,7 +354,7 @@ final class ApprovalService
         }
 
         if (!$this->allowDecision($userId)) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'rate_limited');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'rate_limited');
 
             throw new RateLimitExceeded();
         }
@@ -354,18 +363,19 @@ final class ApprovalService
         try {
             [$approval, $level, $requestId, $levelId, $approvalId] = $this->locateOwn($identity, $requestId, $levelId, $approvalId, $module);
         } catch (ApprovalNotFound $e) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'not_approver_or_missing');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_DENIED, $this->safeId($requestId), $this->safeId($approvalId), 'not_approver_or_missing');
 
             throw $e;
         }
 
         if (!$this->isPending($approval, $level)) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_DENIED, $requestId, $approvalId, 'not_pending');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_DENIED, $requestId, $approvalId, 'not_pending');
 
             throw new AlreadyDecided();
         }
 
-        $sdpComment = self::sdpComment($decision, $approverName, $comment);
+        $this->decisionSubject = $this->recordTitle($module, $requestId);
+        $sdpComment            = self::sdpComment($decision, $approverName, $comment);
 
         try {
             // Comments are plain text (JSON-encoded by SdpClient), not HTML.
@@ -376,12 +386,12 @@ final class ApprovalService
             }
 
             if ($this->stillPending($identity, $requestId, $levelId, $approvalId, $module) === false) {
-                $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'already_decided');
+                $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'already_decided');
 
                 throw new AlreadyDecided();
             }
 
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, $e->getKind() . ':' . $e->getSdpMessage());
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, $e->getKind() . ':' . $e->getSdpMessage());
 
             throw $e;
         }
@@ -398,9 +408,28 @@ final class ApprovalService
             // The decision was accepted by SDP; the verification read is best effort.
         }
 
-        $this->audit->record($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, $outcome);
+        $this->recordDecision($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, $outcome);
 
         return $outcome;
+    }
+
+    /**
+     * Audit row of a decision, with the module and title of the record decided on, so
+     * "My past decisions" can show what each decision was about.
+     */
+    private function recordDecision(int $userId, string $action, string $result, ?string $entityId, ?string $approvalId, string $detail): void
+    {
+        $this->audit->record($userId, $action, $result, $entityId, $approvalId, $detail, 0, $this->decisionModule, $this->decisionSubject);
+    }
+
+    /** Title of a request, change, release or purchase order; '' when it cannot be read. */
+    private function recordTitle(string $module, string $entityId): string
+    {
+        try {
+            return self::firstText($this->client()->getModuleEntity($module, $entityId), ApprovalModule::fields($module)['title'], false);
+        } catch (SdpException | \InvalidArgumentException) {
+            return '';
+        }
     }
 
     /**
@@ -416,7 +445,7 @@ final class ApprovalService
         $verb    = $decision === 'approve' ? 'Approved' : 'Rejected';
         $line    = $name !== '' ? \sprintf('%s by %s via the Joomla portal.', $verb, $name) : $verb . ' via the Joomla portal.';
 
-        return mb_substr($comment !== '' ? $line . ' ' . $comment : $line, 0, self::SDP_COMMENT_MAX);
+        return mb_substr($comment !== '' ? $line . ' Custom comment: ' . $comment : $line, 0, self::SDP_COMMENT_MAX);
     }
 
     /**
@@ -442,7 +471,7 @@ final class ApprovalService
         $accountId = $this->approvalAccountId();
 
         if ($accountId === null || $accountId === $identity->sdpUserId()) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'refused:no_approval_account');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'refused:no_approval_account');
 
             throw $refusal;
         }
@@ -464,7 +493,7 @@ final class ApprovalService
                 $added             = true;
             }
         } catch (SdpException $e) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:' . $e->getKind() . ':' . $e->getSdpMessage());
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:' . $e->getKind() . ':' . $e->getSdpMessage());
 
             // Typically the record is closed: SDP lets nobody change its approvers.
             if ($e->getKind() === SdpException::PERMISSION) {
@@ -473,7 +502,7 @@ final class ApprovalService
 
             throw $e;
         } catch (\InvalidArgumentException) {
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:no_id');
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:no_id');
 
             throw new SdpException(SdpException::BAD_RESPONSE, 'Added approval has no id');
         }
@@ -524,7 +553,7 @@ final class ApprovalService
                         ));
                     }
 
-                    $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'auto_decided:' . $state . ($removed ? ':removed' : ':left'));
+                    $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'auto_decided:' . $state . ($removed ? ':removed' : ':left'));
 
                     throw new AutoDecided($removed);
                 }
@@ -543,22 +572,26 @@ final class ApprovalService
                 }
             }
 
-            $this->audit->record($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_decide:' . $e->getKind() . ':' . $e->getSdpMessage());
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_decide:' . $e->getKind() . ':' . $e->getSdpMessage());
 
             throw $e;
         }
 
-        // The decision is recorded. Remove the approver's own pending entry so only one remains.
+        // The decision is recorded. Remove the approver's own pending entries on this level (the one
+        // decided on, and any duplicate entry for the same person) so only the decision remains.
         $originalRemoved = true;
 
-        try {
-            $client->deleteApproval($requestId, $levelId, $approvalId, $module);
-        } catch (SdpException $e) {
-            // Fine when SDP already closed the entry itself (e.g. the level completed).
-            $originalRemoved = $e->getKind() === SdpException::NOT_FOUND || !$this->approvalStillPending($requestId, $levelId, $approvalId, $module);
+        foreach ($this->ownPendingIds($identity, $requestId, $levelId, $approvalId, $module) as $ownId) {
+            try {
+                $client->deleteApproval($requestId, $levelId, $ownId, $module);
+            } catch (SdpException $e) {
+                // Fine when SDP already closed the entry itself (e.g. the level completed).
+                $removed = $e->getKind() === SdpException::NOT_FOUND || !$this->approvalStillPending($requestId, $levelId, $ownId, $module);
 
-            if (!$originalRemoved) {
-                $this->logger->warning(\sprintf('Pending approval %s of request %s could not be removed after the decision (%s)', $approvalId, $requestId, $e->getKind()));
+                if (!$removed) {
+                    $originalRemoved = false;
+                    $this->logger->warning(\sprintf('Pending approval %s of %s %s could not be removed after the decision (%s)', $ownId, $module, $requestId, $e->getKind()));
+                }
             }
         }
 
@@ -571,7 +604,7 @@ final class ApprovalService
             default                                        => self::OUTCOME_CONFIRMED,
         };
 
-        $this->audit->record($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, 'via_account:' . $accountApprovalId . ':' . $outcome);
+        $this->recordDecision($userId, $action, AuditLogInterface::RESULT_OK, $requestId, $approvalId, 'via_account:' . $accountApprovalId . ':' . $outcome);
 
         return $outcome;
     }
@@ -632,6 +665,56 @@ final class ApprovalService
                 $this->logger->warning(\sprintf('Note for the decision on %s %s could not be added (%s)', $module, $requestId, $e->getKind()));
             }
         }
+    }
+
+    /**
+     * Ids of the user's pending entries on one level: the one decided on first, then any duplicate
+     * entry for the same person (the same approver added twice). Falls back to the decided one.
+     *
+     * @return list<string>
+     */
+    private function ownPendingIds(Identity $identity, string $entityId, string $levelId, string $approvalId, string $module): array
+    {
+        $ids = [$approvalId];
+
+        try {
+            foreach ($this->client()->getApprovals($entityId, $levelId, $module) as $approval) {
+                $id = SdpFields::string($approval, 'id');
+
+                if ($id !== $approvalId && $this->isMine($approval, $identity->sdpUserId()) && $this->isPendingStatus($approval) && preg_match('/^[0-9]{1,20}$/', $id)) {
+                    $ids[] = $id;
+                }
+            }
+        } catch (SdpException) {
+            // Only the decided entry then.
+        }
+
+        return $ids;
+    }
+
+    /**
+     * One row per record and level: an approver added twice to the same level has two pending
+     * entries in SDP, but one decision covers both.
+     *
+     * @param  list<PendingApproval>  $pending
+     *
+     * @return list<PendingApproval>
+     */
+    private static function onePerLevel(array $pending): array
+    {
+        $seen = [];
+        $out  = [];
+
+        foreach ($pending as $p) {
+            $key = $p->module . ':' . $p->requestId . ':' . $p->levelId;
+
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $out[]      = $p;
+            }
+        }
+
+        return $out;
     }
 
     /** Lower-case status name of one approval, or null when it cannot be read. */

@@ -18,13 +18,6 @@ $decisionLabel = [
     'approval.approve' => 'COM_SERVICEDESKPLUS_APPROVAL_HISTORY_APPROVE',
     'approval.reject'  => 'COM_SERVICEDESKPLUS_APPROVAL_HISTORY_REJECT',
 ];
-// One colour per type, so users can tell a request approval from a change, release or purchase order approval.
-$badge = [
-    ApprovalModule::REQUEST        => 'text-bg-primary',
-    ApprovalModule::CHANGE         => 'text-bg-warning',
-    ApprovalModule::RELEASE        => 'text-bg-info',
-    ApprovalModule::PURCHASE_ORDER => 'text-bg-success',
-];
 $resultLabel = [
     'ok'     => 'COM_SERVICEDESKPLUS_APPROVAL_RESULT_OK',
     'denied' => 'COM_SERVICEDESKPLUS_APPROVAL_RESULT_DENIED',
@@ -63,7 +56,7 @@ $resultLabel = [
                         . ($p->module !== ApprovalModule::REQUEST ? '&module=' . rawurlencode($p->module) : ''));
                     ?>
                     <tr>
-                        <td><span class="badge <?php echo $badge[$p->module] ?? 'text-bg-secondary'; ?>"><?php echo Text::_(ApprovalModule::labelKey($p->module)); ?></span></td>
+                        <td><?php echo Text::_(ApprovalModule::labelKey($p->module)); ?></td>
                         <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->requestId); ?></a></td>
                         <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->subject); ?></a></td>
                         <td><?php echo $this->escape($p->requester); ?></td>
@@ -88,16 +81,24 @@ $resultLabel = [
                 <thead>
                     <tr>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_DATE'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_DECISION'); ?></th>
                         <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_RESULT'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($this->history as $h) : ?>
+                <?php foreach ($this->history as $h) :
+                    // Decisions recorded before 1.10.0 have no module (they were all requests) and no subject.
+                    $hModule = ApprovalModule::normalize((string) ($h['module'] ?? '')) ?? ApprovalModule::REQUEST;
+                    $hSubject = trim((string) ($h['subject'] ?? ''));
+                    ?>
                     <tr>
                         <td><?php echo HTMLHelper::_('date', $h['created'], Text::_('DATE_FORMAT_LC5')); ?></td>
+                        <td><?php echo Text::_(ApprovalModule::labelKey($hModule)); ?></td>
                         <td><?php echo $this->escape((string) $h['sdp_request_id']); ?></td>
+                        <td><?php echo $hSubject !== '' ? $this->escape($hSubject) : '—'; ?></td>
                         <td><?php echo Text::_($decisionLabel[$h['action']] ?? 'JNONE'); ?></td>
                         <td><?php echo Text::_($resultLabel[$h['result']] ?? 'JNONE'); ?></td>
                     </tr>

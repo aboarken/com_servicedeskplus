@@ -88,7 +88,7 @@ final class ApprovalController extends BaseController
 
         try {
             $outcome = $this->sdpComponent()->getApprovalService()
-                ->decide($identity, $requestId, $levelId, $approvalId, $decision, $comment, (string) $user->name, $module);
+                ->decide($identity, $requestId, $levelId, $approvalId, $decision, $comment, self::approverLabel((string) $user->username, (string) $user->name), $module);
         } catch (AutoDecided $e) {
             $this->app->enqueueMessage(Text::_($e->entryRemoved ? 'COM_SERVICEDESKPLUS_APPROVAL_ERR_AUTO_DECIDED' : 'COM_SERVICEDESKPLUS_APPROVAL_ERR_AUTO_DECIDED_LEFT'), 'error');
 
@@ -140,5 +140,20 @@ final class ApprovalController extends BaseController
         }
 
         $this->setRedirect(Route::_($listUrl, false));
+    }
+
+    /**
+     * How the user is named in the SDP comment and note: "(username) Full Name".
+     */
+    private static function approverLabel(string $username, string $name): string
+    {
+        $username = trim($username);
+        $name     = trim($name);
+
+        if ($username === '' || strcasecmp($username, $name) === 0) {
+            return $name !== '' ? $name : $username;
+        }
+
+        return '(' . $username . ') ' . $name;
     }
 }

@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS `#__sdp_audit` (
   `action` VARCHAR(50) NOT NULL,
   `sdp_request_id` VARCHAR(20) NULL DEFAULT NULL,
   `approval_id` VARCHAR(20) NULL DEFAULT NULL,
+  `module` VARCHAR(20) NOT NULL DEFAULT '',
+  `subject` VARCHAR(255) NOT NULL DEFAULT '',
   `result` VARCHAR(20) NOT NULL,
   `detail` VARCHAR(255) NOT NULL DEFAULT '',
   `created` DATETIME NOT NULL,

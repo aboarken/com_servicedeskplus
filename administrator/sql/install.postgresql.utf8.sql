@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS "#__sdp_audit" (
   "action" varchar(50) NOT NULL,
   "sdp_request_id" varchar(20) DEFAULT NULL,
   "approval_id" varchar(20) DEFAULT NULL,
+  "module" varchar(20) DEFAULT '' NOT NULL,
+  "subject" varchar(255) DEFAULT '' NOT NULL,
   "result" varchar(20) NOT NULL,
   "detail" varchar(255) DEFAULT '' NOT NULL,
   "created" timestamp without time zone NOT NULL,

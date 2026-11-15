@@ -17,7 +17,6 @@ use Psr\Container\ContainerInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\AnnouncementService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\AssetService;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\IdentityResolver;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\MappingManager;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapRepositoryInterface;
@@ -66,11 +65,6 @@ final class ServiceDeskPlusComponent extends MVCComponent implements RouterServi
     public function getMappingManager(): MappingManager
     {
         return $this->service(MappingManager::class);
-    }
-
-    public function getAuditLog(): AuditLogInterface
-    {
-        return $this->service(AuditLogInterface::class);
     }
 
     public function getRequestService(): RequestService

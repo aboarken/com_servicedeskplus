@@ -45,6 +45,10 @@ final class HtmlView extends BaseHtmlView
 
         $this->addToolbar();
 
+        $assets = $this->getDocument()->getWebAssetManager();
+        $assets->getRegistry()->addExtensionRegistryFile('com_servicedeskplus');
+        $assets->useStyle('com_servicedeskplus.admin');
+
         parent::display($tpl);
     }
 

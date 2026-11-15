@@ -124,13 +124,13 @@
 
     <fieldset name="limits" label="COM_SERVICEDESKPLUS_SETTINGS_FIELDSET_LIMITS">
         <field
-            name="cache_ttl"
+            name="cache_minutes"
             type="number"
-            label="COM_SERVICEDESKPLUS_SETTINGS_CACHE_TTL"
-            description="COM_SERVICEDESKPLUS_SETTINGS_CACHE_TTL_DESC"
-            default="60"
+            label="COM_SERVICEDESKPLUS_SETTINGS_CACHE_MINUTES"
+            description="COM_SERVICEDESKPLUS_SETTINGS_CACHE_MINUTES_DESC"
+            default="5"
             min="0"
-            max="600"
+            max="60"
             filter="integer"
         />
         <field

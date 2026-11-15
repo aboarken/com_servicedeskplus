@@ -1,0 +1,15 @@
+/*
+ * ServiceDesk Plus administrator pages: the toolbar Close button turns Joomla's danger red on hover
+ * and keyboard focus, like Joomla's own Close / Cancel buttons. --danger is the Atum template's red.
+ * Both the toolbar wrapper id and the button class are matched, whichever the Joomla version renders.
+ */
+#toolbar-close .btn:hover,
+#toolbar-close .btn:focus-visible,
+#toolbar-close .btn:active,
+.btn.button-close:hover,
+.btn.button-close:focus-visible,
+.btn.button-close:active {
+  color: #fff;
+  background-color: var(--danger, var(--bs-danger, #c52827));
+  border-color: var(--danger, var(--bs-danger, #c52827));
+}

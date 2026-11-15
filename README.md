@@ -119,6 +119,10 @@ The configuration includes:
 - Joomla user-to-ServiceDesk Plus requester mapping.
 - Component access permissions.
 
+### Cache
+
+*Integration Settings → Limits → Cache time (minutes)* sets how long each user's ServiceDesk Plus results (requests, approvals, loans, announcements and the Dashboard figures) are kept, 0 to 60 minutes; default 5. A user's own new requests and approval decisions refresh their lists at once. With 0, every page reads ServiceDesk Plus again; the Dashboard then makes many calls (approvals are found by scanning requests, changes, releases and purchase orders) and loads slowly.
+
 ### User Mapping
 
 The component uses email addresses to associate Joomla users with their corresponding ServiceDesk Plus requesters.

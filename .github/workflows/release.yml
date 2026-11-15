@@ -1,6 +1,7 @@
-# Builds the Joomla installation package (com_servicedeskplus.zip) and the Joomla update server file
-# (updates.xml), and attaches both to GitHub releases. Joomla sites find updates through
-# releases/latest/download/updates.xml (see <updateservers> in servicedeskplus.xml).
+# Builds the Joomla installation package (com_servicedeskplus.zip), the Joomla update server file
+# (updates.xml) and the Joomla changelog (changelog.xml), and attaches them to GitHub releases.
+# Joomla sites find updates through releases/latest/download/updates.xml (see <updateservers> in
+# servicedeskplus.xml) and the changelog through releases/latest/download/changelog.xml.
 #
 # - Pull requests and pushes to main: build and check the package, keep it as a workflow artifact.
 # - Release published in the GitHub UI (tag v<version>): build from that tag, check that the tag
@@ -68,6 +69,11 @@ jobs:
           python3 -I build/make-update-xml.py dist/com_servicedeskplus.zip "${{ steps.version.outputs.version }}" dist/updates.xml
           python3 -I -c "import xml.etree.ElementTree as E; E.parse('dist/updates.xml')"
 
+      - name: Write Joomla changelog file
+        run: |
+          python3 -I build/make-changelog-xml.py CHANGELOG.md dist/changelog.xml
+          python3 -I -c "import xml.etree.ElementTree as E, sys; v = E.parse('dist/changelog.xml').getroot()[0].findtext('version'); sys.exit(0 if v == '${{ steps.version.outputs.version }}' else 'changelog.xml starts with ' + str(v) + ', expected the manifest version')"
+
       - name: Keep package as workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -75,6 +81,7 @@ jobs:
           path: |
             dist/com_servicedeskplus.zip
             dist/updates.xml
+            dist/changelog.xml
           if-no-files-found: error
 
       - name: Attach package to the published release
@@ -82,7 +89,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" dist/com_servicedeskplus.zip dist/updates.xml --clobber --repo "$GITHUB_REPOSITORY"
+        run: gh release upload "$TAG" dist/com_servicedeskplus.zip dist/updates.xml dist/changelog.xml --clobber --repo "$GITHUB_REPOSITORY"
 
       - name: Create release with package
         if: github.event_name == 'workflow_dispatch'
@@ -99,9 +106,9 @@ jobs:
           fi
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             echo "Release $tag exists; replacing its package and update file."
-            gh release upload "$tag" dist/com_servicedeskplus.zip dist/updates.xml --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload "$tag" dist/com_servicedeskplus.zip dist/updates.xml dist/changelog.xml --clobber --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$tag" dist/com_servicedeskplus.zip dist/updates.xml \
+            gh release create "$tag" dist/com_servicedeskplus.zip dist/updates.xml dist/changelog.xml \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "com_servicedeskplus $VERSION" \

@@ -3,6 +3,19 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.15.0] - 2026-11-15
+
+### Added
+- **Joomla changelog:** the version number in *System → Manage → Extensions* and the update view now show what changed. `changelog.xml` is built from this file for every release (`<changelogurl>`, as described in the Joomla manual).
+
+### Changed
+- **Cache time is set in minutes** (*Integration Settings → Limits → Cache time (minutes)*, 0–60, default 5). An existing value in seconds is converted, rounded up, until the settings are saved. With 0 every page reads ServiceDesk Plus again, which makes the Dashboard slow; 5 minutes is recommended.
+- **Close** button on Integration Settings and User Mappings turns Joomla's red on hover.
+- **Dashboard wording:** headings *My Requests*, *Recent Requests*, *My Approvals*, *My Loans*; cards *Waiting approval*, *Loans to return* and *Announcements*.
+
+### Removed
+- Unused code left from earlier versions (per-user key context, an unused asset helper and component getter, the announcement excerpt) and a reference to a missing document.
+
 ## [1.14.1] - 2026-11-15
 
 ### Changed

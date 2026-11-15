@@ -47,6 +47,7 @@ def main() -> int:
             <downloadurl type="full" format="zip">{REPO}/releases/download/{tag}/{PACKAGE}</downloadurl>
         </downloads>
         <sha256>{sha256}</sha256>
+        <changelogurl>{REPO}/releases/latest/download/changelog.xml</changelogurl>
         <tags>
             <tag>stable</tag>
         </tags>

@@ -15,7 +15,7 @@ use Joomla\CMS\Language\Text;
 
 /**
  * Page heading and browser title for pages that are reached from a menu item
- * (My Requests, New Request, My Loans, My Approvals).
+ * (My Requests, New Request, My Loans, My Approvals, Announcements).
  *
  * When the active menu item points to this view, its settings are used, as in Joomla core:
  *  - heading: the menu item's "Page Heading", otherwise the menu item title;

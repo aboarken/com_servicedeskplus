@@ -28,14 +28,15 @@ final class DisplayController extends BaseController
 
     /** view => required permission */
     private const VIEWS = [
-        'dashboard'   => 'sdp.request.view',
-        'requests'    => 'sdp.request.view',
-        'request'     => 'sdp.request.view',
-        'requestform' => 'sdp.request.create',
-        'assets'      => 'sdp.asset.view',
-        'asset'       => 'sdp.asset.view',
-        'approvals'   => 'sdp.approval.view',
-        'approval'    => 'sdp.approval.view',
+        'requests'      => 'sdp.request.view',
+        'request'       => 'sdp.request.view',
+        'requestform'   => 'sdp.request.create',
+        'assets'        => 'sdp.asset.view',
+        'asset'         => 'sdp.asset.view',
+        'approvals'     => 'sdp.approval.view',
+        'approval'      => 'sdp.approval.view',
+        'announcements' => 'sdp.announcement.view',
+        'announcement'  => 'sdp.announcement.view',
     ];
 
     protected $default_view = 'requests';

@@ -82,56 +82,6 @@ final class RequestService
     }
 
     /**
-     * Counts for "My Dashboard" from the user's own requests (newest first, at most $maxRequests).
-     * Rows SDP returns for other requesters are ignored, as in the request list.
-     *
-     * @throws SdpException
-     */
-    public function statsForUser(Identity $identity, int $maxRequests = 1000): RequestStats
-    {
-        $sdpUserId = $identity->sdpUserId();
-        $cached    = $this->cache->get($identity, 'stats:requests');
-
-        if ($cached !== null) {
-            return RequestStats::fromArray($cached);
-        }
-
-        $client    = ($this->clientFactory)();
-        $rows      = [];
-        $truncated = false;
-
-        for ($start = 1; ; $start += ListInfo::MAX_ROW_COUNT) {
-            $page = $client->listRequests(new ListInfo(
-                rowCount: ListInfo::MAX_ROW_COUNT,
-                startIndex: $start,
-                sortField: 'created_time',
-                sortOrder: 'desc',
-                searchCriteria: ['field' => 'requester.id', 'condition' => 'is', 'value' => $sdpUserId]
-            ));
-
-            foreach ($page->items as $item) {
-                if (self::isOwnedBy($item, $sdpUserId)) {
-                    $rows[] = $item;
-                }
-            }
-
-            if (!$page->hasMoreRows || $page->items === []) {
-                break;
-            }
-
-            if ($start + ListInfo::MAX_ROW_COUNT > $maxRequests) {
-                $truncated = true;
-                break;
-            }
-        }
-
-        $stats = RequestStats::fromSdp($rows, $truncated);
-        $this->cache->set($identity, 'stats:requests', $stats->toArray());
-
-        return $stats;
-    }
-
-    /**
      * @throws RequestNotFound|SdpException
      */
     public function getForUser(Identity $identity, string $requestId): RequestDetail
@@ -196,7 +146,6 @@ final class RequestService
 
         $this->audit->record($userId, self::ACTION_CREATE, AuditLogInterface::RESULT_OK, $id);
         $this->cache->clear($identity, 'requests:');
-        $this->cache->clear($identity, 'stats:');
 
         $failed = [];
 

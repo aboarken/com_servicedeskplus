@@ -9,5 +9,6 @@
         <action name="sdp.asset.view" title="COM_SERVICEDESKPLUS_ACCESS_ASSET_VIEW" description="COM_SERVICEDESKPLUS_ACCESS_ASSET_VIEW_DESC" />
         <action name="sdp.approval.view" title="COM_SERVICEDESKPLUS_ACCESS_APPROVAL_VIEW" description="COM_SERVICEDESKPLUS_ACCESS_APPROVAL_VIEW_DESC" />
         <action name="sdp.approval.decide" title="COM_SERVICEDESKPLUS_ACCESS_APPROVAL_DECIDE" description="COM_SERVICEDESKPLUS_ACCESS_APPROVAL_DECIDE_DESC" />
+        <action name="sdp.announcement.view" title="COM_SERVICEDESKPLUS_ACCESS_ANNOUNCEMENT_VIEW" description="COM_SERVICEDESKPLUS_ACCESS_ANNOUNCEMENT_VIEW_DESC" />
     </section>
 </access>

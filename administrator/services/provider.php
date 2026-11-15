@@ -17,6 +17,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\AnnouncementService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\AssetService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\LoanAssetConfig;
@@ -143,6 +144,15 @@ return new class () implements ServiceProviderInterface {
         $container->share(
             ConversationReader::class,
             static fn (Container $c): ConversationReader => new ConversationReader(
+                $serviceClient($c),
+                $c->get(UserCacheInterface::class),
+                $c->get(JoomlaLogger::class)
+            )
+        );
+
+        $container->share(
+            AnnouncementService::class,
+            static fn (Container $c): AnnouncementService => new AnnouncementService(
                 $serviceClient($c),
                 $c->get(UserCacheInterface::class),
                 $c->get(JoomlaLogger::class)

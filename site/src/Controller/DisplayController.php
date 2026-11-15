@@ -28,6 +28,7 @@ final class DisplayController extends BaseController
 
     /** view => required permission */
     private const VIEWS = [
+        'dashboard'   => 'sdp.request.view',
         'requests'    => 'sdp.request.view',
         'request'     => 'sdp.request.view',
         'requestform' => 'sdp.request.create',

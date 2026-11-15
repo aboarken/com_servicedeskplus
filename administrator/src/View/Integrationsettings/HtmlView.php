@@ -4,7 +4,7 @@
  * @license GNU General Public License version 2 or later
  */
 
-namespace SdpPortal\Component\ServiceDeskPlus\Administrator\View\Settings;
+namespace SdpPortal\Component\ServiceDeskPlus\Administrator\View\Integrationsettings;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -14,7 +14,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\SettingsModel;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\IntegrationsettingsModel;
 
 final class HtmlView extends BaseHtmlView
 {
@@ -32,7 +32,7 @@ final class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
-        /** @var SettingsModel $model */
+        /** @var IntegrationsettingsModel $model */
         $model = $this->getModel();
 
         $this->form          = $model->getForm();

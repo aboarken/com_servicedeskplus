@@ -306,6 +306,41 @@ final class SdpClient
     }
 
     /**
+     * GET /api/v3/requests/{request_id}/conversations with notes (Request_Notifications, "View All
+     * Conversations"): e-mails and notes, newest first, each with show_to_requester and a
+     * content_url for the full text.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getRequestConversations(string $requestId, int $max = 50): array
+    {
+        $data = $this->get('/api/v3/requests/' . self::id($requestId) . '/conversations', [
+            'list_info' => ['start_index' => 1, 'sort_order' => 'desc', 'row_count' => max(1, min(100, $max))],
+            'notes'     => true,
+        ]);
+
+        return $this->collection($data, 'conversations');
+    }
+
+    /**
+     * Full text of one conversation item from its content_url: GET /api/v3/requests/{id}/notifications/{nid}
+     * or /api/v3/requests/{id}/notes/{nid}. Only those two paths of the given request are read.
+     *
+     * @return array<string, mixed>  The notification or note
+     */
+    public function getConversationItem(string $requestId, string $contentUrl): array
+    {
+        $prefix = '/api/v3/requests/' . self::id($requestId) . '/';
+        $path   = (string) parse_url($contentUrl, PHP_URL_PATH);
+
+        if (!preg_match('#^' . preg_quote($prefix, '#') . '(notifications|notes)/[0-9]{1,20}$#', $path, $m)) {
+            throw new \InvalidArgumentException('Unexpected conversation content_url');
+        }
+
+        return $this->entity($this->get($path), $m[1] === 'notes' ? 'note' : 'notification');
+    }
+
+    /**
      * Private note on a request, change or release: POST /api/v3/{module}/{id}/notes.
      * Purchase orders have no notes in the v3 API.
      *

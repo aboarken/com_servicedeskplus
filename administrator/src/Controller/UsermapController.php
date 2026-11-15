@@ -30,7 +30,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\UsermapModel;
  */
 final class UsermapController extends BaseController
 {
-    private const LIST_URL = 'index.php?option=com_servicedeskplus&view=usermaps';
+    private const LIST_URL = 'index.php?option=com_servicedeskplus&view=usermappings';
     private const EDIT_URL = 'index.php?option=com_servicedeskplus&view=usermap&layout=edit';
 
     public function add(): void

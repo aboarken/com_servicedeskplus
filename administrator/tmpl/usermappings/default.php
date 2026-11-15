@@ -12,7 +12,7 @@ use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\EmailNormalizer;
 
-/** @var \SdpPortal\Component\ServiceDeskPlus\Administrator\View\Usermaps\HtmlView $this */
+/** @var \SdpPortal\Component\ServiceDeskPlus\Administrator\View\Usermappings\HtmlView $this */
 
 $this->getDocument()->getWebAssetManager()->useScript('multiselect');
 
@@ -23,7 +23,7 @@ $badge = [
     'ambiguous' => 'bg-warning text-dark',
 ];
 ?>
-<form action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=usermaps'); ?>" method="post" name="adminForm" id="adminForm">
+<form action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=usermappings'); ?>" method="post" name="adminForm" id="adminForm">
     <?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
 
     <?php if ($this->items === []) : ?>

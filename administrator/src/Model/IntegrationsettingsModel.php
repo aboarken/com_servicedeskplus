@@ -22,7 +22,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\KeyVault;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\KeyVaultException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Settings\Settings;
 
-final class SettingsModel extends FormModel
+final class IntegrationsettingsModel extends FormModel
 {
     /** Characters accepted in an SDP authtoken. */
     public const KEY_PATTERN = '/^[A-Za-z0-9._-]{16,128}$/';

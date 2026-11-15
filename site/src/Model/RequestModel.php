@@ -30,4 +30,16 @@ final class RequestModel extends BaseModel
 
         return $this->sdp()->getRequestService()->getForUser($this->identity(), $id);
     }
+
+    /**
+     * Conversation visible to the requester. Call only after getItem() confirmed the user owns it.
+     *
+     * @return list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationEntry>
+     *
+     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
+     */
+    public function getConversation(string $requestId): array
+    {
+        return $this->sdp()->getConversationReader()->forRequest($this->identity(), $requestId);
+    }
 }

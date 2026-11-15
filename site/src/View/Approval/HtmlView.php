@@ -28,6 +28,9 @@ final class HtmlView extends BaseHtmlView
 
     public string $error = '';
 
+    /** @var list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationEntry> */
+    public array $conversation = [];
+
     public function display($tpl = null): void
     {
         /** @var ApprovalModel $model */
@@ -35,6 +38,11 @@ final class HtmlView extends BaseHtmlView
 
         try {
             $this->item = $model->getItem();
+
+            // Requests have a conversation; the API offers none for changes, releases and purchase orders.
+            if ($this->item->module === \SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule::REQUEST) {
+                $this->conversation = $model->getConversation($this->item->requestId);
+            }
         } catch (ApprovalNotFound) {
             Factory::getApplication()->setHeader('status', '404', true);
             $this->error = Text::_('COM_SERVICEDESKPLUS_APPROVAL_NOT_FOUND');

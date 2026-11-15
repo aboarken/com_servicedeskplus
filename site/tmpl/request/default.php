@@ -8,6 +8,7 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Request\HtmlView $this */
@@ -66,5 +67,7 @@ $text = static fn (string $v): string => $v !== '' ? $v : Text::_('COM_SERVICEDE
 
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_RESOLUTION'); ?></h2>
         <div class="sdp-text"><?php echo $item->resolution !== '' ? nl2br($this->escape($item->resolution)) : Text::_('COM_SERVICEDESKPLUS_NO_RESOLUTION'); ?></div>
+
+        <?php echo LayoutHelper::render('conversation', ['entries' => $this->conversation], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
     <?php endif; ?>
 </div>

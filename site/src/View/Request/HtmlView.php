@@ -24,6 +24,9 @@ final class HtmlView extends BaseHtmlView
 
     public string $error = '';
 
+    /** @var list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationEntry> */
+    public array $conversation = [];
+
     public function display($tpl = null): void
     {
         /** @var RequestModel $model */
@@ -32,6 +35,7 @@ final class HtmlView extends BaseHtmlView
         try {
             $this->item = $model->getItem();
             $this->getDocument()->setTitle(Text::sprintf('COM_SERVICEDESKPLUS_REQUEST_TITLE', $this->item->id));
+            $this->conversation = $model->getConversation($this->item->id);
         } catch (RequestNotFound) {
             // Same answer for "does not exist" and "not yours".
             Factory::getApplication()->setHeader('status', '404', true);

@@ -38,6 +38,19 @@ final class ApprovalModel extends BaseModel
         );
     }
 
+    /**
+     * Conversation of the request being approved (visible-to-requester items only). Call only
+     * after getItem() confirmed the user is the approver.
+     *
+     * @return list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationEntry>
+     *
+     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
+     */
+    public function getConversation(string $requestId): array
+    {
+        return $this->sdp()->getConversationReader()->forRequest($this->identity(), $requestId);
+    }
+
     public function canDecide(): bool
     {
         return Factory::getApplication()->getIdentity()->authorise('sdp.approval.decide', 'com_servicedeskplus');

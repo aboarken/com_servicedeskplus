@@ -414,7 +414,7 @@ final class SdpClient
     /**
      * GET /api/v3/assets.
      *
-     * UNVERIFIED: assets are not in the On-Premises v3 reference (see docs/ENDPOINTS.md).
+     * UNVERIFIED: assets are not in the On-Premises v3 reference.
      * Only these methods name the path.
      */
     public function listAssets(ListInfo $listInfo): ListPage

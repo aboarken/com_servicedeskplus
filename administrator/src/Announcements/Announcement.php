@@ -10,7 +10,6 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
-
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Support\HtmlText;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Support\SdpFields;
 
@@ -56,13 +55,6 @@ final class Announcement
     public function date(): ?int
     {
         return $this->fromTime ?? $this->createdTime;
-    }
-
-    public function excerpt(int $length = 200): string
-    {
-        $text = trim((string) preg_replace('/\s+/u', ' ', $this->content));
-
-        return mb_strlen($text) > $length ? rtrim(mb_substr($text, 0, $length - 1)) . '…' : $text;
     }
 
     /** @return array<string, mixed> */

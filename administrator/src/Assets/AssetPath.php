@@ -69,14 +69,4 @@ final class AssetPath
 
         return $ms > 0 ? intdiv($ms, 1000) : null;
     }
-
-    /**
-     * True when the field holds anything at all (a date, text, or a lookup object).
-     *
-     * @param array<string, mixed> $data
-     */
-    public static function isSet(array $data, string $path): bool
-    {
-        return self::timestamp($data, $path) !== null || self::text($data, $path) !== '';
-    }
 }

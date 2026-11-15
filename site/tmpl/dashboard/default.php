@@ -42,10 +42,10 @@ $card = function (string $label, int $value, string $url): string {
             echo $card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_OVERDUE_REQUESTS'), $this->requests->overdue, $this->url('requests&status=all'));
         endif; ?>
         <?php if ($this->showApprovals && $this->approvalsError === '') :
-            echo $card(Text::_('COM_SERVICEDESKPLUS_APPROVALS_SHOW_PENDING'), $this->approvals['total'] ?? 0, $this->url('approvals'));
+            echo $card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_WAITING_APPROVAL'), $this->approvals['total'] ?? 0, $this->url('approvals'));
         endif; ?>
         <?php if ($this->showLoans && $this->loansError === '') :
-            echo $card(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_DUE_SOON'), $this->loansDueSoon, $this->url('assets&show=due_soon'));
+            echo $card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_LOANS_TO_RETURN'), $this->loansDueSoon, $this->url('assets&show=due_soon'));
         endif; ?>
         <?php if ($this->showAnnouncements && $this->announcementsError === '') :
             echo $card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_ALL_ANNOUNCEMENTS'), $this->announcementsTotal, $this->url('announcements'));
@@ -234,7 +234,7 @@ $card = function (string $label, int $value, string $url): string {
                             <td class="text-end"><?php echo $link($this->loansTotal, $this->url('assets')); ?></td>
                         </tr>
                         <tr>
-                            <th scope="row"><?php echo Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_DUE_SOON'); ?></th>
+                            <th scope="row"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_LOANS_TO_RETURN'); ?></th>
                             <td class="text-end"><?php echo $link($this->loansDueSoon, $this->url('assets&show=due_soon')); ?></td>
                         </tr>
                         <tr>

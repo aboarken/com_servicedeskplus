@@ -38,11 +38,6 @@ final class KeyVault
         $this->key = hash_hkdf('sha256', $masterSecret, 32, self::INFO);
     }
 
-    public static function userKeyContext(int $joomlaUserId): string
-    {
-        return 'user-key:' . $joomlaUserId;
-    }
-
     public function encrypt(#[\SensitiveParameter] string $plaintext, string $context): string
     {
         $nonce = random_bytes(12);

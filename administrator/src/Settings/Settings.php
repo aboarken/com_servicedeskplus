@@ -26,7 +26,10 @@ final class Settings
         'ca_bundle'            => '',
         'ssl_pin'              => '',
         'connect_via'          => '',
-        'cache_ttl'            => '60',
+        // Minutes list results are kept per user; empty = DEFAULT_CACHE_MINUTES (or the old cache_ttl).
+        'cache_minutes'        => '',
+        // Seconds; setting of versions before 1.15.0, read only until cache_minutes is saved.
+        'cache_ttl'            => '',
         'rate_create_per_hour' => '10',
         'rate_decide_per_hour' => '30',
         'request_statuses'     => 'Open,On Hold,Resolved,Closed',
@@ -91,9 +94,29 @@ final class Settings
         return $this->get('connect_via');
     }
 
+    public const DEFAULT_CACHE_MINUTES = 5;
+
+    public const MAX_CACHE_MINUTES = 60;
+
+    /**
+     * Minutes list results are cached per user (0 = no cache). Sites updated from a version that
+     * stored seconds keep their value, rounded up to whole minutes, until the settings are saved.
+     */
+    public function cacheMinutes(): int
+    {
+        $minutes = $this->get('cache_minutes');
+
+        if ($minutes === '' && $this->get('cache_ttl') !== '') {
+            $minutes = (string) (int) ceil(max(0, (int) $this->get('cache_ttl')) / 60);
+        }
+
+        return $minutes === '' ? self::DEFAULT_CACHE_MINUTES : max(0, min(self::MAX_CACHE_MINUTES, (int) $minutes));
+    }
+
+    /** Cache time in seconds, for the cache store. */
     public function cacheTtl(): int
     {
-        return max(0, min(600, (int) $this->get('cache_ttl')));
+        return $this->cacheMinutes() * 60;
     }
 
     public function rateCreatePerHour(): int
@@ -170,6 +193,9 @@ final class Settings
     {
         $data = array_merge(self::DEFAULTS, $this->values);
         unset($data['service_key_enc']);
+
+        $data['cache_minutes'] = (string) $this->cacheMinutes();
+        unset($data['cache_ttl']);
 
         // Checkboxes field: a list of values.
         $data['approval_modules'] = $this->approvalModules();

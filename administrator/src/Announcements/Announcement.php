@@ -27,7 +27,8 @@ final class Announcement
         public readonly string $priority,
         public readonly ?int $fromTime,
         public readonly ?int $toTime,
-        public readonly ?int $createdTime
+        public readonly ?int $createdTime,
+        public readonly string $createdBy = ''
     ) {
     }
 
@@ -44,7 +45,8 @@ final class Announcement
             SdpFields::name($row, 'priority'),
             SdpFields::timestamp($row, 'from_date'),
             SdpFields::timestamp($row, 'to_date'),
-            SdpFields::timestamp($row, 'created_date')
+            SdpFields::timestamp($row, 'created_date'),
+            SdpFields::name($row, 'created_by')
         );
     }
 
@@ -80,7 +82,8 @@ final class Announcement
             (string) ($a['priority'] ?? ''),
             isset($a['fromTime']) ? (int) $a['fromTime'] : null,
             isset($a['toTime']) ? (int) $a['toTime'] : null,
-            isset($a['createdTime']) ? (int) $a['createdTime'] : null
+            isset($a['createdTime']) ? (int) $a['createdTime'] : null,
+            (string) ($a['createdBy'] ?? '')
         );
     }
 }

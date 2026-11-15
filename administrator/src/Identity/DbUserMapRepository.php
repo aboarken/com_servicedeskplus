@@ -24,7 +24,7 @@ final class DbUserMapRepository implements UserMapRepositoryInterface
 
     public function find(int $joomlaUserId): ?UserMapping
     {
-        $query = $this->db->getQuery(true)
+        $query = $this->db->createQuery()
             ->select('*')
             ->from($this->db->quoteName(self::TABLE))
             ->where($this->db->quoteName('joomla_user_id') . ' = :id')
@@ -37,7 +37,7 @@ final class DbUserMapRepository implements UserMapRepositoryInterface
 
     public function findBySdpUserId(string $sdpUserId): ?UserMapping
     {
-        $query = $this->db->getQuery(true)
+        $query = $this->db->createQuery()
             ->select('*')
             ->from($this->db->quoteName(self::TABLE))
             ->where($this->db->quoteName('sdp_user_id') . ' = :sid')
@@ -81,7 +81,7 @@ final class DbUserMapRepository implements UserMapRepositoryInterface
 
     public function delete(int $joomlaUserId): void
     {
-        $query = $this->db->getQuery(true)
+        $query = $this->db->createQuery()
             ->delete($this->db->quoteName(self::TABLE))
             ->where($this->db->quoteName('joomla_user_id') . ' = :id')
             ->bind(':id', $joomlaUserId, ParameterType::INTEGER);

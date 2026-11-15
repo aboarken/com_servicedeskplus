@@ -2,10 +2,11 @@
 <extension type="component" method="upgrade">
     <name>com_servicedeskplus</name>
     <author>SDP Portal</author>
+    <authorUrl>https://github.com/aboarken/com_servicedeskplus</authorUrl>
     <creationDate>2026-11</creationDate>
     <copyright>(C) 2026</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.12.1</version>
+    <version>1.13.0</version>
     <description>COM_SERVICEDESKPLUS_XML_DESCRIPTION</description>
     <namespace path="src">SdpPortal\Component\ServiceDeskPlus</namespace>
 

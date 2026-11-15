@@ -8,37 +8,107 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Announcements\HtmlView $this */
 
-$date = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC4')) : '';
+$date  = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC5')) : '—';
+$text  = fn (string $v): string => $v !== '' ? $this->escape($v) : '—';
+$sorts = [
+    'date_desc' => 'COM_SERVICEDESKPLUS_ANNOUNCEMENTS_SORT_DATE_DESC',
+    'date_asc'  => 'COM_SERVICEDESKPLUS_ANNOUNCEMENTS_SORT_DATE_ASC',
+    'end_asc'   => 'COM_SERVICEDESKPLUS_ANNOUNCEMENTS_SORT_END_ASC',
+    'title_asc' => 'COM_SERVICEDESKPLUS_ANNOUNCEMENTS_SORT_TITLE_ASC',
+];
 ?>
 <div class="com-servicedeskplus sdp-announcements">
+    <?php echo LayoutHelper::render('nav', ['active' => 'announcements'], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
+
     <?php if ($this->showPageHeading) : ?>
         <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
     <?php endif; ?>
+
+    <form class="sdp-filters row g-2 align-items-end mb-3" method="get" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=announcements'); ?>">
+        <div class="col-12 col-lg-5">
+            <label class="form-label" for="sdp-search"><?php echo Text::_('COM_SERVICEDESKPLUS_SEARCH'); ?></label>
+            <input class="form-control" type="search" id="sdp-search" name="search" maxlength="100"
+                   value="<?php echo $this->escape($this->search); ?>"
+                   placeholder="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_SEARCH_HINT')); ?>">
+        </div>
+        <div class="col-12 col-sm-6 col-lg-3">
+            <label class="form-label" for="sdp-type"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE'); ?></label>
+            <select class="form-select" id="sdp-type" name="type">
+                <option value=""><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_ALL_TYPES'); ?></option>
+                <?php foreach ($this->types as $type) : ?>
+                    <option value="<?php echo $this->escape($type); ?>" <?php echo strcasecmp($type, $this->type) === 0 ? 'selected' : ''; ?>><?php echo $this->escape($type); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-2">
+            <label class="form-label" for="sdp-sort"><?php echo Text::_('COM_SERVICEDESKPLUS_SORT'); ?></label>
+            <select class="form-select" id="sdp-sort" name="sort">
+                <?php foreach ($sorts as $value => $label) : ?>
+                    <option value="<?php echo $value; ?>" <?php echo $value === $this->sort ? 'selected' : ''; ?>><?php echo Text::_($label); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-12 col-lg-2 sdp-filter-submit">
+            <button class="btn btn-secondary sdp-btn-neutral w-100" type="submit"><?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?></button>
+        </div>
+    </form>
 
     <?php if ($this->error !== '') : ?>
         <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->error); ?></div>
     <?php elseif ($this->items === []) : ?>
         <div class="alert alert-info"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_NONE'); ?></div>
     <?php else : ?>
-        <div class="list-group mb-4">
-            <?php foreach ($this->items as $item) :
-                $url  = Route::_('index.php?option=com_servicedeskplus&view=announcement&id=' . rawurlencode($item->id));
-                $meta = array_filter([$date($item->date()), $item->type, $item->priority !== '' ? Text::sprintf('COM_SERVICEDESKPLUS_ANNOUNCEMENT_PRIORITY_LABEL', $item->priority) : '']);
-                ?>
-                <article class="list-group-item">
-                    <h2 class="h5 mb-1"><a href="<?php echo $url; ?>"><?php echo $this->escape($item->title !== '' ? $item->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></a></h2>
-                    <?php if ($meta !== []) : ?>
-                        <p class="small text-muted mb-1"><?php echo $this->escape(implode(' · ', $meta)); ?></p>
-                    <?php endif; ?>
-                    <?php if ($item->excerpt() !== '') : ?>
-                        <p class="mb-0"><?php echo $this->escape($item->excerpt()); ?></p>
-                    <?php endif; ?>
-                </article>
-            <?php endforeach; ?>
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_TITLE'); ?></caption>
+                <thead>
+                    <tr>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_PRIORITY'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_POSTED_BY'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_START'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_END'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($this->items as $item) :
+                    $url = Route::_('index.php?option=com_servicedeskplus&view=announcement&id=' . rawurlencode($item->id));
+                    ?>
+                    <tr>
+                        <td><a href="<?php echo $url; ?>"><?php echo $this->escape($item->id); ?></a></td>
+                        <td><a href="<?php echo $url; ?>"><?php echo $this->escape($item->title !== '' ? $item->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></a></td>
+                        <td><?php echo $text($item->type); ?></td>
+                        <td><?php echo $text($item->priority); ?></td>
+                        <td><?php echo $text($item->createdBy); ?></td>
+                        <td><?php echo $date($item->date()); ?></td>
+                        <td><?php echo $item->toTime !== null ? $date($item->toTime) : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_NO_END'); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
+    <?php endif; ?>
+
+    <?php if ($this->pages > 1) : ?>
+        <nav aria-label="<?php echo $this->escape(Text::_('JLIB_HTML_PAGINATION')); ?>">
+            <ul class="pagination">
+                <li class="page-item <?php echo $this->page <= 1 ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="<?php echo $this->pageUrl($this->page - 1); ?>"><?php echo Text::_('JPREV'); ?></a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_PAGE_N_OF_M', $this->page, $this->pages); ?></span>
+                </li>
+                <li class="page-item <?php echo $this->page < $this->pages ? '' : 'disabled'; ?>">
+                    <a class="page-link" href="<?php echo $this->pageUrl($this->page + 1); ?>"><?php echo Text::_('JNEXT'); ?></a>
+                </li>
+            </ul>
+        </nav>
     <?php endif; ?>
 </div>

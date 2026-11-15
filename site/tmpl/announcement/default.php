@@ -23,18 +23,24 @@ $item = $this->item;
     <?php else : ?>
         <h1 class="h2"><?php echo $this->escape($item->title !== '' ? $item->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></h1>
 
+        <p class="text-muted"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_ANNOUNCEMENT_ID', $this->escape($item->id)); ?></p>
+
         <dl class="row">
             <?php if ($date($item->date()) !== '') : ?>
-                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_DATE'); ?></dt>
+                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_START'); ?></dt>
                 <dd class="col-sm-9"><?php echo $date($item->date()); ?></dd>
             <?php endif; ?>
             <?php if ($item->toTime !== null) : ?>
-                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTIL'); ?></dt>
+                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_END'); ?></dt>
                 <dd class="col-sm-9"><?php echo $date($item->toTime); ?></dd>
             <?php endif; ?>
             <?php if ($item->type !== '') : ?>
                 <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE'); ?></dt>
                 <dd class="col-sm-9"><?php echo $this->escape($item->type); ?></dd>
+            <?php endif; ?>
+            <?php if ($item->createdBy !== '') : ?>
+                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_POSTED_BY'); ?></dt>
+                <dd class="col-sm-9"><?php echo $this->escape($item->createdBy); ?></dd>
             <?php endif; ?>
             <?php if ($item->priority !== '') : ?>
                 <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_PRIORITY'); ?></dt>

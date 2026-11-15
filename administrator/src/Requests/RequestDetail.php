@@ -35,7 +35,8 @@ final class RequestDetail
         public readonly string $subcategory = '',
         public readonly string $item = '',
         public readonly string $urgency = '',
-        public readonly string $technicianGroup = ''
+        public readonly string $technicianGroup = '',
+        public readonly string $approvalStatus = ''
     ) {
     }
 
@@ -62,7 +63,8 @@ final class RequestDetail
             SdpFields::name($r, 'item'),
             SdpFields::name($r, 'urgency'),
             // SDP v3 "group": the support group the request (and its technician) is assigned to.
-            SdpFields::name($r, 'group')
+            SdpFields::name($r, 'group'),
+            SdpFields::name($r, 'approval_status')
         );
     }
 

@@ -22,6 +22,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\IdentityResolver;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\MappingManager;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapRepositoryInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationReader;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestApprovalsReader;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SubmissionGuard;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Service\SdpClientFactory;
@@ -85,6 +86,11 @@ final class ServiceDeskPlusComponent extends MVCComponent implements RouterServi
     public function getAnnouncementService(): AnnouncementService
     {
         return $this->service(AnnouncementService::class);
+    }
+
+    public function getRequestApprovalsReader(): RequestApprovalsReader
+    {
+        return $this->service(RequestApprovalsReader::class);
     }
 
     public function getAssetService(): AssetService

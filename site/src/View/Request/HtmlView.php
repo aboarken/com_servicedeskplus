@@ -27,6 +27,9 @@ final class HtmlView extends BaseHtmlView
     /** @var list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationEntry> */
     public array $conversation = [];
 
+    /** @var list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestApproval> */
+    public array $approvals = [];
+
     public function display($tpl = null): void
     {
         /** @var RequestModel $model */
@@ -35,6 +38,7 @@ final class HtmlView extends BaseHtmlView
         try {
             $this->item = $model->getItem();
             $this->getDocument()->setTitle(Text::sprintf('COM_SERVICEDESKPLUS_REQUEST_TITLE', $this->item->id));
+            $this->approvals    = $model->getApprovals($this->item->id);
             $this->conversation = $model->getConversation($this->item->id);
         } catch (RequestNotFound) {
             // Same answer for "does not exist" and "not yours".
@@ -45,6 +49,8 @@ final class HtmlView extends BaseHtmlView
         }
 
         $this->getDocument()->setMetaData('robots', 'noindex, nofollow');
+        $this->getDocument()->getWebAssetManager()->getRegistry()->addExtensionRegistryFile('com_servicedeskplus');
+        $this->getDocument()->getWebAssetManager()->useStyle('com_servicedeskplus.portal');
 
         parent::display($tpl);
     }

@@ -3,6 +3,17 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.13.0] - 2026-11-15
+
+### Added
+- **Approvals on the request page:** when a request has approvals, its page shows them by level: approver, status, sent for approval, decided on and comments, plus the request's approval status in the details. Requests without approvals show no approvals section.
+- **Links between portal pages:** My Requests, New Request, My Approvals, My Loans and Announcements link to each other at the top of each page. Only pages the user may open are shown; a link uses its menu item's title when there is one.
+- **Close** button on the backend pages *Integration Settings* and *User Mappings* (back to the administrator dashboard).
+
+### Changed
+- **Announcements** are shown as a table like My Requests: ID, subject (both link to the announcement), type, priority, posted by, start date and end date, with search, type filter, sorting and pages. The announcement page shows its ID and who posted it.
+- Joomla review: database queries use `createQuery()` (`getQuery(true)` is deprecated since Joomla 5); every site page loads the portal stylesheet; the manifest has an author URL.
+
 ## [1.12.1] - 2026-11-15
 
 ### Fixed

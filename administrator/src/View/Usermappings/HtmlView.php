@@ -71,6 +71,11 @@ final class HtmlView extends BaseHtmlView
             ->icon('icon-refresh')
             ->listCheck(true);
 
+        // Leaves the component for the administrator dashboard; unsaved changes are discarded.
+        $toolbar->linkButton('close', 'JTOOLBAR_CLOSE')
+            ->url('index.php')
+            ->icon('icon-times');
+
         $toolbar->preferences('com_servicedeskplus');
     }
 }

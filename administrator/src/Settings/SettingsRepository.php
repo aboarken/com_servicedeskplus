@@ -30,7 +30,7 @@ final class SettingsRepository
             return $this->cache;
         }
 
-        $query = $this->db->getQuery(true)
+        $query = $this->db->createQuery()
             ->select($this->db->quoteName(['name', 'value']))
             ->from($this->db->quoteName('#__sdp_settings'));
 
@@ -63,7 +63,7 @@ final class SettingsRepository
         $this->db->transactionStart();
 
         try {
-            $delete = $this->db->getQuery(true)
+            $delete = $this->db->createQuery()
                 ->delete($this->db->quoteName('#__sdp_settings'))
                 ->whereIn($this->db->quoteName('name'), $names, ParameterType::STRING);
             $this->db->setQuery($delete)->execute();

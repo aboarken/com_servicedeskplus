@@ -48,6 +48,10 @@ $text = static fn (string $v): string => $v !== '' ? $v : Text::_('COM_SERVICEDE
             <dd class="col-sm-9"><?php echo $date($item->createdAt); ?></dd>
             <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_UPDATED'); ?></dt>
             <dd class="col-sm-9"><?php echo $date($item->updatedAt); ?></dd>
+            <?php if ($item->approvalStatus !== '') : ?>
+                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_STATUS'); ?></dt>
+                <dd class="col-sm-9"><?php echo $this->escape($item->approvalStatus); ?></dd>
+            <?php endif; ?>
             <?php if ($item->dueAt) : ?>
                 <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_DUE'); ?></dt>
                 <dd class="col-sm-9"><?php echo $date($item->dueAt); ?></dd>
@@ -67,6 +71,38 @@ $text = static fn (string $v): string => $v !== '' ? $v : Text::_('COM_SERVICEDE
 
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_RESOLUTION'); ?></h2>
         <div class="sdp-text"><?php echo $item->resolution !== '' ? nl2br($this->escape($item->resolution)) : Text::_('COM_SERVICEDESKPLUS_NO_RESOLUTION'); ?></div>
+
+        <?php if ($this->approvals !== []) : ?>
+            <h2 class="h4 mt-4"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUEST_APPROVALS'); ?></h2>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle sdp-request-approvals">
+                    <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUEST_APPROVALS'); ?></caption>
+                    <thead>
+                        <tr>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_LEVEL'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVER'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_SENT_ON'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_ACTED_ON'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_COMMENTS'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($this->approvals as $approval) : ?>
+                        <tr>
+                            <td><?php echo $this->escape(Text::sprintf('COM_SERVICEDESKPLUS_APPROVAL_LEVEL_N', $approval->levelNumber)
+                                . ($approval->levelName !== '' ? ' · ' . $approval->levelName : '')); ?></td>
+                            <td><?php echo $this->escape($approval->approver !== '' ? $approval->approver : '—'); ?></td>
+                            <td><?php echo $this->escape($approval->status !== '' ? $approval->status : '—'); ?></td>
+                            <td><?php echo $date($approval->sentOn); ?></td>
+                            <td><?php echo $date($approval->actedOn); ?></td>
+                            <td class="sdp-text"><?php echo $approval->comments !== '' ? nl2br($this->escape($approval->comments)) : '—'; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
 
         <?php echo LayoutHelper::render('conversation', ['entries' => $this->conversation], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
     <?php endif; ?>

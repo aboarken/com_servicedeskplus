@@ -8,6 +8,7 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 
@@ -25,6 +26,8 @@ $resultLabel = [
 ];
 ?>
 <div class="com-servicedeskplus sdp-approvals">
+    <?php echo LayoutHelper::render('nav', ['active' => 'approvals'], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
+
     <?php if ($this->showPageHeading) : ?>
         <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
     <?php endif; ?>

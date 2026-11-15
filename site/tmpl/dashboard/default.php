@@ -52,6 +52,42 @@ $card = function (string $label, int $value, string $url): string {
         endif; ?>
     </div>
 
+    <?php if ($this->showAnnouncements) : ?>
+        <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_ANNOUNCEMENTS'); ?></h2>
+        <?php if ($this->announcementsError !== '') : ?>
+            <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->announcementsError); ?></div>
+        <?php elseif ($this->announcements === []) : ?>
+            <p class="text-muted mb-4"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_NONE'); ?></p>
+        <?php else : ?>
+            <div class="table-responsive mb-2">
+                <table class="table table-striped align-middle">
+                    <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_ANNOUNCEMENTS'); ?></caption>
+                    <thead>
+                        <tr>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_START'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($this->announcements as $a) :
+                        $url = $this->url('announcement&id=' . rawurlencode($a->id));
+                        ?>
+                        <tr>
+                            <td><a href="<?php echo $url; ?>"><?php echo $this->escape($a->id); ?></a></td>
+                            <td><a href="<?php echo $url; ?>"><?php echo $this->escape($a->title !== '' ? $a->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></a></td>
+                            <td><?php echo $this->escape($a->type !== '' ? $a->type : '—'); ?></td>
+                            <td><?php echo $date($a->date()); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <p class="mb-4"><a href="<?php echo $this->url('announcements'); ?>"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_VIEW_ALL_ANNOUNCEMENTS'); ?></a></p>
+        <?php endif; ?>
+    <?php endif; ?>
+
     <?php if ($this->showRequests) : ?>
         <?php // Requests by status and type ?>
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_REQUESTS'); ?></h2>
@@ -208,42 +244,6 @@ $card = function (string $label, int $value, string $url): string {
                     </tbody>
                 </table>
             </div>
-        <?php endif; ?>
-    <?php endif; ?>
-
-    <?php if ($this->showAnnouncements) : ?>
-        <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_ANNOUNCEMENTS'); ?></h2>
-        <?php if ($this->announcementsError !== '') : ?>
-            <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->announcementsError); ?></div>
-        <?php elseif ($this->announcements === []) : ?>
-            <p class="text-muted"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_NONE'); ?></p>
-        <?php else : ?>
-            <div class="table-responsive mb-2">
-                <table class="table table-striped align-middle">
-                    <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_ANNOUNCEMENTS'); ?></caption>
-                    <thead>
-                        <tr>
-                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
-                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
-                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE'); ?></th>
-                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_START'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($this->announcements as $a) :
-                        $url = $this->url('announcement&id=' . rawurlencode($a->id));
-                        ?>
-                        <tr>
-                            <td><a href="<?php echo $url; ?>"><?php echo $this->escape($a->id); ?></a></td>
-                            <td><a href="<?php echo $url; ?>"><?php echo $this->escape($a->title !== '' ? $a->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></a></td>
-                            <td><?php echo $this->escape($a->type !== '' ? $a->type : '—'); ?></td>
-                            <td><?php echo $date($a->date()); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            <p class="mb-4"><a href="<?php echo $this->url('announcements'); ?>"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_VIEW_ALL_ANNOUNCEMENTS'); ?></a></p>
         <?php endif; ?>
     <?php endif; ?>
 </div>

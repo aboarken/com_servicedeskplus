@@ -15,12 +15,12 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 ## Features
 
 ### Dashboard
-- One page of figures for the logged-in user. Each figure opens its page with the matching filter:
-  - **Requests:** all requests and one figure per status of the My Requests filter (*Integration Settings → Request statuses*, e.g. Open, On Hold, Resolved, Closed, Canceled).
-  - **Approvals:** waiting for my approval, approved by me, rejected by me (decisions made through the portal).
-  - **Loans:** all loans, to return within 30 days (including overdue), overdue.
-  - **Announcements:** current announcements.
-- Each section is shown only to users with the permission for its page.
+- **Summary cards:** open requests, overdue requests, waiting for my approval, loans to return within 30 days, current announcements.
+- **My requests:** service requests and incident requests by status (Open, On Hold, Resolved, Closed, Canceled, other) with totals, counted from the user's 1000 most recent requests, and the five most recent requests.
+- **My approvals:** waiting approvals by type, approved by me and rejected by me (decisions made through the portal).
+- **My loans:** all loans, to return within 30 days (including overdue), overdue.
+- **Announcements:** the five newest announcements.
+- Every figure opens its page with the matching filter. Each part is shown only to users with the permission for its page.
 
 ### Service Requests
 - View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, status filter and sorting.

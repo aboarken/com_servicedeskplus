@@ -44,8 +44,6 @@ return new class () implements ServiceProviderInterface {
                 ];
 
                 private const OBSOLETE_ADMIN = [
-                    // 1.11.0: request counts of the first dashboard (removed in 1.12.0)
-                    'src/Requests/RequestStats.php',
                     // 1.11.0: views renamed to integrationsettings and usermappings
                     'src/View/Settings',
                     'src/View/Usermaps',

@@ -12,7 +12,10 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\Model;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseModel;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\Announcement;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\PendingApproval;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\LoanAsset;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestStats;
 
 /**
  * Dashboard figures, each from the service behind its own page (so each follows that page's
@@ -23,29 +26,47 @@ final class DashboardModel extends BaseModel
     use SiteServicesTrait;
 
     /**
-     * Total ('' key) and per status of the My Requests filter; null where SDP gave no count.
-     *
-     * @return array<string, int|null>
-     *
      * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
      */
-    public function getRequestCounts(): array
+    public function getRequestStats(): RequestStats
     {
-        return $this->sdp()->getRequestService()->countsForUser($this->identity());
+        return $this->sdp()->getRequestService()->statsForUser($this->identity());
     }
 
     /**
+     * Statuses of the My Requests filter (Integration Settings), as spelled in ServiceDesk Plus.
+     *
+     * @return list<string>
+     */
+    public function getRequestStatuses(): array
+    {
+        return $this->sdp()->getSettingsRepository()->load()->requestStatuses();
+    }
+
+    /**
+     * @return list<PendingApproval>
+     *
      * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
      */
-    public function getPendingApprovalCount(): int
+    public function getPendingApprovals(): array
     {
-        return \count($this->sdp()->getApprovalService()->listPending($this->identity()));
+        return $this->sdp()->getApprovalService()->listPending($this->identity());
     }
 
     /** @return array{approved: int|null, rejected: int|null} */
     public function getDecisionCounts(): array
     {
         return $this->sdp()->getApprovalService()->decisionCounts($this->identity());
+    }
+
+    /**
+     * Modules My Approvals checks (Integration Settings).
+     *
+     * @return list<string>
+     */
+    public function getApprovalModules(): array
+    {
+        return $this->sdp()->getSettingsRepository()->load()->approvalModules();
     }
 
     /**
@@ -59,11 +80,15 @@ final class DashboardModel extends BaseModel
     }
 
     /**
+     * Newest first.
+     *
+     * @return list<Announcement>
+     *
      * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
      */
-    public function getAnnouncementCount(): int
+    public function getAnnouncements(): array
     {
-        return \count($this->sdp()->getAnnouncementService()->listForUser($this->identity()));
+        return $this->sdp()->getAnnouncementService()->listForUser($this->identity());
     }
 
     public function can(string $action): bool

@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.14.1] - 2026-11-15
+
+### Changed
+- **Dashboard** has the 1.11 design again: summary cards (open requests, overdue requests, waiting for my approval, loans to return within 30 days, current announcements), then *My requests* with service requests and incident requests by status and the five most recent requests, *My approvals* by type with approved and rejected by me, *My loans* and the five newest announcements. Every figure links to its page with the matching filter. Request figures are counted from the user's 1000 most recent requests and include a **Canceled** row.
+
 ## [1.14.0] - 2026-11-15
 
 ### Added

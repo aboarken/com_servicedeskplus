@@ -61,47 +61,54 @@ final class RequestService
     }
 
     /**
-     * Number of the user's requests in total ('' key) and per status of the My Requests filter,
-     * from SDP's total_count (one call each). A count is null when SDP gives no total, or when the
-     * row it returns is not the user's (the requester filter was not applied).
-     *
-     * @return array<string, int|null>
+     * Counts for the Dashboard from the user's own requests (newest first, at most $maxRequests).
+     * Rows SDP returns for other requesters are ignored, as in the request list.
      *
      * @throws SdpException
      */
-    public function countsForUser(Identity $identity): array
+    public function statsForUser(Identity $identity, int $maxRequests = 1000): RequestStats
     {
         $sdpUserId = $identity->sdpUserId();
         // "requests:" prefix: cleared with the lists when the user creates a request.
-        $cached = $this->cache->get($identity, 'requests:counts');
+        $cached = $this->cache->get($identity, 'requests:stats');
 
         if ($cached !== null) {
-            return $cached;
+            return RequestStats::fromArray($cached);
         }
 
-        $client = ($this->clientFactory)();
-        $counts = [];
+        $client    = ($this->clientFactory)();
+        $rows      = [];
+        $truncated = false;
 
-        foreach (['', ...$this->allowedStatuses] as $status) {
-            $criteria = [['field' => 'requester.id', 'condition' => 'is', 'value' => $sdpUserId]];
-
-            if ($status !== '') {
-                $criteria[] = ['field' => 'status.name', 'condition' => 'is', 'value' => $status, 'logical_operator' => 'AND'];
-            }
-
+        for ($start = 1; ; $start += ListInfo::MAX_ROW_COUNT) {
             $page = $client->listRequests(new ListInfo(
-                rowCount: 1,
-                searchCriteria: \count($criteria) === 1 ? $criteria[0] : $criteria,
-                getTotalCount: true
+                rowCount: ListInfo::MAX_ROW_COUNT,
+                startIndex: $start,
+                sortField: 'created_time',
+                sortOrder: 'desc',
+                searchCriteria: ['field' => 'requester.id', 'condition' => 'is', 'value' => $sdpUserId]
             ));
 
-            $trusted         = $page->items === [] || self::isOwnedBy($page->items[0], $sdpUserId);
-            $counts[$status] = $trusted ? ($page->totalCount ?? ($page->items === [] ? 0 : null)) : null;
+            foreach ($page->items as $item) {
+                if (self::isOwnedBy($item, $sdpUserId)) {
+                    $rows[] = $item;
+                }
+            }
+
+            if (!$page->hasMoreRows || $page->items === []) {
+                break;
+            }
+
+            if ($start + ListInfo::MAX_ROW_COUNT > $maxRequests) {
+                $truncated = true;
+                break;
+            }
         }
 
-        $this->cache->set($identity, 'requests:counts', $counts);
+        $stats = RequestStats::fromSdp($rows, $truncated);
+        $this->cache->set($identity, 'requests:stats', $stats->toArray());
 
-        return $counts;
+        return $stats;
     }
 
     /**

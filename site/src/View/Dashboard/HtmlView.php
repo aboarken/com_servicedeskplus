@@ -13,75 +13,127 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\View\Dashboard;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\Announcement;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\LoanAsset;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestStats;
 use SdpPortal\Component\ServiceDeskPlus\Site\Model\DashboardModel;
 use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 /**
- * Dashboard: figures for each portal page the user may open, each linking to that page with the
- * matching filter. A section that cannot be read shows its error; the others still show.
+ * Dashboard: summary cards, then requests by status and type, recent requests, approvals by
+ * type and decisions, loans and the latest announcements. Each part follows the permission of
+ * its own page and fails on its own.
  */
 final class HtmlView extends BaseHtmlView
 {
     use MenuPageTrait;
 
-    /**
-     * Sections in display order: [title key, error text, cards]; a card is
-     * [label, value (null: unknown), url].
-     *
-     * @var list<array{title: string, error: string, cards: list<array{label: string, value: int|null, url: string}>}>
-     */
-    public array $sections = [];
+    public bool $showRequests = false;
+
+    public ?RequestStats $requests = null;
+
+    public string $requestsError = '';
+
+    /** @var array<string, string> request bucket => status name of the My Requests filter */
+    public array $statusNames = [];
+
+    public bool $canCreate = false;
+
+    public bool $showApprovals = false;
+
+    /** @var array<string, int> module => waiting approvals, plus "total" */
+    public array $approvals = [];
+
+    /** @var list<string> */
+    public array $approvalModules = [];
+
+    /** @var array{approved: int|null, rejected: int|null} */
+    public array $decisions = ['approved' => null, 'rejected' => null];
+
+    public string $approvalsError = '';
+
+    public bool $showLoans = false;
+
+    public int $loansTotal = 0;
+
+    public int $loansDueSoon = 0;
+
+    public int $loansOverdue = 0;
+
+    public string $loansError = '';
+
+    public bool $showAnnouncements = false;
+
+    /** @var list<Announcement> Newest announcements */
+    public array $announcements = [];
+
+    public int $announcementsTotal = 0;
+
+    public string $announcementsError = '';
 
     public function display($tpl = null): void
     {
         /** @var DashboardModel $model */
         $model = $this->getModel();
 
-        if ($model->can('sdp.request.view')) {
-            $this->section('COM_SERVICEDESKPLUS_DASHBOARD_REQUESTS', function () use ($model): array {
-                $cards = [];
+        $this->showRequests      = $model->can('sdp.request.view');
+        $this->canCreate         = $model->can('sdp.request.create');
+        $this->showApprovals     = $model->can('sdp.approval.view');
+        $this->showLoans         = $model->can('sdp.asset.view');
+        $this->showAnnouncements = $model->can('sdp.announcement.view');
 
-                foreach ($model->getRequestCounts() as $status => $count) {
-                    $cards[] = $status === ''
-                        ? $this->card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_ALL_REQUESTS'), $count, 'requests&status=all')
-                        : $this->card($status, $count, 'requests&status=' . rawurlencode($status));
+        // Each part fails on its own: one unavailable list does not hide the others.
+        if ($this->showRequests) {
+            try {
+                $this->requests = $model->getRequestStats();
+
+                foreach ($model->getRequestStatuses() as $status) {
+                    $this->statusNames[RequestStats::bucket($status)] ??= $status;
                 }
-
-                return $cards;
-            });
+            } catch (SdpException $e) {
+                $this->requestsError = Text::_($e->getLanguageKey());
+            }
         }
 
-        if ($model->can('sdp.approval.view')) {
-            $this->section('COM_SERVICEDESKPLUS_DASHBOARD_APPROVALS', function () use ($model): array {
-                $decisions = $model->getDecisionCounts();
+        if ($this->showApprovals) {
+            $this->decisions = $model->getDecisionCounts();
 
-                return [
-                    $this->card(Text::_('COM_SERVICEDESKPLUS_APPROVALS_SHOW_PENDING'), $model->getPendingApprovalCount(), 'approvals'),
-                    $this->card(Text::_('COM_SERVICEDESKPLUS_APPROVALS_SHOW_APPROVED'), $decisions['approved'], 'approvals&show=approved'),
-                    $this->card(Text::_('COM_SERVICEDESKPLUS_APPROVALS_SHOW_REJECTED'), $decisions['rejected'], 'approvals&show=rejected'),
-                ];
-            });
+            try {
+                $this->approvalModules = $model->getApprovalModules();
+                $this->approvals       = array_fill_keys([...ApprovalModule::ALL, 'total'], 0);
+
+                foreach ($model->getPendingApprovals() as $approval) {
+                    $this->approvals[$approval->module] = ($this->approvals[$approval->module] ?? 0) + 1;
+                    $this->approvals['total']++;
+                }
+            } catch (SdpException $e) {
+                $this->approvalsError = Text::_($e->getLanguageKey());
+            }
         }
 
-        if ($model->can('sdp.asset.view')) {
-            $this->section('COM_SERVICEDESKPLUS_DASHBOARD_LOANS', function () use ($model): array {
-                $loans = $model->getLoans();
-                $now   = time();
+        if ($this->showLoans) {
+            try {
+                $now = time();
 
-                return [
-                    $this->card(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_ALL'), \count($loans), 'assets'),
-                    $this->card(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_DUE_SOON'), \count(array_filter($loans, static fn (LoanAsset $a) => $a->isDueSoon($now))), 'assets&show=due_soon'),
-                    $this->card(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_OVERDUE'), \count(array_filter($loans, static fn (LoanAsset $a) => $a->isOverdue($now))), 'assets&show=overdue'),
-                ];
-            });
+                foreach ($model->getLoans() as $loan) {
+                    $this->loansTotal++;
+                    $this->loansDueSoon += $loan->isDueSoon($now) ? 1 : 0;
+                    $this->loansOverdue += $loan->isOverdue($now) ? 1 : 0;
+                }
+            } catch (SdpException $e) {
+                $this->loansError = Text::_($e->getLanguageKey());
+            }
         }
 
-        if ($model->can('sdp.announcement.view')) {
-            $this->section('COM_SERVICEDESKPLUS_DASHBOARD_ANNOUNCEMENTS', fn (): array => [
-                $this->card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_ALL_ANNOUNCEMENTS'), $model->getAnnouncementCount(), 'announcements'),
-            ]);
+        if ($this->showAnnouncements) {
+            try {
+                $all                      = $model->getAnnouncements();
+                $this->announcementsTotal = \count($all);
+                $this->announcements      = \array_slice($all, 0, 5);
+            } catch (SdpException $e) {
+                $this->announcementsError = Text::_($e->getLanguageKey());
+            }
         }
 
         $document = $this->getDocument();
@@ -94,22 +146,21 @@ final class HtmlView extends BaseHtmlView
     }
 
     /**
-     * @param  \Closure(): list<array{label: string, value: int|null, url: string}>  $cards
+     * Link to a portal page, e.g. url('requests&status=all').
      */
-    private function section(string $titleKey, \Closure $cards): void
+    public function url(string $viewAndQuery): string
     {
-        try {
-            $this->sections[] = ['title' => $titleKey, 'error' => '', 'cards' => $cards()];
-        } catch (SdpException $e) {
-            $this->sections[] = ['title' => $titleKey, 'error' => Text::_($e->getLanguageKey()), 'cards' => []];
-        }
+        return Route::_('index.php?option=com_servicedeskplus&view=' . $viewAndQuery);
     }
 
     /**
-     * @return array{label: string, value: int|null, url: string}
+     * My Requests filtered on the status of a bucket, or all statuses when the filter has no
+     * status for it.
      */
-    private function card(string $label, ?int $value, string $viewAndQuery): array
+    public function statusUrl(string $bucket): string
     {
-        return ['label' => $label, 'value' => $value, 'url' => Route::_('index.php?option=com_servicedeskplus&view=' . $viewAndQuery)];
+        return isset($this->statusNames[$bucket])
+            ? $this->url('requests&status=' . rawurlencode($this->statusNames[$bucket]))
+            : $this->url('requests&status=all');
     }
 }

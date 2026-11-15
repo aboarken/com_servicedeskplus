@@ -11,7 +11,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SecretProvider;
 
-/** @var \SdpPortal\Component\ServiceDeskPlus\Administrator\View\Settings\HtmlView $this */
+/** @var \SdpPortal\Component\ServiceDeskPlus\Administrator\View\Integrationsettings\HtmlView $this */
 
 $this->getDocument()->getWebAssetManager()
     ->useScript('keepalive')
@@ -23,7 +23,7 @@ $secretLabel = match ($this->secretSource) {
     default                       => 'COM_SERVICEDESKPLUS_SETTINGS_SECRET_NONE',
 };
 ?>
-<form action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=settings'); ?>"
+<form action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=integrationsettings'); ?>"
       method="post" name="adminForm" id="adminForm" class="form-validate" autocomplete="off">
 
     <div class="card mb-3">

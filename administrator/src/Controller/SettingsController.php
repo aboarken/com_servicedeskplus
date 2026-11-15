@@ -15,7 +15,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\SettingsModel;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\IntegrationsettingsModel;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\ValidationFailed;
 
 final class SettingsController extends BaseController
@@ -26,8 +26,8 @@ final class SettingsController extends BaseController
     {
         $this->guard();
 
-        /** @var SettingsModel $model */
-        $model = $this->getModel('Settings', 'Administrator', ['ignore_request' => true]);
+        /** @var IntegrationsettingsModel $model */
+        $model = $this->getModel('Integrationsettings', 'Administrator', ['ignore_request' => true]);
         $data  = $this->input->post->get('jform', [], 'array');
 
         try {
@@ -44,7 +44,7 @@ final class SettingsController extends BaseController
             }
         }
 
-        $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=settings', false));
+        $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=integrationsettings', false));
     }
 
     /**
@@ -54,8 +54,8 @@ final class SettingsController extends BaseController
     {
         $this->guard();
 
-        /** @var SettingsModel $model */
-        $model = $this->getModel('Settings', 'Administrator', ['ignore_request' => true]);
+        /** @var IntegrationsettingsModel $model */
+        $model = $this->getModel('Integrationsettings', 'Administrator', ['ignore_request' => true]);
 
         try {
             $model->testConnection();
@@ -64,7 +64,7 @@ final class SettingsController extends BaseController
             $this->app->enqueueMessage(Text::sprintf('COM_SERVICEDESKPLUS_TEST_FAILED', Text::_($e->getLanguageKey())), 'error');
         }
 
-        $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=settings', false));
+        $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=integrationsettings', false));
     }
 
     /**
@@ -75,8 +75,8 @@ final class SettingsController extends BaseController
     {
         $this->guard();
 
-        /** @var SettingsModel $model */
-        $model = $this->getModel('Settings', 'Administrator', ['ignore_request' => true]);
+        /** @var IntegrationsettingsModel $model */
+        $model = $this->getModel('Integrationsettings', 'Administrator', ['ignore_request' => true]);
 
         try {
             $cert = $model->readServerPin();
@@ -91,7 +91,7 @@ final class SettingsController extends BaseController
             $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_PIN_READ_FAILED'), 'error');
         }
 
-        $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=settings', false));
+        $this->setRedirect(Route::_('index.php?option=com_servicedeskplus&view=integrationsettings', false));
     }
 
     private function guard(): void

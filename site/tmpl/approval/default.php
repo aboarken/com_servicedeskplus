@@ -8,6 +8,7 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
@@ -37,6 +38,10 @@ $item = $this->item;
 
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_DESCRIPTION'); ?></h2>
         <div class="sdp-text mb-4"><?php echo nl2br($this->escape($item->description !== '' ? $item->description : '—')); ?></div>
+
+        <?php if ($item->module === ApprovalModule::REQUEST) : ?>
+            <?php echo LayoutHelper::render('conversation', ['entries' => $this->conversation], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
+        <?php endif; ?>
 
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_COMMENTS'); ?></h2>
         <div class="sdp-text mb-4"><?php echo $item->comments !== '' ? nl2br($this->escape($item->comments)) : '—'; ?></div>

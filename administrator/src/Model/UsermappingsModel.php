@@ -16,7 +16,7 @@ use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapping;
 
-final class UsermapsModel extends ListModel
+final class UsermappingsModel extends ListModel
 {
     public function __construct($config = [], ?MVCFactoryInterface $factory = null)
     {
@@ -26,6 +26,9 @@ final class UsermapsModel extends ListModel
         ];
 
         parent::__construct($config, $factory);
+
+        // The filter form keeps its original file name (forms/filter_usermaps.xml).
+        $this->filterFormName = 'filter_usermaps';
     }
 
     protected function populateState($ordering = 'm.checked_at', $direction = 'DESC')

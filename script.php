@@ -42,6 +42,13 @@ return new class () implements ServiceProviderInterface {
                 ];
 
                 private const OBSOLETE_ADMIN = [
+                    // 1.11.0: views renamed to integrationsettings and usermappings
+                    'src/View/Settings',
+                    'src/View/Usermaps',
+                    'tmpl/settings',
+                    'tmpl/usermaps',
+                    'src/Model/SettingsModel.php',
+                    'src/Model/UsermapsModel.php',
                     // 1.0: per-user approver keys (removed in 1.1.0)
                     'src/Keys',
                     'src/Api/ApproverKey.php',

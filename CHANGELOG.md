@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.11.0] - 2026-11-15
+
+### Added
+- **My Dashboard** (new menu item type): open requests, overdue requests, approvals waiting for the user and overdue loans at a glance; the user's **service requests and incident requests by status** (Open, On Hold, Resolved, Closed, other) with totals; the five most recent requests; waiting approvals by type (the modules ticked in Integration Settings); total and overdue loans. Built from the lists the portal already reads (up to the user's 1000 most recent requests); each part follows the permission of its own page.
+- **Conversation on request pages:** the e-mails and notes of a request, oldest first, on the request page and on the approval page of a request. Only items ServiceDesk Plus marks as visible to the requester are shown; technicians' internal notes are never read. The newest 20 items are read.
+
+### Changed
+- **Backend addresses:** `view=settings` is now `view=integrationsettings` and `view=usermaps` is now `view=usermappings`. Old links and bookmarks are redirected; files of the old views are removed on update.
+
 ## [1.10.0] - 2026-11-14
 
 ### Added

@@ -30,6 +30,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\IdentityResolver;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\MappingManager;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapRepositoryInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Log\JoomlaLogger;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationReader;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\RateLimiter;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SecretProvider;
@@ -137,6 +138,15 @@ return new class () implements ServiceProviderInterface {
                     $settings->rateCreatePerHour()
                 );
             }
+        );
+
+        $container->share(
+            ConversationReader::class,
+            static fn (Container $c): ConversationReader => new ConversationReader(
+                $serviceClient($c),
+                $c->get(UserCacheInterface::class),
+                $c->get(JoomlaLogger::class)
+            )
         );
 
         $container->share(

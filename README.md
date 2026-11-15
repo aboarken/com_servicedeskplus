@@ -14,11 +14,15 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 
 ## Features
 
+### My Dashboard
+- One page with the user's open and overdue requests, approvals waiting for them and overdue loans.
+- Service requests and incident requests counted by status (Open, On Hold, Resolved, Closed), recent requests, approvals by type and loan totals.
+
 ### Service Requests
 - View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, status filter and sorting.
 - Submit new service requests with the **Request Form** menu item (page title **New Request**).
 - Create requests using only a subject and description, with optional attachments.
-- View request details: status, priority, urgency, technician, technician group, category, subcategory, item, dates, description and resolution.
+- View request details: status, priority, urgency, technician, technician group, category, subcategory, item, dates, description, resolution and the **conversation** (e-mails and notes visible to the requester).
 
 ### Attachments
 - Allowed types: JPG, PNG, PDF, Excel (.xlsx) and Word (.docx); the real file content is checked, not just the extension.
@@ -94,7 +98,7 @@ You can always upgrade by installing a newer package over the existing one.
 
 ### Menu items
 
-Create front-end pages with **Menus → Add New Menu Item → ServiceDesk Plus**: *My Requests*, *Request Form*, *My Loans* and *My Approvals*. The menu item title is shown as the page heading and browser title; the menu item's *Page Display* settings (*Browser Page Title*, *Show Page Heading*, *Page Heading*) are respected.
+Create front-end pages with **Menus → Add New Menu Item → ServiceDesk Plus**: *My Dashboard*, *My Requests*, *Request Form*, *My Loans* and *My Approvals*. The menu item title is shown as the page heading and browser title; the menu item's *Page Display* settings (*Browser Page Title*, *Show Page Heading*, *Page Heading*) are respected.
 
 ## Configuration
 

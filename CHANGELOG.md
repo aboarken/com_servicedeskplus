@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.12.1] - 2026-11-15
+
+### Fixed
+- **Internal announcements were never shown.** Announcements created for the team (not public) are now shown to **technicians** — users whose ServiceDesk Plus record has *is_technician* — together with every other announcement in its display period. Requesters still only see public announcements (and group ones for their groups).
+- Each load of Announcements writes one line to `administrator/logs/com_servicedeskplus.php`: how many announcements were read and shown, and how many were hidden as outside the display period, internal, or for other user groups.
+
+### Changed
+- Messages now say **ServiceDesk Plus** instead of "the service desk", e.g. "The ServiceDesk Plus did not allow this action."
+
 ## [1.12.0] - 2026-11-15
 
 ### Added

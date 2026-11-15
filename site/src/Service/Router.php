@@ -34,8 +34,6 @@ final class Router extends RouterView
 
         $this->registerView(new RouterViewConfiguration('requestform'));
 
-        $this->registerView(new RouterViewConfiguration('dashboard'));
-
         $assets = new RouterViewConfiguration('assets');
         $this->registerView($assets);
 
@@ -50,6 +48,13 @@ final class Router extends RouterView
         $approval = new RouterViewConfiguration('approval');
         $approval->setKey('id')->setParent($approvals);
         $this->registerView($approval);
+
+        $announcements = new RouterViewConfiguration('announcements');
+        $this->registerView($announcements);
+
+        $announcement = new RouterViewConfiguration('announcement');
+        $announcement->setKey('id')->setParent($announcements);
+        $this->registerView($announcement);
 
         parent::__construct($app, $menu);
 
@@ -95,6 +100,19 @@ final class Router extends RouterView
     }
 
     public function getApprovalId($segment, $query): string|false
+    {
+        return $this->getRequestId($segment, $query);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getAnnouncementSegment($id, $query): array
+    {
+        return $this->getRequestSegment($id, $query);
+    }
+
+    public function getAnnouncementId($segment, $query): string|false
     {
         return $this->getRequestId($segment, $query);
     }

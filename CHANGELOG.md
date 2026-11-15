@@ -3,6 +3,14 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.12.0] - 2026-11-15
+
+### Added
+- **Announcements** (new menu item type): ServiceDesk Plus announcements, newest first, with date, type, priority and a short preview; each opens on its own page. Shown only to users with the new **View announcements** permission (`sdp.announcement.view`, not granted by default). Only announcements ServiceDesk Plus shows to requesters are listed: public, inside their display period, and — when limited to user groups — only for members of those groups. Technician-only announcements never appear. The newest 100 announcements are read.
+
+### Removed
+- **My Dashboard.** Its files are removed on update, and existing *My Dashboard* menu items are moved to the trash.
+
 ## [1.11.0] - 2026-11-15
 
 ### Added

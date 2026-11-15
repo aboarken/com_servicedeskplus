@@ -14,6 +14,7 @@ use Joomla\CMS\Component\Router\RouterServiceInterface;
 use Joomla\CMS\Component\Router\RouterServiceTrait;
 use Joomla\CMS\Extension\MVCComponent;
 use Psr\Container\ContainerInterface;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\AnnouncementService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\AssetService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
@@ -79,6 +80,11 @@ final class ServiceDeskPlusComponent extends MVCComponent implements RouterServi
     public function getConversationReader(): ConversationReader
     {
         return $this->service(ConversationReader::class);
+    }
+
+    public function getAnnouncementService(): AnnouncementService
+    {
+        return $this->service(AnnouncementService::class);
     }
 
     public function getAssetService(): AssetService

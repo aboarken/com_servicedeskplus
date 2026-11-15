@@ -443,6 +443,25 @@ final class SdpClient
     }
 
     /**
+     * GET /api/v3/announcements (Announcements folder of the On-Premises Postman collection,
+     * "View All Announcements").
+     */
+    public function listAnnouncements(ListInfo $listInfo): ListPage
+    {
+        return $this->listPage('/api/v3/announcements', 'announcements', $listInfo);
+    }
+
+    /**
+     * GET /api/v3/announcements/{announcement_id} ("View Announcement").
+     *
+     * @return array<string, mixed>
+     */
+    public function getAnnouncement(string $announcementId): array
+    {
+        return $this->entity($this->get('/api/v3/announcements/' . self::id($announcementId)), 'announcement');
+    }
+
+    /**
      * GET /api/v3/requests/{request_id} (requests/request.html, "Get Request").
      *
      * @return array<string, mixed>

@@ -32,6 +32,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\MappingManager;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapRepositoryInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Log\JoomlaLogger;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationReader;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestApprovalsReader;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\RateLimiter;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SecretProvider;
@@ -153,6 +154,15 @@ return new class () implements ServiceProviderInterface {
         $container->share(
             AnnouncementService::class,
             static fn (Container $c): AnnouncementService => new AnnouncementService(
+                $serviceClient($c),
+                $c->get(UserCacheInterface::class),
+                $c->get(JoomlaLogger::class)
+            )
+        );
+
+        $container->share(
+            RequestApprovalsReader::class,
+            static fn (Container $c): RequestApprovalsReader => new RequestApprovalsReader(
                 $serviceClient($c),
                 $c->get(UserCacheInterface::class),
                 $c->get(JoomlaLogger::class)

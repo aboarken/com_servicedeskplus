@@ -184,7 +184,7 @@ return new class () implements ServiceProviderInterface {
                     foreach (self::OBSOLETE_VIEWS as $view) {
                         $link  = 'index.php?option=com_servicedeskplus&view=' . $view;
                         $like  = $link . '&%';
-                        $query = $db->getQuery(true)
+                        $query = $db->createQuery()
                             ->update($db->quoteName('#__menu'))
                             ->set($db->quoteName('published') . ' = -2')
                             ->where($db->quoteName('client_id') . ' = 0')
@@ -206,7 +206,7 @@ return new class () implements ServiceProviderInterface {
 
                 private function deleteObsoleteSettings(DatabaseInterface $db): void
                 {
-                    $query = $db->getQuery(true)
+                    $query = $db->createQuery()
                         ->delete($db->quoteName('#__sdp_settings'))
                         ->whereIn($db->quoteName('name'), self::OBSOLETE_SETTINGS, ParameterType::STRING);
 

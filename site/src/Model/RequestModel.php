@@ -42,4 +42,16 @@ final class RequestModel extends BaseModel
     {
         return $this->sdp()->getConversationReader()->forRequest($this->identity(), $requestId);
     }
+
+    /**
+     * Approval levels and approvers of the request. Call only after getItem() confirmed the user owns it.
+     *
+     * @return list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestApproval>
+     *
+     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
+     */
+    public function getApprovals(string $requestId): array
+    {
+        return $this->sdp()->getRequestApprovalsReader()->forRequest($this->identity(), $requestId);
+    }
 }

@@ -8,6 +8,7 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestQuery;
 
@@ -24,6 +25,8 @@ $sorts  = [
 $currentSort = $q->sort . '_' . $q->direction;
 ?>
 <div class="com-servicedeskplus sdp-requests">
+    <?php echo LayoutHelper::render('nav', ['active' => 'requests'], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
+
     <?php /* Same grid as the filter bar below, so "Submit a Request" lines up with and has the size of "Search". */ ?>
     <div class="sdp-page-header row g-2 align-items-center mb-3">
         <div class="col">

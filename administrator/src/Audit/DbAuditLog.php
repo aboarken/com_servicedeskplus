@@ -23,7 +23,7 @@ final class DbAuditLog implements AuditLogInterface, AuditCounterInterface, Audi
             return [];
         }
 
-        $query = $this->db->getQuery(true)
+        $query = $this->db->createQuery()
             ->select($this->db->quoteName(['created', 'action', 'result', 'sdp_request_id', 'approval_id', 'module', 'subject', 'detail']))
             ->from($this->db->quoteName('#__sdp_audit'))
             ->where($this->db->quoteName('user_id') . ' = :uid')
@@ -42,7 +42,7 @@ final class DbAuditLog implements AuditLogInterface, AuditCounterInterface, Audi
 
         $sinceUtc = $since->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
 
-        $query = $this->db->getQuery(true)
+        $query = $this->db->createQuery()
             ->select('COUNT(*)')
             ->from($this->db->quoteName('#__sdp_audit'))
             ->where($this->db->quoteName('user_id') . ' = :uid')

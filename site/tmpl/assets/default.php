@@ -8,6 +8,7 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Assets\HtmlView $this */
@@ -16,6 +17,8 @@ $date = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-
 $text = fn (string $v): string => $v !== '' ? $this->escape($v) : '—';
 ?>
 <div class="com-servicedeskplus sdp-assets">
+    <?php echo LayoutHelper::render('nav', ['active' => 'assets'], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
+
     <?php if ($this->showPageHeading) : ?>
         <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
     <?php endif; ?>

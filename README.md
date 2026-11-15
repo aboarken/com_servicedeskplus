@@ -18,7 +18,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 - View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, status filter and sorting.
 - Submit new service requests with the **Request Form** menu item (page title **New Request**).
 - Create requests using only a subject and description, with optional attachments.
-- View request details: status, priority, urgency, technician, technician group, category, subcategory, item, dates, description, resolution and the **conversation** (e-mails and notes visible to the requester).
+- View request details: status, priority, urgency, technician, technician group, category, subcategory, item, dates, approval status, description, resolution, the **approvals** of the request when it has any (level, approver, status, sent and decision dates, comments) and the **conversation** (e-mails and notes visible to the requester).
 
 ### Attachments
 - Allowed types: JPG, PNG, PDF, Excel (.xlsx) and Word (.docx); the real file content is checked, not just the extension.
@@ -39,7 +39,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 ServiceDesk Plus only accepts an approval decision from the assigned approver, while the portal talks to ServiceDesk Plus with a single API technician key. To let approvers decide from Joomla anyway, enter the API technician's e-mail under **Integration Settings → Approvals → API technician e-mail**. When ServiceDesk Plus refuses a decision, the portal adds the API technician as approver on the same level, records the decision under that account with the real approver's name in the comment and in a private request note, and removes the approver's pending entry. In ServiceDesk Plus the decision therefore appears under the API technician. Approval levels that need all approvers still wait for the others. The API technician's role needs permission to edit and manage approvals in each module used (requests, changes, releases, purchase orders). Turn off both "Auto-approve…" options under ServiceDesk Plus **Admin → Advanced Portal Settings → Approval**: otherwise ServiceDesk Plus can approve the API technician's added entry by itself, even when the user rejected. Closed records cannot be decided from the portal, and purchase requests have no API.
 
 ### Announcements
-- The **Announcements** menu item lists ServiceDesk Plus announcements, newest first, with type and priority; each opens on its own page.
+- The **Announcements** menu item lists ServiceDesk Plus announcements in a table like My Requests: ID, subject, type, priority, posted by, start date and end date. Click the ID or subject to open an announcement. Search (ID, subject or text), filter by type, sort (newest, oldest, ending soonest, subject) and pages of 25.
 - Users need the **View announcements** permission (*System → Global Configuration → ServiceDesk Plus → Permissions*, or the component's *Options*). It is not granted by default.
 - Only announcements inside their display period (from / to date) appear.
 - **Technicians** (users whose ServiceDesk Plus record is a technician) see all of them, including internal announcements for the team.
@@ -97,6 +97,8 @@ You can always upgrade by installing a newer package over the existing one.
 ### Menu items
 
 Create front-end pages with **Menus → Add New Menu Item → ServiceDesk Plus**: *My Requests*, *Request Form*, *My Loans*, *My Approvals* and *Announcements*. The menu item title is shown as the page heading and browser title; the menu item's *Page Display* settings (*Browser Page Title*, *Show Page Heading*, *Page Heading*) are respected.
+
+Each portal page shows links to the other portal pages the user may open (My Requests, New Request, My Approvals, My Loans, Announcements). A link uses the title of its menu item when the page has one.
 
 ## Configuration
 

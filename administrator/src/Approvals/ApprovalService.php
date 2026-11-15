@@ -103,6 +103,7 @@ final class ApprovalService
         $pending = $this->listFromApprovalsEndpoint($sdpUserId);
 
         if ($pending !== null && $pending !== []) {
+            $pending = self::onePerLevel($pending);
             $this->cache->set($identity, 'approvals:pending', array_map(static fn (PendingApproval $p) => $p->toArray(), $pending));
 
             return $pending;
@@ -116,6 +117,7 @@ final class ApprovalService
             array_push($pending, ...$this->scanModule($client, $module, $sdpUserId));
         }
 
+        $pending = self::onePerLevel($pending);
         $this->cache->set($identity, 'approvals:pending', array_map(static fn (PendingApproval $p) => $p->toArray(), $pending));
 
         return $pending;
@@ -575,17 +577,21 @@ final class ApprovalService
             throw $e;
         }
 
-        // The decision is recorded. Remove the approver's own pending entry so only one remains.
+        // The decision is recorded. Remove the approver's own pending entries on this level (the one
+        // decided on, and any duplicate entry for the same person) so only the decision remains.
         $originalRemoved = true;
 
-        try {
-            $client->deleteApproval($requestId, $levelId, $approvalId, $module);
-        } catch (SdpException $e) {
-            // Fine when SDP already closed the entry itself (e.g. the level completed).
-            $originalRemoved = $e->getKind() === SdpException::NOT_FOUND || !$this->approvalStillPending($requestId, $levelId, $approvalId, $module);
+        foreach ($this->ownPendingIds($identity, $requestId, $levelId, $approvalId, $module) as $ownId) {
+            try {
+                $client->deleteApproval($requestId, $levelId, $ownId, $module);
+            } catch (SdpException $e) {
+                // Fine when SDP already closed the entry itself (e.g. the level completed).
+                $removed = $e->getKind() === SdpException::NOT_FOUND || !$this->approvalStillPending($requestId, $levelId, $ownId, $module);
 
-            if (!$originalRemoved) {
-                $this->logger->warning(\sprintf('Pending approval %s of request %s could not be removed after the decision (%s)', $approvalId, $requestId, $e->getKind()));
+                if (!$removed) {
+                    $originalRemoved = false;
+                    $this->logger->warning(\sprintf('Pending approval %s of %s %s could not be removed after the decision (%s)', $ownId, $module, $requestId, $e->getKind()));
+                }
             }
         }
 
@@ -659,6 +665,56 @@ final class ApprovalService
                 $this->logger->warning(\sprintf('Note for the decision on %s %s could not be added (%s)', $module, $requestId, $e->getKind()));
             }
         }
+    }
+
+    /**
+     * Ids of the user's pending entries on one level: the one decided on first, then any duplicate
+     * entry for the same person (the same approver added twice). Falls back to the decided one.
+     *
+     * @return list<string>
+     */
+    private function ownPendingIds(Identity $identity, string $entityId, string $levelId, string $approvalId, string $module): array
+    {
+        $ids = [$approvalId];
+
+        try {
+            foreach ($this->client()->getApprovals($entityId, $levelId, $module) as $approval) {
+                $id = SdpFields::string($approval, 'id');
+
+                if ($id !== $approvalId && $this->isMine($approval, $identity->sdpUserId()) && $this->isPendingStatus($approval) && preg_match('/^[0-9]{1,20}$/', $id)) {
+                    $ids[] = $id;
+                }
+            }
+        } catch (SdpException) {
+            // Only the decided entry then.
+        }
+
+        return $ids;
+    }
+
+    /**
+     * One row per record and level: an approver added twice to the same level has two pending
+     * entries in SDP, but one decision covers both.
+     *
+     * @param  list<PendingApproval>  $pending
+     *
+     * @return list<PendingApproval>
+     */
+    private static function onePerLevel(array $pending): array
+    {
+        $seen = [];
+        $out  = [];
+
+        foreach ($pending as $p) {
+            $key = $p->module . ':' . $p->requestId . ':' . $p->levelId;
+
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $out[]      = $p;
+            }
+        }
+
+        return $out;
     }
 
     /** Lower-case status name of one approval, or null when it cannot be read. */

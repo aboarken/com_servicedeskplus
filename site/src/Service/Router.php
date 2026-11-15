@@ -34,6 +34,8 @@ final class Router extends RouterView
 
         $this->registerView(new RouterViewConfiguration('requestform'));
 
+        $this->registerView(new RouterViewConfiguration('dashboard'));
+
         $assets = new RouterViewConfiguration('assets');
         $this->registerView($assets);
 

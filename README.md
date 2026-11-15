@@ -41,7 +41,10 @@ ServiceDesk Plus only accepts an approval decision from the assigned approver, w
 ### Announcements
 - The **Announcements** menu item lists ServiceDesk Plus announcements, newest first, with type and priority; each opens on its own page.
 - Users need the **View announcements** permission (*System → Global Configuration → ServiceDesk Plus → Permissions*, or the component's *Options*). It is not granted by default.
-- Only announcements ServiceDesk Plus shows to requesters appear: public announcements inside their display period (from / to date). Announcements limited to user groups appear only when the user's ServiceDesk Plus record lists one of those groups; technician-only announcements never appear.
+- Only announcements inside their display period (from / to date) appear.
+- **Technicians** (users whose ServiceDesk Plus record is a technician) see all of them, including internal announcements for the team.
+- **Requesters** see public announcements; announcements limited to user groups only when their ServiceDesk Plus record lists one of those groups. Internal (technician-only) announcements are hidden from requesters.
+- Each time the list is loaded, a line in `administrator/logs/com_servicedeskplus.php` tells how many announcements were read, shown and hidden (and why).
 
 ### Assets & Equipment
 - View assets associated with the user.

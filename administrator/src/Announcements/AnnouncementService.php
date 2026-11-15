@@ -23,20 +23,25 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Support\SdpFields;
  * ServiceDesk Plus announcements the user may see (Announcements folder of the On-Premises
  * Postman collection: GET /api/v3/announcements and /api/v3/announcements/{id}).
  *
- * The service key sees every announcement, so the portal applies ServiceDesk Plus' own rules for
- * requesters, and hides an announcement whenever it cannot be sure:
- *  - "is_public" must be true (otherwise the announcement is for technicians only);
+ * The service key sees every announcement, so the portal applies ServiceDesk Plus' own rules and
+ * hides an announcement whenever it cannot be sure:
  *  - the display period (from_date / to_date) must include now;
- *  - an announcement limited to user groups is shown only when the user's ServiceDesk Plus record
- *    lists one of those groups.
+ *  - technicians (is_technician on their ServiceDesk Plus user record) see every announcement,
+ *    including internal ones ("is_public" false);
+ *  - other users only see public announcements; one limited to user groups only when the user's
+ *    ServiceDesk Plus record lists one of those groups.
  */
 final class AnnouncementService
 {
     /** Newest announcements read from ServiceDesk Plus. */
     public const MAX_ITEMS = 100;
 
-    /** @var array<string, list<string>> SDP user id => user group ids, per page load */
-    private array $userGroups = [];
+    private const HIDDEN_PERIOD   = 'outside display period';
+    private const HIDDEN_INTERNAL = 'internal (technicians only)';
+    private const HIDDEN_GROUPS   = 'other user groups';
+
+    /** @var array<string, array{technician: bool, groups: list<string>}> SDP user id => profile, per page load */
+    private array $profiles = [];
 
     /**
      * @param  \Closure(): SdpClient  $clientFactory
@@ -69,27 +74,45 @@ final class AnnouncementService
         $page   = $client->listAnnouncements(new ListInfo(rowCount: self::MAX_ITEMS, sortField: 'id', sortOrder: 'desc'));
         $now    = $this->now();
         $result = [];
+        $hidden = [];
 
         foreach ($page->items as $row) {
-            // The list may leave out the group list of a restricted announcement; read the full one.
-            if (self::isRestricted($row) && !\is_array($row['user_groups'] ?? null) && self::showable($row, $now)) {
+            // The list may leave out the group list of a restricted announcement; read the full one
+            // when it decides what this user sees.
+            if (
+                self::isRestricted($row) && !\is_array($row['user_groups'] ?? null)
+                && self::inPeriod($row, $now) && self::isPublic($row)
+                && !$this->profile($identity, $client)['technician']
+            ) {
                 try {
                     $row = $client->getAnnouncement(SdpFields::string($row, 'id'));
                 } catch (SdpException | \InvalidArgumentException $e) {
                     if ($e instanceof SdpException && \in_array($e->getKind(), [SdpException::NETWORK, SdpException::AUTH], true)) {
                         throw $e;
                     }
-
-                    continue;
                 }
             }
 
-            if ($this->isVisible($row, $identity, $client, $now)) {
+            $reason = $this->hiddenReason($row, $identity, $client, $now);
+
+            if ($reason === null) {
                 $result[] = Announcement::fromSdp($row);
+            } else {
+                $hidden[$reason] = ($hidden[$reason] ?? 0) + 1;
             }
         }
 
         usort($result, static fn (Announcement $a, Announcement $b): int => [$b->date() ?? 0, (int) $b->id] <=> [$a->date() ?? 0, (int) $a->id]);
+
+        // One line per load, so an administrator can see why announcements are not shown.
+        $this->logger->info(\sprintf(
+            'Announcements for ServiceDesk Plus user %s (%s): %d read, %d shown%s',
+            $identity->sdpUserId(),
+            ($this->profiles[$identity->sdpUserId()]['technician'] ?? false) ? 'technician' : 'requester',
+            \count($page->items),
+            \count($result),
+            $hidden === [] ? '' : '; hidden: ' . implode(', ', array_map(static fn ($k, $v) => "$v $k", array_keys($hidden), $hidden))
+        ));
 
         $this->cache->set($identity, 'announcements:list', array_map(static fn (Announcement $a) => $a->toArray(), $result));
 
@@ -120,7 +143,7 @@ final class AnnouncementService
             throw $e;
         }
 
-        if (SdpFields::string($row, 'id') !== $id || !$this->isVisible($row, $identity, $client, $this->now())) {
+        if (SdpFields::string($row, 'id') !== $id || $this->hiddenReason($row, $identity, $client, $this->now()) !== null) {
             throw new AnnouncementNotFound();
         }
 
@@ -128,34 +151,43 @@ final class AnnouncementService
     }
 
     /**
+     * Why the user may not see the announcement, or null when they may.
+     *
      * @param  array<string, mixed>  $row
      */
-    private function isVisible(array $row, Identity $identity, SdpClient $client, int $now): bool
+    private function hiddenReason(array $row, Identity $identity, SdpClient $client, int $now): ?string
     {
-        if (!self::showable($row, $now)) {
-            return false;
+        if (!self::inPeriod($row, $now)) {
+            return self::HIDDEN_PERIOD;
+        }
+
+        // Technicians see what ServiceDesk Plus shows them: every announcement.
+        if ($this->profile($identity, $client)['technician']) {
+            return null;
+        }
+
+        if (!self::isPublic($row)) {
+            return self::HIDDEN_INTERNAL;
         }
 
         if (!self::isRestricted($row)) {
-            return true;
+            return null;
         }
 
         $groups = self::ids($row['user_groups'] ?? null);
 
-        return $groups !== [] && array_intersect($groups, $this->groupsOf($identity, $client)) !== [];
+        return $groups !== [] && array_intersect($groups, $this->profile($identity, $client)['groups']) !== [] ? null : self::HIDDEN_GROUPS;
     }
 
-    /**
-     * Public and inside its display period (group limits are checked separately).
-     *
-     * @param  array<string, mixed>  $row
-     */
-    private static function showable(array $row, int $now): bool
+    /** @param array<string, mixed> $row */
+    private static function isPublic(array $row): bool
     {
-        if (!filter_var($row['is_public'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
-            return false;
-        }
+        return filter_var($row['is_public'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    }
 
+    /** @param array<string, mixed> $row */
+    private static function inPeriod(array $row, int $now): bool
+    {
         $from = SdpFields::timestamp($row, 'from_date');
         $to   = SdpFields::timestamp($row, 'to_date');
 
@@ -170,29 +202,34 @@ final class AnnouncementService
     }
 
     /**
-     * User group ids on the user's ServiceDesk Plus record; none when they cannot be read.
+     * Whether the user is a technician, and their user group ids, from their ServiceDesk Plus
+     * record (GET /api/v3/users/{id}: is_technician, type). Unreadable: a requester in no group.
      *
-     * @return list<string>
+     * @return array{technician: bool, groups: list<string>}
      */
-    private function groupsOf(Identity $identity, SdpClient $client): array
+    private function profile(Identity $identity, SdpClient $client): array
     {
         $userId = $identity->sdpUserId();
 
-        if (!isset($this->userGroups[$userId])) {
+        if (!isset($this->profiles[$userId])) {
             try {
                 $user = $client->getUser($userId);
-                $this->userGroups[$userId] = self::ids($user['user_groups'] ?? null);
+                $this->profiles[$userId] = [
+                    'technician' => filter_var($user['is_technician'] ?? false, FILTER_VALIDATE_BOOLEAN)
+                        || strcasecmp(SdpFields::string($user, 'type'), 'Technician') === 0,
+                    'groups'     => self::ids($user['user_groups'] ?? null),
+                ];
             } catch (SdpException $e) {
                 if (\in_array($e->getKind(), [SdpException::NETWORK, SdpException::AUTH], true)) {
                     throw $e;
                 }
 
-                $this->logger->warning(\sprintf('User groups of ServiceDesk Plus user %s could not be read (%s)', $userId, $e->getKind()));
-                $this->userGroups[$userId] = [];
+                $this->logger->warning(\sprintf('ServiceDesk Plus user %s could not be read for announcements (%s)', $userId, $e->getKind()));
+                $this->profiles[$userId] = ['technician' => false, 'groups' => []];
             }
         }
 
-        return $this->userGroups[$userId];
+        return $this->profiles[$userId];
     }
 
     /**

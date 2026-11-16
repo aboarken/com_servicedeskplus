@@ -3,6 +3,12 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.17.0] - 2026-11-16
+
+### Changed
+- **Dashboard redesign:** coloured summary cards (blue open, amber on hold, purple waiting approval, red/amber/green loans to return, teal announcements) that lift on hover; *Announcements* and *Recent Requests* in panels with a *View all* link and coloured status and type badges; *My Requests* as two tiles (Open, On Hold) with the service and incident split; *My Approvals* and *My Loans* as lists with coloured counts (green for approved and nothing overdue, red for overdue). The Dashboard has its own styles, so it looks the same on any site template.
+- **My Requests filter** is labelled *Request type*, with the options *All types*, *Incident* and *Service*.
+
 ## [1.16.0] - 2026-11-16
 
 ### Added

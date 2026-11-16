@@ -22,10 +22,11 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
   - *My Requests:* open and on-hold service requests and incidents with totals. Only open and on-hold requests are read from ServiceDesk Plus (up to 500 of each), so the Dashboard stays fast for users with many closed requests.
   - *My Approvals:* waiting approvals by type, approved by me and rejected by me (decisions made through the portal).
   - *My Loans:* all loans, to return within 30 days (including overdue), overdue.
+- Coloured cards, panels and counts (green for good, amber and red for what needs attention), styled by the component so the Dashboard looks the same on any site template.
 - Every figure opens its page with the matching filter. Each part is shown only to users with the permission for its page.
 
 ### Service Requests
-- View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, type filter (incident or service request), status filter and sorting.
+- View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, *Request type* filter (incident or service), status filter and sorting.
 - Submit new service requests with the **Request Form** menu item (page title **New Request**).
 - Create requests using only a subject and description, with optional attachments.
 - View request details: status, priority, urgency, technician, technician group, category, subcategory, item, dates, approval status, description, resolution, the **approvals** of the request when it has any (level, approver, status, sent and decision dates, comments) and the **conversation** (e-mails and notes visible to the requester).

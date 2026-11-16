@@ -16,7 +16,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 
 ### Dashboard
 - **Summary cards:** open requests, on-hold requests, waiting for my approval, loans to return within 30 days, current announcements.
-- **Announcements:** the five newest announcements, right under the cards.
+- **Announcements:** the five newest announcements with start and end date, right under the cards.
 - **Recent Requests:** the five newest open and on-hold requests, under the announcements.
 - **My Requests block:** Open, On Hold, Resolved and Closed tiles, each with its incident and service request count. Resolved and closed requests are counted by ServiceDesk Plus without reading them.
 - **My Requests, My Approvals, My Loans** side by side in three columns (stacked on small screens):
@@ -52,7 +52,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 ServiceDesk Plus only accepts an approval decision from the assigned approver, while the portal talks to ServiceDesk Plus with a single API technician key. To let approvers decide from Joomla anyway, enter the API technician's e-mail under **Integration Settings → Approvals → API technician e-mail**. When ServiceDesk Plus refuses a decision, the portal adds the API technician as approver on the same level, records the decision under that account with the real approver's name in the comment and in a private request note, and removes the approver's pending entry. In ServiceDesk Plus the decision therefore appears under the API technician. Approval levels that need all approvers still wait for the others. The API technician's role needs permission to edit and manage approvals in each module used (requests, changes, releases, purchase orders). Turn off both "Auto-approve…" options under ServiceDesk Plus **Admin → Advanced Portal Settings → Approval**: otherwise ServiceDesk Plus can approve the API technician's added entry by itself, even when the user rejected. Closed records cannot be decided from the portal, and purchase requests have no API.
 
 ### Announcements
-- The **Announcements** menu item lists ServiceDesk Plus announcements in a table like My Requests: ID, subject, type, priority, posted by, start date and end date. Click the ID or subject to open an announcement. Search (ID, subject or text), filter by type, sort (newest, oldest, ending soonest, subject) and pages of 25.
+- The **Announcements** menu item lists ServiceDesk Plus announcements in a table like My Requests: ID, subject, type, priority, start date and end date (the announcement's page also shows who posted it). Click the ID or subject to open an announcement. Search (ID, subject or text), filter by type, sort (newest, oldest, ending soonest, subject) and pages of 25.
 - Users need the **View announcements** permission (*System → Global Configuration → ServiceDesk Plus → Permissions*, or the component's *Options*). It is not granted by default.
 - Only announcements inside their display period (from / to date) appear.
 - **Technicians** (users whose ServiceDesk Plus record is a technician) see all of them, including internal announcements for the team.

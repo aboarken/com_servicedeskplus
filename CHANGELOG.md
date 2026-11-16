@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.18.1] - 2026-11-16
+
+### Added
+- **Dashboard, Announcements:** *End date* column ("No end date" when there is none).
+
+### Changed
+- **Filter bars** size each list to its longest option, so *Waiting for my approval* on My Approvals is shown in full; fields wrap to a second line on narrow screens.
+- **Announcements list:** the *Posted by* column is removed. It is still shown on the announcement's own page.
+
 ## [1.18.0] - 2026-11-16
 
 ### Added

@@ -135,12 +135,16 @@
   border-color: #9ca3af;
 }
 
-/* Filter bar: fields side by side, applied on change and on Enter (filters.js); no Search button */
+/*
+ * Filter bar: fields side by side, applied on change and on Enter (filters.js); no Search button.
+ * Each list is never narrower than its longest option ("Waiting for my approval"); the search
+ * field takes the remaining space, and fields wrap to the next line when they do not fit.
+ */
 .com-servicedeskplus .sdp-toolbar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem 1rem;
-  align-items: end;
+  align-items: flex-end;
   margin: 0 0 1.25rem;
   padding: 1rem 1.125rem;
   background: var(--sdp-card-bg);
@@ -149,13 +153,27 @@
   box-shadow: var(--sdp-card-shadow);
 }
 
-.com-servicedeskplus .sdp-toolbar .sdp-field--search {
-  grid-column: span 2;
+.com-servicedeskplus .sdp-toolbar > div {
+  flex: 1 0 auto;
+  min-width: 150px;
+}
+
+.com-servicedeskplus .sdp-toolbar > .sdp-field--search {
+  flex: 3 1 260px;
+}
+
+.com-servicedeskplus .sdp-toolbar select.sdp-input {
+  width: 100%;
+  min-width: max-content;
 }
 
 @media (max-width: 575.98px) {
-  .com-servicedeskplus .sdp-toolbar .sdp-field--search {
-    grid-column: auto;
+  .com-servicedeskplus .sdp-toolbar > div {
+    flex: 1 1 100%;
+  }
+
+  .com-servicedeskplus .sdp-toolbar select.sdp-input {
+    min-width: 0;
   }
 }
 

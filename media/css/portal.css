@@ -61,6 +61,343 @@
 }
 
 /*
+ * Dashboard
+ * ---------
+ * Cards and panels with their own look, so the Dashboard is the same on every site template.
+ * Fonts and link colours still come from the template.
+ */
+.com-servicedeskplus.sdp-dashboard {
+  --sdp-card-bg: var(--bs-body-bg, #fff);
+  --sdp-card-border: #e5e7eb;
+  --sdp-card-line: #eef0f3;
+  --sdp-card-hover: #f8fafc;
+  --sdp-card-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.06);
+  --sdp-card-shadow-hover: 0 8px 20px rgba(16, 24, 40, 0.1);
+  --sdp-text-muted: #6b7280;
+}
+
+/* Tones: --sdp-tone is the strong colour, --sdp-tone-soft its light background. */
+.com-servicedeskplus .sdp-tone-blue { --sdp-tone: #2563eb; --sdp-tone-soft: #eff6ff; }
+.com-servicedeskplus .sdp-tone-amber { --sdp-tone: #b45309; --sdp-tone-soft: #fffbeb; }
+.com-servicedeskplus .sdp-tone-purple { --sdp-tone: #7c3aed; --sdp-tone-soft: #f5f3ff; }
+.com-servicedeskplus .sdp-tone-green { --sdp-tone: #15803d; --sdp-tone-soft: #f0fdf4; }
+.com-servicedeskplus .sdp-tone-red { --sdp-tone: #dc2626; --sdp-tone-soft: #fef2f2; }
+.com-servicedeskplus .sdp-tone-teal { --sdp-tone: #0f766e; --sdp-tone-soft: #f0fdfa; }
+.com-servicedeskplus .sdp-tone-muted { --sdp-tone: #6b7280; --sdp-tone-soft: #f3f4f6; }
+
+/* Summary cards */
+.com-servicedeskplus .sdp-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+}
+
+.com-servicedeskplus .sdp-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 1rem 1.125rem 1rem 1.375rem;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  background: var(--sdp-card-bg);
+  border: 1px solid var(--sdp-card-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--sdp-card-shadow);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.com-servicedeskplus .sdp-stat::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  content: "";
+  background: var(--sdp-tone);
+}
+
+.com-servicedeskplus .sdp-stat:hover,
+.com-servicedeskplus .sdp-stat:focus-visible {
+  color: inherit;
+  text-decoration: none;
+  box-shadow: var(--sdp-card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.com-servicedeskplus .sdp-stat-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--sdp-text-muted);
+}
+
+.com-servicedeskplus .sdp-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--sdp-tone);
+}
+
+/* Panels */
+.com-servicedeskplus .sdp-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0 0 1.5rem;
+  overflow: hidden;
+  background: var(--sdp-card-bg);
+  border: 1px solid var(--sdp-card-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--sdp-card-shadow);
+}
+
+.com-servicedeskplus .sdp-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+  margin: 0 0 1.5rem;
+}
+
+.com-servicedeskplus .sdp-panels > .sdp-panel {
+  height: 100%;
+  margin: 0;
+}
+
+.com-servicedeskplus .sdp-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1.125rem;
+  border-bottom: 1px solid var(--sdp-card-line);
+}
+
+.com-servicedeskplus .sdp-panel-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.com-servicedeskplus .sdp-panel-link {
+  font-size: 0.875rem;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.com-servicedeskplus .sdp-panel-link:hover {
+  text-decoration: underline;
+}
+
+.com-servicedeskplus .sdp-panel-body {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 1rem 1.125rem;
+}
+
+.com-servicedeskplus .sdp-panel-foot {
+  padding: 0.75rem 1.125rem;
+  font-size: 0.875rem;
+  background: var(--sdp-card-hover);
+  border-top: 1px solid var(--sdp-card-line);
+}
+
+.com-servicedeskplus .sdp-action {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.com-servicedeskplus .sdp-empty,
+.com-servicedeskplus .sdp-note {
+  color: var(--sdp-text-muted);
+}
+
+.com-servicedeskplus .sdp-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+}
+
+/* Tables inside panels */
+.com-servicedeskplus .sdp-table-wrap {
+  overflow-x: auto;
+}
+
+.com-servicedeskplus .sdp-table {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-collapse: collapse;
+}
+
+.com-servicedeskplus .sdp-table th,
+.com-servicedeskplus .sdp-table td {
+  padding: 0.7rem 1.125rem;
+  text-align: start;
+  vertical-align: middle;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--sdp-card-line);
+  box-shadow: none;
+}
+
+.com-servicedeskplus .sdp-table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sdp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--sdp-card-hover);
+  border-top: 0;
+}
+
+.com-servicedeskplus .sdp-table tbody tr:hover > * {
+  background: var(--sdp-card-hover);
+}
+
+.com-servicedeskplus .sdp-table a {
+  text-decoration: none;
+}
+
+.com-servicedeskplus .sdp-table a:hover {
+  text-decoration: underline;
+}
+
+.com-servicedeskplus .sdp-id {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.com-servicedeskplus .sdp-nowrap {
+  white-space: nowrap;
+}
+
+/* Status and type badges, count pills */
+.com-servicedeskplus .sdp-badge,
+.com-servicedeskplus .sdp-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--sdp-tone);
+  white-space: nowrap;
+  background: var(--sdp-tone-soft);
+  border-radius: 999px;
+}
+
+.com-servicedeskplus .sdp-badge {
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+.com-servicedeskplus .sdp-pill {
+  min-width: 2.25rem;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lists (My Approvals, My Loans) */
+.com-servicedeskplus .sdp-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.com-servicedeskplus .sdp-list > li {
+  margin: 0;
+  padding: 0;
+}
+
+.com-servicedeskplus .sdp-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 1.125rem;
+  color: inherit;
+  text-decoration: none;
+  border-top: 1px solid var(--sdp-card-line);
+}
+
+.com-servicedeskplus .sdp-list > li:first-child > .sdp-list-row {
+  border-top: 0;
+}
+
+.com-servicedeskplus a.sdp-list-row:hover,
+.com-servicedeskplus a.sdp-list-row:focus-visible {
+  color: inherit;
+  text-decoration: none;
+  background: var(--sdp-card-hover);
+}
+
+.com-servicedeskplus .sdp-list-row--strong {
+  font-weight: 600;
+}
+
+.com-servicedeskplus .sdp-list > li.sdp-list-sep {
+  padding: 0.5rem 1.125rem 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sdp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--sdp-card-hover);
+  border-top: 1px solid var(--sdp-card-line);
+}
+
+/* Tiles (My Requests: Open, On Hold) */
+.com-servicedeskplus .sdp-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.com-servicedeskplus .sdp-tile {
+  padding: 0.875rem 1rem;
+  background: var(--sdp-tone-soft);
+  border-radius: 0.625rem;
+}
+
+.com-servicedeskplus .sdp-tile-main {
+  display: block;
+  color: var(--sdp-tone);
+  text-decoration: none;
+}
+
+.com-servicedeskplus .sdp-tile-value {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.com-servicedeskplus .sdp-tile-label {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.com-servicedeskplus .sdp-tile-meta {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--sdp-text-muted);
+}
+
+.com-servicedeskplus .sdp-tile-meta a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.com-servicedeskplus .sdp-tile-meta a:hover {
+  color: var(--sdp-tone);
+  text-decoration: underline;
+}
+
+/*
  * Template independence
  * ---------------------
  * The portal pages use Bootstrap 5 class names, which Cassiopeia and most Joomla templates style.

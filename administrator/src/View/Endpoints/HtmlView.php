@@ -68,7 +68,7 @@ final class HtmlView extends BaseHtmlView
     /**
      * Known endpoints, filtered by text; the portal's own first.
      *
-     * @return list<array{path: string, summary: string, portal: string}>
+     * @return list<array{path: string, summary: string, section: string, doc: string, portal: string}>
      */
     public function endpoints(): array
     {
@@ -76,7 +76,7 @@ final class HtmlView extends BaseHtmlView
 
         return array_values(array_filter(
             EndpointCatalog::all(),
-            static fn (array $e): bool => $needle === '' || str_contains(mb_strtolower($e['path'] . ' ' . $e['summary'] . ' ' . $e['portal']), $needle)
+            static fn (array $e): bool => $needle === '' || str_contains(mb_strtolower($e['path'] . ' ' . $e['section'] . ' ' . $e['summary'] . ' ' . $e['portal']), $needle)
         ));
     }
 

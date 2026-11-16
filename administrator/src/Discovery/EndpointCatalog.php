@@ -11,65 +11,90 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Discovery;
 // phpcs:enable PSR1.Files.SideEffects
 
 /**
- * List endpoints of the ServiceDesk Plus REST API v3 that Find Endpoints knows.
+ * List endpoints of the ServiceDesk Plus On-Premises REST API v3 that Find Endpoints knows.
  *
- * ServiceDesk Plus publishes no machine-readable API list (unlike /api/docs/ on other products),
- * so the list is built in: the endpoints this portal reads, then other list endpoints of the
- * On-Premises v3 reference. Not every build has every one; "Check which endpoints answer" shows
- * which exist on this server and whether the API technician may read them.
+ * ServiceDesk Plus offers no machine-readable API list on the server, so the list is built in from
+ * ManageEngine's "ServiceDesk Plus On Premise" API collection (Postman workspace "servicedeskplus",
+ * published at https://servicedeskplus.docs.buildwithfern.com): the endpoints this portal reads,
+ * then other top-level "View all" / "Get all" endpoints, with their names and sections there.
+ * Not every build or edition has every one; "Check which endpoints answer" shows which exist on
+ * this server and whether the API technician may read them.
  */
 final class EndpointCatalog
 {
     /** Allowed API paths: /api/v3 and up to six lower-case segments (ids are digits). */
     public const PATH = '#^/api/v3(/[a-z0-9_]{1,60}){1,6}$#';
 
+    /** Base of the documentation pages (the "doc" of each endpoint is relative to it). */
+    public const DOCS = 'https://servicedeskplus.docs.buildwithfern.com/servicedesk-plus-on-premise/';
+
     /**
-     * path => [description, portal page that reads it ('' = not read by the portal)].
+     * path => [name in the API collection, section, documentation page, portal pages that read it ('' = none)].
      */
     private const ENDPOINTS = [
-        '/api/v3/requests'        => ['Requests (incidents and service requests)', 'My Requests, Dashboard, My Approvals'],
-        '/api/v3/approvals'       => ['Approvals of all modules', 'My Approvals, Dashboard'],
-        '/api/v3/changes'         => ['Changes', 'My Approvals'],
-        '/api/v3/releases'        => ['Releases', 'My Approvals'],
-        '/api/v3/purchase_orders' => ['Purchase orders', 'My Approvals'],
-        '/api/v3/assets'          => ['Assets (loans)', 'My Loans, Dashboard'],
-        '/api/v3/announcements'   => ['Announcements', 'Announcements, Dashboard'],
-        '/api/v3/users'           => ['Users (requesters and technicians)', 'User Mappings, sign-in matching'],
-        '/api/v3/requesters'      => ['Requesters', ''],
-        '/api/v3/technicians'     => ['Technicians', ''],
-        '/api/v3/problems'        => ['Problems', ''],
-        '/api/v3/projects'        => ['Projects', ''],
-        '/api/v3/tasks'           => ['Tasks', ''],
-        '/api/v3/solutions'       => ['Solutions (knowledge base)', ''],
-        '/api/v3/request_templates' => ['Request templates', ''],
-        '/api/v3/service_categories' => ['Service categories', ''],
-        '/api/v3/categories'      => ['Categories', ''],
-        '/api/v3/statuses'        => ['Request statuses', ''],
-        '/api/v3/priorities'      => ['Priorities', ''],
-        '/api/v3/urgencies'       => ['Urgencies', ''],
-        '/api/v3/impacts'         => ['Impacts', ''],
-        '/api/v3/levels'          => ['Levels', ''],
-        '/api/v3/modes'           => ['Modes', ''],
-        '/api/v3/request_types'   => ['Request types', ''],
-        '/api/v3/support_groups'  => ['Support groups', ''],
-        '/api/v3/sites'           => ['Sites', ''],
-        '/api/v3/departments'     => ['Departments', ''],
-        '/api/v3/workstations'    => ['Workstations', ''],
-        '/api/v3/products'        => ['Products', ''],
-        '/api/v3/product_types'   => ['Product types', ''],
-        '/api/v3/vendors'         => ['Vendors', ''],
-        '/api/v3/contracts'       => ['Contracts', ''],
+        '/api/v3/requests'              => ['View all Requests', 'Request', 'request/request/view-all-requests', 'My Requests, Dashboard, My Approvals'],
+        '/api/v3/approvals'             => ['Get Pending Approvals', 'Common', 'common/approvals/get-pending-approvals', 'My Approvals, Dashboard'],
+        '/api/v3/changes'               => ['View all Changes', 'Change', 'change/change/view-all-changes', 'My Approvals'],
+        '/api/v3/releases'              => ['View all Releases', 'Release', 'release/release/view-all-releases', 'My Approvals'],
+        '/api/v3/purchase_orders'       => ['View all purchase orders', 'Purchase', 'purchase/purchase-order/view-all-purchase-orders', 'My Approvals'],
+        '/api/v3/assets'                => ['Get all assets', 'Asset (old)', 'asset/asset-old/get-all-assets', 'My Loans, Dashboard'],
+        '/api/v3/announcements'         => ['View All Announcements', 'Common', 'common/announcements/view-all-announcements', 'Announcements, Dashboard'],
+        '/api/v3/users'                 => ['Get all users', 'Common', 'common/user/get-all-users', 'User Mappings, sign-in matching'],
+        '/api/v3/request_templates'     => ['Get Incident Templates / Get Service Templates', 'Request', 'request/request-templates/get-incident-templates', ''],
+        '/api/v3/request_types'         => ['View all Request Types', 'Request', 'request/request-type/view-all-request-types', ''],
+        '/api/v3/request_closure_codes' => ['View all Request Closure Codes', 'Request', 'request/request-closure-code/view-all-request-closure-codes', ''],
+        '/api/v3/resolution_templates'  => ['View All Resolution Templates', 'Request', 'request/resolution-template/view-all-resolution-templates', ''],
+        '/api/v3/tags'                  => ['View all tags', 'Request', 'request/tag/view-all-tags', ''],
+        '/api/v3/problems'              => ['View All Problem', 'Problem', 'problem/problem-api/view-all-problem', ''],
+        '/api/v3/problem_templates'     => ['View All Problem Templates', 'Problem', 'problem/problem-templates/view-all-problem-templates', ''],
+        '/api/v3/change_types'          => ['View all Change Types', 'Change', 'change/change-type/view-all-change-types', ''],
+        '/api/v3/change_statuses'       => ['View all Change Statuses', 'Change', 'change/change-status/view-all-change-statuses', ''],
+        '/api/v3/change_stages'         => ['View all Change Stages', 'Change', 'change/change-stage/view-all-change-stages', ''],
+        '/api/v3/reasons_for_change'    => ['View All Reason for Change', 'Change', 'change/reason-for-change/view-all-reason-for-change', ''],
+        '/api/v3/risks'                 => ['View All Risk', 'Change', 'change/risk/view-all-risk', ''],
+        '/api/v3/cabs'                  => ['View All CABs', 'Change', 'change/cab/view-all-ca-bs', ''],
+        '/api/v3/release_stages'        => ['Get All Release Stages', 'Release', 'release/release-stage/get-all-release-stages', ''],
+        '/api/v3/projects'              => ['View all projects', 'Project', 'project/project/view-all-projects', ''],
+        '/api/v3/tasks'                 => ['View All Tasks', 'Common', 'common/general-task/view-all-tasks', ''],
+        '/api/v3/solutions'             => ['View all solutions', 'Solutions', 'solutions/solutions/view-all-solutions', ''],
+        '/api/v3/topics'                => ['View all topics', 'Solutions', 'solutions/topic/view-all-topics', ''],
+        '/api/v3/technicians'           => ['Get all technicians', 'Common', 'common/technician/get-all-technicians', ''],
+        '/api/v3/orgusers'              => ['Get all orgusers', 'Common', 'common/orguser/get-all-orgusers', ''],
+        '/api/v3/support_groups'        => ['View all support groups', 'Common', 'common/support-group/view-all-support-groups', ''],
+        '/api/v3/sites'                 => ['View all sites', 'Common', 'common/site/view-all-sites', ''],
+        '/api/v3/regions'               => ['View all Regions', 'Common', 'common/region/view-all-regions', ''],
+        '/api/v3/departments'           => ['Get all departments', 'Common', 'common/department/get-all-departments', ''],
+        '/api/v3/categories'            => ['View All Categories', 'Common', 'common/category/view-all-categories', ''],
+        '/api/v3/items'                 => ['View All Items', 'Common', 'common/item/view-all-items', ''],
+        '/api/v3/statuses'              => ['View All Statuses', 'Common', 'common/status/view-all-statuses', ''],
+        '/api/v3/priorities'            => ['View All Priorities', 'Common', 'common/priority/view-all-priorities', ''],
+        '/api/v3/urgencies'             => ['View all Urgencies', 'Common', 'common/urgency/view-all-urgencies', ''],
+        '/api/v3/impacts'               => ['View all Impacts', 'Common', 'common/impact/view-all-impacts', ''],
+        '/api/v3/levels'                => ['View All Levels', 'Common', 'common/level/view-all-levels', ''],
+        '/api/v3/modes'                 => ['View All Modes', 'Common', 'common/mode/view-all-modes', ''],
+        '/api/v3/asset_assets'          => ['Get all assets', 'Asset', 'asset/asset-asset/get-all-assets', ''],
+        '/api/v3/asset_computers'       => ['Get all computers', 'Asset', 'asset/asset-computer/get-all-computers', ''],
+        '/api/v3/asset_printers'        => ['Get all printers', 'Asset', 'asset/asset-printer/get-all-printers', ''],
+        '/api/v3/workstations'          => ['Get all workstations', 'Asset (old)', 'asset/workstation-old/get-all-workstations', ''],
+        '/api/v3/asset_states'          => ['Get all asset states', 'Asset', 'asset/asset-state/get-all-asset-states', ''],
+        '/api/v3/asset_modules'         => ['Get all product types', 'Asset', 'asset/product-type/get-all-product-types', ''],
+        '/api/v3/products'              => ['Get all products', 'Asset', 'asset/product/get-all-products', ''],
+        '/api/v3/vendors'               => ['Get all vendors', 'Asset', 'asset/vendor/get-all-vendors', ''],
+        '/api/v3/softwares'             => ['View All Software', 'Software', 'software/software/view-all-software', ''],
+        '/api/v3/contracts'             => ['View All Contracts', 'Contract', 'contract/contract/view-all-contracts', ''],
+        '/api/v3/contract_types'        => ['View All Contract Types', 'Contract', 'contract/contract-type/view-all-contract-types', ''],
+        '/api/v3/reports'               => ['View all Query Reports', 'Reports', 'reports/query-reports/view-all-query-reports', ''],
     ];
 
     /**
-     * @return list<array{path: string, summary: string, portal: string}>
+     * @return list<array{path: string, summary: string, section: string, doc: string, portal: string}>
      */
     public static function all(): array
     {
         $out = [];
 
-        foreach (self::ENDPOINTS as $path => [$summary, $portal]) {
-            $out[] = ['path' => $path, 'summary' => $summary, 'portal' => $portal];
+        foreach (self::ENDPOINTS as $path => [$summary, $section, $doc, $portal]) {
+            $out[] = ['path' => $path, 'summary' => $summary, 'section' => $section, 'doc' => self::DOCS . $doc, 'portal' => $portal];
         }
 
         return $out;
@@ -82,7 +107,7 @@ final class EndpointCatalog
      */
     public static function portalPaths(): array
     {
-        return array_keys(array_filter(self::ENDPOINTS, static fn (array $e): bool => $e[1] !== ''));
+        return array_keys(array_filter(self::ENDPOINTS, static fn (array $e): bool => $e[3] !== ''));
     }
 
     /**

@@ -442,9 +442,7 @@ final class SdpClient
     }
 
     /**
-     * GET /api/v3/assets.
-     *
-     * UNVERIFIED: assets are not in the On-Premises v3 reference.
+     * GET /api/v3/assets (On Premise API collection, Asset > "Asset (old)" > "Get all assets").
      * Only these methods name the path.
      */
     public function listAssets(ListInfo $listInfo): ListPage
@@ -453,7 +451,7 @@ final class SdpClient
     }
 
     /**
-     * All pages of GET /api/v3/assets. UNVERIFIED, see listAssets().
+     * All pages of GET /api/v3/assets. See listAssets().
      *
      * @return list<array<string, mixed>>
      */
@@ -463,7 +461,7 @@ final class SdpClient
     }
 
     /**
-     * GET /api/v3/assets/{asset_id}. UNVERIFIED, see listAssets().
+     * GET /api/v3/assets/{asset_id}. See listAssets().
      *
      * @return array<string, mixed>
      */
@@ -504,11 +502,10 @@ final class SdpClient
     /**
      * Attach one file to an existing request.
      *
-     * UNVERIFIED: the On-Premises v3 reference documents no upload endpoint (request responses only
-     * show "attachments" with content_url /api/v3/requests/{id}/attachments/{id}/download). Two
-     * forms used by SDP builds are tried in order, and the one that worked is logged:
-     *   1. PUT  /api/v3/requests/{id}/upload    multipart field "input_file"
-     *   2. POST /api/v3/requests/{id}/_uploads  multipart field "filename"
+     * Two forms are tried in order, and the one that worked is logged:
+     *   1. PUT  /api/v3/requests/{id}/upload    multipart field "input_file" (On Premise API
+     *      collection, Request > Request Attachment > "Add and associate attachment")
+     *   2. POST /api/v3/requests/{id}/_uploads  multipart field "filename" (undocumented, older builds)
      * The second is only tried when the first answers "not found" / "method not allowed".
      *
      * @return array<string, mixed>  SDP response

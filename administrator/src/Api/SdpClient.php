@@ -12,7 +12,9 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Api;
 
 use Psr\Log\LoggerInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\Transport\TransportException;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\Transport\ParallelTransportInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\Transport\TransportInterface;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\Transport\TransportResponse;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 
 /**
@@ -32,11 +34,17 @@ final class SdpClient
     private const GET_RETRIES    = 1;
     private const RETRY_DELAY_US = 300_000;
 
+    /** Reads sent at once by getMany() unless the caller says otherwise. */
+    public const DEFAULT_CONCURRENCY = 6;
+
     /** Safety cap for listAll() so a bad has_more_rows value cannot loop forever. */
     private const MAX_PAGES = 50;
 
     /** @var list<string> */
     private array $secrets;
+
+    /** @var array{dns: int, connect: int, tls: int, server: int, total: int, reused: bool}|null */
+    private ?array $lastTiming = null;
 
     public function __construct(
         private readonly TransportInterface $transport,
@@ -49,6 +57,7 @@ final class SdpClient
         }
 
         $this->secrets = [$serviceKey];
+        PageStats::start($logger);
     }
 
     /**
@@ -229,6 +238,68 @@ final class SdpClient
         );
 
         return $this->collection($data, 'approvals');
+    }
+
+    /**
+     * getApprovalLevels() for several records at once.
+     *
+     * @param  list<string>  $entityIds
+     *
+     * @return array<string, list<array<string, mixed>>|SdpException>  entity id => levels or the error
+     */
+    public function getApprovalLevelsMany(array $entityIds, string $module = ApprovalModule::REQUEST, int $concurrency = self::DEFAULT_CONCURRENCY): array
+    {
+        $calls = [];
+
+        foreach ($entityIds as $entityId) {
+            $calls[self::id($entityId)] = [
+                self::modulePath($module, $entityId) . '/approval_levels',
+                ['list_info' => ['row_count' => ListInfo::MAX_ROW_COUNT, 'start_index' => 1]],
+            ];
+        }
+
+        return $this->collectionsOf($this->getMany($calls, $concurrency), 'approval_levels');
+    }
+
+    /**
+     * getApprovals() for several records at once, one level each.
+     *
+     * @param  array<string, string>  $levelByEntity  entity id => level id
+     *
+     * @return array<string, list<array<string, mixed>>|SdpException>  entity id => approvals or the error
+     */
+    public function getApprovalsMany(array $levelByEntity, string $module = ApprovalModule::REQUEST, int $concurrency = self::DEFAULT_CONCURRENCY): array
+    {
+        $calls = [];
+
+        foreach ($levelByEntity as $entityId => $levelId) {
+            $calls[self::id((string) $entityId)] = [
+                self::modulePath($module, (string) $entityId) . '/approval_levels/' . self::id($levelId) . '/approvals',
+                ['list_info' => ['row_count' => ListInfo::MAX_ROW_COUNT, 'start_index' => 1]],
+            ];
+        }
+
+        return $this->collectionsOf($this->getMany($calls, $concurrency), 'approvals');
+    }
+
+    /**
+     * @param  array<int|string, array<string, mixed>|SdpException>  $results
+     *
+     * @return array<string, list<array<string, mixed>>|SdpException>
+     */
+    private function collectionsOf(array $results, string $key): array
+    {
+        $out = [];
+
+        foreach ($results as $id => $result) {
+            try {
+                $out[(string) $id] = $result instanceof SdpException ? $result : $this->collection($result, $key);
+            } catch (SdpException $e) {
+                $out[(string) $id] = $e;
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -644,6 +715,16 @@ final class SdpClient
         return $entity;
     }
 
+    /**
+     * Timing of the last single call, when the transport measured it (Diagnostics).
+     *
+     * @return array{dns: int, connect: int, tls: int, server: int, total: int, reused: bool}|null
+     */
+    public function lastTiming(): ?array
+    {
+        return $this->lastTiming;
+    }
+
     public function __debugInfo(): array
     {
         return ['baseUrl' => $this->config->baseUrl, 'serviceKey' => '[redacted]'];
@@ -674,6 +755,68 @@ final class SdpClient
     }
 
     /**
+     * Several reads at once (GET only), at most $concurrency at a time when the transport can.
+     * Each read is checked like get(): a failed one gives its SdpException in place of the data,
+     * and a read that could not connect is tried once more on its own.
+     *
+     * @param  array<int|string, array{0: string, 1: array<string, mixed>|null}>  $calls  key => [path, input_data]
+     *
+     * @return array<int|string, array<string, mixed>|SdpException>  Same keys
+     */
+    public function getMany(array $calls, int $concurrency = self::DEFAULT_CONCURRENCY): array
+    {
+        $out = [];
+
+        if (!$this->transport instanceof ParallelTransportInterface || $concurrency <= 1 || \count($calls) <= 1) {
+            foreach ($calls as $key => [$path, $input]) {
+                try {
+                    $out[$key] = $this->get($path, $input);
+                } catch (SdpException $e) {
+                    $out[$key] = $e;
+                }
+            }
+
+            return $out;
+        }
+
+        $requests = [];
+        $paths    = [];
+
+        foreach ($calls as $key => [$path, $input]) {
+            [$url, $headers]  = $this->request('GET', $path, $input, $this->serviceKey);
+            $requests[$key] = [$url, $headers];
+            $paths[$key]    = $path;
+        }
+
+        $started   = hrtime(true);
+        $responses = $this->transport->getAll($requests, $concurrency);
+        $secrets   = $this->secrets;
+
+        foreach ($responses as $key => $response) {
+            try {
+                if ($response instanceof TransportException) {
+                    // Tried once more on its own, like a single read.
+                    $this->logger->warning(\sprintf('SDP GET %s failed (trying again): %s', $paths[$key], Redactor::scrub($response->getMessage(), $secrets)));
+                    $out[$key] = $this->get($paths[$key], $calls[$key][1]);
+
+                    continue;
+                }
+
+                $out[$key] = $this->finish('GET', $paths[$key], $response, null, $secrets, true);
+            } catch (SdpException $e) {
+                $out[$key] = $e;
+            }
+        }
+
+        $batchMs = (int) ((hrtime(true) - $started) / 1_000_000);
+        PageStats::waited($batchMs);
+
+        $this->logger->info(\sprintf('SDP %d reads in parallel (up to %d at a time): %d ms in total', \count($calls), $concurrency, $batchMs));
+
+        return $out;
+    }
+
+    /**
      * @param  array<string, mixed>|null               $input
      * @param  array{0: string, 1: string}|null        $raw    Prebuilt [body, Content-Type] (uploads)
      * @param  array<string, string>                   $query  Extra query parameters (e.g. ids=...)
@@ -682,35 +825,7 @@ final class SdpClient
      */
     private function call(string $method, string $path, ?array $input, #[\SensitiveParameter] string $authtoken, ?array $raw = null, array $query = []): array
     {
-        if (!preg_match('#^/api/v3(/[a-z0-9_]+)+$#', $path)) {
-            throw new \InvalidArgumentException('Invalid SDP API path');
-        }
-
-        $url     = $this->config->baseUrl . $path;
-        $headers = ['Accept' => self::ACCEPT, 'authtoken' => $authtoken];
-
-        if ($query !== []) {
-            $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
-        }
-        $body    = null;
-
-        if ($raw !== null) {
-            [$body, $headers['Content-Type']] = $raw;
-        } else {
-            if ($input !== null) {
-                $json = json_encode($input, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-                if ($method === 'GET') {
-                    $url .= ($query !== [] ? '&' : '?') . http_build_query(['input_data' => $json], '', '&', PHP_QUERY_RFC3986);
-                } else {
-                    $body = http_build_query(['input_data' => $json], '', '&', PHP_QUERY_RFC1738);
-                }
-            }
-
-            if ($method !== 'GET') {
-                $headers['Content-Type'] = 'application/x-www-form-urlencoded';
-            }
-        }
+        [$url, $headers, $body] = $this->request($method, $path, $input, $authtoken, $raw, $query);
 
         $secrets = array_values(array_unique([...$this->secrets, $authtoken]));
         $started = hrtime(true);
@@ -743,7 +858,68 @@ final class SdpClient
             }
         }
 
-        $elapsed = (int) ((hrtime(true) - $started) / 1_000_000);
+        return $this->finish($method, $path, $response, (int) ((hrtime(true) - $started) / 1_000_000), $secrets);
+    }
+
+    /**
+     * URL, headers and body of one call.
+     *
+     * @param  array<string, mixed>|null         $input
+     * @param  array{0: string, 1: string}|null  $raw
+     * @param  array<string, string>             $query
+     *
+     * @return array{0: string, 1: array<string, string>, 2: ?string}
+     */
+    private function request(string $method, string $path, ?array $input, #[\SensitiveParameter] string $authtoken, ?array $raw = null, array $query = []): array
+    {
+        if (!preg_match('#^/api/v3(/[a-z0-9_]+)+$#', $path)) {
+            throw new \InvalidArgumentException('Invalid SDP API path');
+        }
+
+        $url     = $this->config->baseUrl . $path;
+        $headers = ['Accept' => self::ACCEPT, 'authtoken' => $authtoken];
+        $body    = null;
+
+        if ($query !== []) {
+            $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        }
+
+        if ($raw !== null) {
+            [$body, $headers['Content-Type']] = $raw;
+        } else {
+            if ($input !== null) {
+                $json = json_encode($input, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                if ($method === 'GET') {
+                    $url .= ($query !== [] ? '&' : '?') . http_build_query(['input_data' => $json], '', '&', PHP_QUERY_RFC3986);
+                } else {
+                    $body = http_build_query(['input_data' => $json], '', '&', PHP_QUERY_RFC1738);
+                }
+            }
+
+            if ($method !== 'GET') {
+                $headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            }
+        }
+
+        return [$url, $headers, $body];
+    }
+
+    /**
+     * Check one response, log it with its timing and count it for the page summary.
+     *
+     * @param  ?int          $elapsed  Measured by the caller (ms); null = use the transport's timing
+     * @param  list<string>  $secrets
+     *
+     * @return array<string, mixed>
+     */
+    private function finish(string $method, string $path, TransportResponse $response, ?int $elapsed, array $secrets, bool $batched = false): array
+    {
+        $ms = $response->timing['total'] ?? $elapsed ?? 0;
+        PageStats::add($path, $ms, !$batched);
+        $this->lastTiming = $response->timing;
+
+        $timing  = self::timing($response->timing);
         $decoded = $this->decode($response->body);
         [$failed, $sdpCode, $sdpMessage] = $this->readStatus($decoded);
 
@@ -754,13 +930,14 @@ final class SdpClient
                 : SdpException::fromResponse($response->status, $sdpCode, $sdpMessage);
 
             $this->logger->warning(\sprintf(
-                'SDP %s %s -> HTTP %d, code %s, kind %s, %d ms: %s',
+                'SDP %s %s -> HTTP %d, code %s, kind %s, %d ms%s: %s',
                 $method,
                 $path,
                 $response->status,
                 $sdpCode ?? '-',
                 $exception->getKind(),
-                $elapsed,
+                $ms,
+                $timing,
                 $sdpMessage
             ));
 
@@ -773,9 +950,27 @@ final class SdpClient
             throw new SdpException(SdpException::BAD_RESPONSE, 'ServiceDesk Plus returned an unreadable response', $response->status);
         }
 
-        $this->logger->info(\sprintf('SDP %s %s -> HTTP %d, %d ms', $method, $path, $response->status, $elapsed));
+        $this->logger->info(\sprintf('SDP %s %s -> HTTP %d, %d ms%s', $method, $path, $response->status, $ms, $timing));
 
         return $decoded;
+    }
+
+    /**
+     * " (connect 12 ms, TLS 85 ms, server 140 ms)" or " (reused connection, server 140 ms)".
+     *
+     * @param  array{dns: int, connect: int, tls: int, server: int, total: int, reused: bool}|null  $t
+     */
+    private static function timing(?array $t): string
+    {
+        if ($t === null) {
+            return '';
+        }
+
+        if ($t['reused']) {
+            return ' (reused connection, server ' . $t['server'] . ' ms)';
+        }
+
+        return ' (DNS ' . $t['dns'] . ' ms, connect ' . $t['connect'] . ' ms' . ($t['tls'] > 0 ? ', TLS ' . $t['tls'] . ' ms' : '') . ', server ' . $t['server'] . ' ms)';
     }
 
     /**

@@ -134,6 +134,16 @@
             filter="integer"
         />
         <field
+            name="parallel_requests"
+            type="number"
+            label="COM_SERVICEDESKPLUS_SETTINGS_PARALLEL"
+            description="COM_SERVICEDESKPLUS_SETTINGS_PARALLEL_DESC"
+            default="6"
+            min="1"
+            max="10"
+            filter="integer"
+        />
+        <field
             name="rate_create_per_hour"
             type="number"
             label="COM_SERVICEDESKPLUS_SETTINGS_RATE_CREATE"

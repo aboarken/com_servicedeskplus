@@ -70,7 +70,8 @@ final class ApprovalService
         private readonly string $pendingStatus = 'Pending Approval',
         private readonly int $scanLimit = 50,
         private readonly string $approvalAccountEmail = '',
-        private readonly array $modules = ApprovalModule::ALL
+        private readonly array $modules = ApprovalModule::ALL,
+        private readonly int $concurrency = SdpClient::DEFAULT_CONCURRENCY
     ) {
     }
 
@@ -155,51 +156,95 @@ final class ApprovalService
             return [];
         }
 
-        $fields  = ApprovalModule::fields($module);
-        $pending = [];
+        $fields = ApprovalModule::fields($module);
+        $open   = [];
 
         foreach ($records as $record) {
             $entityId = SdpFields::string($record, 'id');
 
-            if (!preg_match('/^[0-9]{1,20}$/', $entityId) || self::isClosed($record)) {
+            if (preg_match('/^[0-9]{1,20}$/', $entityId) && !self::isClosed($record)) {
+                $open[$entityId] = $record;
+            }
+        }
+
+        if ($open === []) {
+            return [];
+        }
+
+        // 1. The approval levels of every record, several at once; 2. the approvals of each
+        // record's current level, several at once. A record that cannot be read is skipped.
+        $levels = [];
+
+        foreach ($client->getApprovalLevelsMany(array_map('strval', array_keys($open)), $module, $this->concurrency) as $entityId => $result) {
+            if ($this->skipped($result, $module, (string) $entityId, $fatal)) {
                 continue;
             }
 
-            try {
-                $level = $this->currentLevel($client->getApprovalLevels($entityId, $module));
+            $level = $this->currentLevel($result);
 
-                if ($level === null) {
-                    continue;
-                }
+            if ($level !== null && preg_match('/^[0-9]{1,20}$/', SdpFields::string($level, 'id'))) {
+                $levels[(string) $entityId] = $level;
+            }
+        }
 
-                $levelId = SdpFields::string($level, 'id');
+        if ($levels === []) {
+            return [];
+        }
 
-                foreach ($client->getApprovals($entityId, $levelId, $module) as $approval) {
-                    if ($this->isMine($approval, $sdpUserId) && $this->isPendingStatus($approval)) {
-                        $pending[] = new PendingApproval(
-                            $entityId,
-                            $levelId,
-                            SdpFields::string($approval, 'id'),
-                            self::firstText($record, $fields['title'], false),
-                            self::firstText($record, $fields['requester'], true),
-                            SdpFields::timestamp($approval, 'sent_on'),
-                            SdpFields::string($level, 'level') ?: SdpFields::string($level, 'name'),
-                            $module
-                        );
-                    }
-                }
-            } catch (SdpException $e) {
-                if (\in_array($e->getKind(), $fatal, true)) {
-                    throw $e;
-                }
+        $pending = [];
+        $byLevel = array_map(static fn (array $level): string => SdpFields::string($level, 'id'), $levels);
 
-                $this->logger->warning(\sprintf('Approvals of %s %s could not be read (%s)', str_replace('_', ' ', $module), $entityId, $e->getKind()));
-            } catch (\InvalidArgumentException) {
+        foreach ($client->getApprovalsMany($byLevel, $module, $this->concurrency) as $entityId => $result) {
+            $entityId = (string) $entityId;
+
+            if ($this->skipped($result, $module, $entityId, $fatal)) {
                 continue;
+            }
+
+            $level  = $levels[$entityId];
+            $record = $open[$entityId];
+
+            foreach ($result as $approval) {
+                if ($this->isMine($approval, $sdpUserId) && $this->isPendingStatus($approval)) {
+                    $pending[] = new PendingApproval(
+                        $entityId,
+                        SdpFields::string($level, 'id'),
+                        SdpFields::string($approval, 'id'),
+                        self::firstText($record, $fields['title'], false),
+                        self::firstText($record, $fields['requester'], true),
+                        SdpFields::timestamp($approval, 'sent_on'),
+                        SdpFields::string($level, 'level') ?: SdpFields::string($level, 'name'),
+                        $module
+                    );
+                }
             }
         }
 
         return $pending;
+    }
+
+    /**
+     * True when a batched read failed and the record is skipped (logged). Network,
+     * authentication and configuration errors are thrown, as for single reads.
+     *
+     * @param  list<array<string, mixed>>|SdpException  $result
+     * @param  list<string>                              $fatal
+     *
+     * @throws SdpException
+     */
+    private function skipped(array|SdpException $result, string $module, string $entityId, array $fatal): bool
+    {
+        if (!$result instanceof SdpException) {
+            return false;
+        }
+
+        if (\in_array($result->getKind(), $fatal, true)) {
+            throw $result;
+        }
+
+        $this->logger->warning(\sprintf('Approvals of %s %s could not be read (%s)', str_replace('_', ' ', $module), $entityId, $result->getKind()));
+
+        return true;
     }
 
     /**

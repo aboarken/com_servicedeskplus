@@ -30,6 +30,8 @@ final class Settings
         'cache_minutes'        => '',
         // Seconds; setting of versions before 1.15.0, read only until cache_minutes is saved.
         'cache_ttl'            => '',
+        // ServiceDesk Plus reads sent at once where the portal reads many records (approval scan).
+        'parallel_requests'    => '6',
         'rate_create_per_hour' => '10',
         'rate_decide_per_hour' => '30',
         'request_statuses'     => 'Open,On Hold,Resolved,Closed',
@@ -117,6 +119,14 @@ final class Settings
     public function cacheTtl(): int
     {
         return $this->cacheMinutes() * 60;
+    }
+
+    public const MAX_PARALLEL_REQUESTS = 10;
+
+    /** Reads sent to ServiceDesk Plus at once (1 = one after another). */
+    public function parallelRequests(): int
+    {
+        return max(1, min(self::MAX_PARALLEL_REQUESTS, (int) $this->get('parallel_requests')));
     }
 
     public function rateCreatePerHour(): int

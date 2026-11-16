@@ -25,11 +25,17 @@ final class RequestQuery
     /** URL value of the "All statuses" filter option. */
     public const ALL_STATUSES = 'all';
 
+    /** URL values of the request type filter ("" is all types). */
+    public const TYPE_SERVICE  = 'service';
+    public const TYPE_INCIDENT = 'incident';
+    public const TYPES         = [self::TYPE_SERVICE, self::TYPE_INCIDENT];
+
     public readonly int $page;
     public readonly string $search;
     public readonly string $status;
     public readonly string $sort;
     public readonly string $direction;
+    public readonly string $type;
 
     /**
      * @param  list<string>  $allowedStatuses
@@ -41,7 +47,8 @@ final class RequestQuery
         string $sort = 'created',
         string $direction = 'desc',
         array $allowedStatuses = [],
-        public readonly int $limit = self::PAGE_SIZE
+        public readonly int $limit = self::PAGE_SIZE,
+        string $type = ''
     ) {
         $this->page      = max(1, min(self::MAX_PAGE, $page));
         $search          = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $search) ?? '');
@@ -49,6 +56,20 @@ final class RequestQuery
         $this->status    = \in_array($status, $allowedStatuses, true) ? $status : '';
         $this->sort      = isset(self::SORTS[$sort]) ? $sort : 'created';
         $this->direction = $direction === 'asc' ? 'asc' : 'desc';
+        $this->type      = \in_array($type, self::TYPES, true) ? $type : '';
+    }
+
+    /**
+     * Whether an SDP request row has the selected type. True for all types, and for rows that do
+     * not say their type (SDP's own search already filtered them).
+     *
+     * @param array<string, mixed> $request
+     */
+    public function matchesType(array $request): bool
+    {
+        $flag = RequestStats::serviceFlag($request);
+
+        return $this->type === '' || $flag === null || $flag === ($this->type === self::TYPE_SERVICE);
     }
 
     /**
@@ -105,6 +126,6 @@ final class RequestQuery
 
     public function cacheKey(): string
     {
-        return 'requests:' . hash('sha256', json_encode([$this->page, $this->search, $this->status, $this->sort, $this->direction, $this->limit]));
+        return 'requests:' . hash('sha256', json_encode([$this->page, $this->search, $this->status, $this->sort, $this->direction, $this->limit, $this->type]));
     }
 }

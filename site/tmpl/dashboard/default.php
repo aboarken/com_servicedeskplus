@@ -14,12 +14,8 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 
 $date    = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC5')) : '—';
 $buckets = [
-    'open'     => 'COM_SERVICEDESKPLUS_DASHBOARD_OPEN',
-    'on_hold'  => 'COM_SERVICEDESKPLUS_DASHBOARD_ON_HOLD',
-    'resolved' => 'COM_SERVICEDESKPLUS_DASHBOARD_RESOLVED',
-    'closed'   => 'COM_SERVICEDESKPLUS_DASHBOARD_CLOSED',
-    'canceled' => 'COM_SERVICEDESKPLUS_DASHBOARD_CANCELED',
-    'other'    => 'COM_SERVICEDESKPLUS_DASHBOARD_OTHER',
+    'open'    => 'COM_SERVICEDESKPLUS_DASHBOARD_OPEN',
+    'on_hold' => 'COM_SERVICEDESKPLUS_DASHBOARD_ON_HOLD',
 ];
 // A number that opens its page; "—" when it is not known.
 $link = fn (?int $value, string $url): string => $value === null ? '—' : '<a href="' . $url . '">' . $value . '</a>';
@@ -39,7 +35,7 @@ $card = function (string $label, int $value, string $url): string {
     <div class="row g-3 mb-4">
         <?php if ($this->requests !== null) :
             echo $card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_OPEN_REQUESTS'), $this->requests->service['open'] + $this->requests->incident['open'], $this->statusUrl('open'));
-            echo $card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_OVERDUE_REQUESTS'), $this->requests->overdue, $this->url('requests&status=all'));
+            echo $card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_ON_HOLD_REQUESTS'), $this->requests->service['on_hold'] + $this->requests->incident['on_hold'], $this->statusUrl('on_hold'));
         endif; ?>
         <?php if ($this->showApprovals && $this->approvalsError === '') :
             echo $card(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_WAITING_APPROVAL'), $this->approvals['total'] ?? 0, $this->url('approvals'));
@@ -88,7 +84,39 @@ $card = function (string $label, int $value, string $url): string {
         <?php endif; ?>
     <?php endif; ?>
 
+    <?php if ($this->showRequests && $this->requests !== null && $this->requests->recent !== []) : ?>
+        <?php // Newest open and on-hold requests, under the announcements ?>
+        <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_RECENT'); ?></h2>
+        <div class="table-responsive mb-4">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_UPDATED'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($this->requests->recent as $r) :
+                    $url = $this->url('request&id=' . rawurlencode($r->id));
+                    ?>
+                    <tr>
+                        <td><a href="<?php echo $url; ?>"><?php echo $this->escape($r->id); ?></a></td>
+                        <td><a href="<?php echo $url; ?>"><?php echo $this->escape($r->subject); ?></a></td>
+                        <td><?php echo $this->escape($r->status); ?></td>
+                        <td><?php echo $date($r->updatedAt); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+
+    <?php // My Requests, My Approvals and My Loans side by side (stacked on small screens) ?>
+    <div class="row g-4 sdp-dashboard-columns">
     <?php if ($this->showRequests) : ?>
+        <div class="col-12 col-lg-4">
         <?php // Requests by status and type ?>
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_REQUESTS'); ?></h2>
         <?php if ($this->requestsError !== '') : ?>
@@ -109,9 +137,6 @@ $card = function (string $label, int $value, string $url): string {
                     <?php foreach ($buckets as $bucket => $label) :
                         $s = $this->requests->service[$bucket] ?? 0;
                         $i = $this->requests->incident[$bucket] ?? 0;
-                        if (\in_array($bucket, ['canceled', 'other'], true) && $s + $i === 0) {
-                            continue;
-                        }
                         $url = $this->statusUrl($bucket);
                         ?>
                         <tr>
@@ -141,38 +166,12 @@ $card = function (string $label, int $value, string $url): string {
                     · <a href="<?php echo $this->url('requestform'); ?>"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBMIT_A_REQUEST'); ?></a>
                 <?php endif; ?>
             </p>
-
-            <?php if ($this->requests->recent !== []) : ?>
-                <h2 class="h5"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_RECENT'); ?></h2>
-                <div class="table-responsive mb-4">
-                    <table class="table table-striped align-middle">
-                        <thead>
-                            <tr>
-                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
-                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
-                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></th>
-                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_UPDATED'); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($this->requests->recent as $r) :
-                            $url = $this->url('request&id=' . rawurlencode($r->id));
-                            ?>
-                            <tr>
-                                <td><a href="<?php echo $url; ?>"><?php echo $this->escape($r->id); ?></a></td>
-                                <td><a href="<?php echo $url; ?>"><?php echo $this->escape($r->subject); ?></a></td>
-                                <td><?php echo $this->escape($r->status); ?></td>
-                                <td><?php echo $date($r->updatedAt); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
         <?php endif; ?>
+        </div>
     <?php endif; ?>
 
     <?php if ($this->showApprovals) : ?>
+        <div class="col-12 col-lg-4">
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_APPROVALS'); ?></h2>
         <?php if ($this->approvalsError !== '') : ?>
             <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->approvalsError); ?></div>
@@ -218,9 +217,11 @@ $card = function (string $label, int $value, string $url): string {
                 </tbody>
             </table>
         </div>
+        </div>
     <?php endif; ?>
 
     <?php if ($this->showLoans) : ?>
+        <div class="col-12 col-lg-4">
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_DASHBOARD_LOANS'); ?></h2>
         <?php if ($this->loansError !== '') : ?>
             <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->loansError); ?></div>
@@ -245,5 +246,7 @@ $card = function (string $label, int $value, string $url): string {
                 </table>
             </div>
         <?php endif; ?>
+        </div>
     <?php endif; ?>
+    </div>
 </div>

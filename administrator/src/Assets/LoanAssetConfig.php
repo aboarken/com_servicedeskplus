@@ -21,6 +21,18 @@ final class LoanAssetConfig
     public const LOAN_START  = 'loan_start';
     public const LOAN_END    = 'loan_end';
 
+    /** Purchase date: acquisition_date on SDP builds that name it so. First non-empty wins. */
+    public const PURCHASE_DATE_PATHS = ['purchase_date', 'acquisition_date', 'purchase_order.purchase_date'];
+
+    /** Warranty expiry date. */
+    public const WARRANTY_EXPIRY_PATHS = ['warranty_expiry', 'warranty_expiry_date', 'expiry_date'];
+
+    /** Department of the asset, else of its user. */
+    public const DEPARTMENT_PATHS = ['department.name', 'user.department.name'];
+
+    /** User the asset is loaned to. */
+    public const LOANED_TO_PATHS = ['user.name', 'user.email_id'];
+
     /** Product type: top level on this build, under product on others. */
     private const PRODUCT_TYPE_PATHS = ['product_type.name', 'product.product_type.name'];
 

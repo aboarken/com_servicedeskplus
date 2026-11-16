@@ -23,7 +23,11 @@ final class LoanAsset
         public readonly string $serialNumber,
         public readonly string $state,
         public readonly ?int $loanStart,
-        public readonly ?int $loanEnd
+        public readonly ?int $loanEnd,
+        public readonly ?int $purchaseDate = null,
+        public readonly ?int $warrantyExpiry = null,
+        public readonly string $department = '',
+        public readonly string $loanedTo = ''
     ) {
     }
 
@@ -40,7 +44,11 @@ final class LoanAsset
             $serial !== '' ? $serial : AssetPath::text($a, 'serial_number'),
             AssetPath::text($a, 'state.name'),
             AssetPath::timestamp($a, LoanAssetConfig::LOAN_START),
-            AssetPath::timestamp($a, LoanAssetConfig::LOAN_END)
+            AssetPath::timestamp($a, LoanAssetConfig::LOAN_END),
+            AssetPath::firstTimestamp($a, LoanAssetConfig::PURCHASE_DATE_PATHS),
+            AssetPath::firstTimestamp($a, LoanAssetConfig::WARRANTY_EXPIRY_PATHS),
+            AssetPath::firstText($a, LoanAssetConfig::DEPARTMENT_PATHS),
+            AssetPath::firstText($a, LoanAssetConfig::LOANED_TO_PATHS)
         );
     }
 

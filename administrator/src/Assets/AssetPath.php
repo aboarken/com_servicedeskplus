@@ -69,4 +69,42 @@ final class AssetPath
 
         return $ms > 0 ? intdiv($ms, 1000) : null;
     }
+
+    /**
+     * Text of the first path that has one.
+     *
+     * @param array<string, mixed> $data
+     * @param list<string>         $paths
+     */
+    public static function firstText(array $data, array $paths): string
+    {
+        foreach ($paths as $path) {
+            $value = self::text($data, $path);
+
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Timestamp of the first path that has one.
+     *
+     * @param array<string, mixed> $data
+     * @param list<string>         $paths
+     */
+    public static function firstTimestamp(array $data, array $paths): ?int
+    {
+        foreach ($paths as $path) {
+            $value = self::timestamp($data, $path);
+
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
 }

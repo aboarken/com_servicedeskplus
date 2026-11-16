@@ -59,3 +59,265 @@
 .com-servicedeskplus .sdp-page-header .btn {
   min-height: calc(1.5em + 0.75rem + 2px);
 }
+
+/*
+ * Template independence
+ * ---------------------
+ * The portal pages use Bootstrap 5 class names, which Cassiopeia and most Joomla templates style.
+ * The rules below give those classes a plain look when the site template does not provide them.
+ * Every selector is wrapped in :where(), which has zero specificity, so any style of the
+ * installed template wins over these and the pages follow the template wherever it has one.
+ */
+:where(.com-servicedeskplus) {
+  --sdp-border: var(--bs-border-color, #dee2e6);
+  --sdp-muted: var(--bs-secondary-color, #6c757d);
+  --sdp-radius: var(--bs-border-radius, 0.375rem);
+  --sdp-link: var(--bs-link-color, #0d6efd);
+  --sdp-stripe: rgba(0, 0, 0, 0.05);
+}
+
+:where(.com-servicedeskplus) :where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
+/* Grid */
+:where(.com-servicedeskplus .row) {
+  --sdp-gx: 1.5rem;
+  --sdp-gy: 0;
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: calc(-1 * var(--sdp-gy));
+  margin-right: calc(-0.5 * var(--sdp-gx));
+  margin-left: calc(-0.5 * var(--sdp-gx));
+}
+
+:where(.com-servicedeskplus .row > *) {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  padding-right: calc(0.5 * var(--sdp-gx));
+  padding-left: calc(0.5 * var(--sdp-gx));
+  margin-top: var(--sdp-gy);
+}
+
+:where(.com-servicedeskplus .g-2) { --sdp-gx: 0.5rem; --sdp-gy: 0.5rem; }
+:where(.com-servicedeskplus .g-3) { --sdp-gx: 1rem; --sdp-gy: 1rem; }
+:where(.com-servicedeskplus .row > .col) { flex: 1 0 0%; }
+:where(.com-servicedeskplus .row > .col-6) { flex: 0 0 auto; width: 50%; }
+:where(.com-servicedeskplus .row > .col-12) { flex: 0 0 auto; width: 100%; }
+
+@media (min-width: 576px) {
+  :where(.com-servicedeskplus .row > .col-sm-auto) { flex: 0 0 auto; width: auto; }
+  :where(.com-servicedeskplus .row > .col-sm-3) { flex: 0 0 auto; width: 25%; }
+  :where(.com-servicedeskplus .row > .col-sm-4) { flex: 0 0 auto; width: 33.333333%; }
+  :where(.com-servicedeskplus .row > .col-sm-6) { flex: 0 0 auto; width: 50%; }
+  :where(.com-servicedeskplus .row > .col-sm-9) { flex: 0 0 auto; width: 75%; }
+}
+
+@media (min-width: 768px) {
+  :where(.com-servicedeskplus .row > .col-md-4) { flex: 0 0 auto; width: 33.333333%; }
+}
+
+@media (min-width: 992px) {
+  :where(.com-servicedeskplus .row > .col-lg) { flex: 1 0 0%; width: auto; }
+  :where(.com-servicedeskplus .row > .col-lg-2) { flex: 0 0 auto; width: 16.666667%; }
+  :where(.com-servicedeskplus .row > .col-lg-3) { flex: 0 0 auto; width: 25%; }
+  :where(.com-servicedeskplus .row > .col-lg-4) { flex: 0 0 auto; width: 33.333333%; }
+  :where(.com-servicedeskplus .row > .col-lg-5) { flex: 0 0 auto; width: 41.666667%; }
+}
+
+@media (min-width: 1200px) {
+  :where(.com-servicedeskplus .row > .col-xl) { flex: 1 0 0%; width: auto; }
+}
+
+/* Flex and spacing utilities */
+:where(.com-servicedeskplus .d-flex) { display: flex; }
+:where(.com-servicedeskplus .d-none) { display: none; }
+:where(.com-servicedeskplus .flex-wrap) { flex-wrap: wrap; }
+:where(.com-servicedeskplus .gap-2) { gap: 0.5rem; }
+:where(.com-servicedeskplus .align-items-center) { align-items: center; }
+:where(.com-servicedeskplus .align-items-end) { align-items: flex-end; }
+:where(.com-servicedeskplus .align-middle) { vertical-align: middle; }
+:where(.com-servicedeskplus .align-middle :is(th, td)) { vertical-align: middle; }
+:where(.com-servicedeskplus .w-100) { width: 100%; }
+:where(.com-servicedeskplus .h-100) { height: 100%; }
+:where(.com-servicedeskplus .mb-0) { margin-bottom: 0; }
+:where(.com-servicedeskplus .mb-2) { margin-bottom: 0.5rem; }
+:where(.com-servicedeskplus .mb-3) { margin-bottom: 1rem; }
+:where(.com-servicedeskplus .mb-4) { margin-bottom: 1.5rem; }
+:where(.com-servicedeskplus .mt-2) { margin-top: 0.5rem; }
+:where(.com-servicedeskplus .mt-3) { margin-top: 1rem; }
+:where(.com-servicedeskplus .mt-4) { margin-top: 1.5rem; }
+:where(.com-servicedeskplus .ps-3) { padding-left: 1rem; }
+
+/* Text */
+:where(.com-servicedeskplus .h2) { font-size: calc(1.325rem + 0.9vw); font-weight: 500; line-height: 1.2; }
+:where(.com-servicedeskplus .h4) { font-size: calc(1.275rem + 0.3vw); font-weight: 500; line-height: 1.2; }
+:where(.com-servicedeskplus .h5) { font-size: 1.25rem; font-weight: 500; line-height: 1.2; }
+:where(.com-servicedeskplus .fs-2) { font-size: calc(1.325rem + 0.9vw); }
+:where(.com-servicedeskplus .small) { font-size: 0.875em; }
+:where(.com-servicedeskplus .fw-semibold) { font-weight: 600; }
+:where(.com-servicedeskplus .text-end) { text-align: right; }
+:where(.com-servicedeskplus .text-muted) { color: var(--sdp-muted); }
+:where(.com-servicedeskplus .text-danger) { color: var(--bs-danger, #dc3545); }
+:where(.com-servicedeskplus .text-reset) { color: inherit; }
+:where(.com-servicedeskplus .text-decoration-none) { text-decoration: none; }
+
+@media (min-width: 1200px) {
+  :where(.com-servicedeskplus .h2, .com-servicedeskplus .fs-2) { font-size: 2rem; }
+  :where(.com-servicedeskplus .h4) { font-size: 1.5rem; }
+}
+
+:where(.com-servicedeskplus .visually-hidden) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Tables */
+:where(.com-servicedeskplus .table-responsive) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+:where(.com-servicedeskplus .table) {
+  width: 100%;
+  margin-bottom: 1rem;
+  border-collapse: collapse;
+  caption-side: bottom;
+}
+
+:where(.com-servicedeskplus .table :is(th, td)) {
+  padding: 0.5rem;
+  text-align: inherit;
+  border-bottom: 1px solid var(--sdp-border);
+}
+
+:where(.com-servicedeskplus .table :is(th, td).text-end) { text-align: right; }
+:where(.com-servicedeskplus .table > thead th) { vertical-align: bottom; border-bottom-width: 2px; }
+:where(.com-servicedeskplus .table-sm :is(th, td)) { padding: 0.25rem; }
+:where(.com-servicedeskplus .table-striped > tbody > tr:nth-of-type(odd) > *) { background-color: var(--sdp-stripe); }
+
+/* Description lists (request and loan details) */
+:where(.com-servicedeskplus dl.row > dt) { font-weight: 600; }
+:where(.com-servicedeskplus dl.row > dd) { margin-left: 0; margin-bottom: 0.5rem; }
+
+/* Cards */
+:where(.com-servicedeskplus .card) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: var(--bs-body-bg, #fff);
+  border: 1px solid var(--sdp-border);
+  border-radius: var(--sdp-radius);
+}
+
+:where(.com-servicedeskplus .card-header) {
+  padding: 0.5rem 1rem;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid var(--sdp-border);
+}
+
+:where(.com-servicedeskplus .card-body) { flex: 1 1 auto; padding: 1rem; }
+
+:where(.com-servicedeskplus .stretched-link)::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+}
+
+/* Alerts */
+:where(.com-servicedeskplus .alert) {
+  position: relative;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--sdp-radius);
+}
+
+:where(.com-servicedeskplus .alert-info) { color: #055160; background-color: #cff4fc; border-color: #9eeaf9; }
+:where(.com-servicedeskplus .alert-success) { color: #0a3622; background-color: #d1e7dd; border-color: #a3cfbb; }
+:where(.com-servicedeskplus .alert-warning) { color: #664d03; background-color: #fff3cd; border-color: #ffe69c; }
+:where(.com-servicedeskplus .alert-danger) { color: #58151c; background-color: #f8d7da; border-color: #f1aeb5; }
+:where(.com-servicedeskplus .alert-secondary) { color: #2b2f32; background-color: #e2e3e5; border-color: #c4c8cb; }
+:where(.com-servicedeskplus .alert-link) { font-weight: 700; color: inherit; }
+
+/* Forms */
+:where(.com-servicedeskplus .form-label) { display: inline-block; margin-bottom: 0.5rem; }
+:where(.com-servicedeskplus .form-text) { margin-top: 0.25rem; font-size: 0.875em; color: var(--sdp-muted); }
+
+:where(.com-servicedeskplus :is(.form-control, .form-select)) {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font: inherit;
+  line-height: 1.5;
+  color: inherit;
+  background-color: var(--bs-body-bg, #fff);
+  border: 1px solid var(--sdp-border);
+  border-radius: var(--sdp-radius);
+}
+
+/* Buttons */
+:where(.com-servicedeskplus .btn) {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  font: inherit;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--sdp-radius);
+}
+
+:where(.com-servicedeskplus .btn:disabled) { opacity: 0.65; cursor: default; }
+:where(.com-servicedeskplus .btn-primary) { color: #fff; background-color: #0d6efd; border-color: #0d6efd; }
+:where(.com-servicedeskplus .btn-secondary) { color: #fff; background-color: #6c757d; border-color: #6c757d; }
+:where(.com-servicedeskplus .btn-success) { color: #fff; background-color: #198754; border-color: #198754; }
+:where(.com-servicedeskplus .btn-danger) { color: #fff; background-color: #dc3545; border-color: #dc3545; }
+
+:where(.com-servicedeskplus .spinner-border) {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  vertical-align: -0.125em;
+  border: 0.25em solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: sdp-spin 0.75s linear infinite;
+}
+
+:where(.com-servicedeskplus .spinner-border-sm) { width: 1rem; height: 1rem; border-width: 0.2em; }
+
+@keyframes sdp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Pagination */
+:where(.com-servicedeskplus .pagination) {
+  display: flex;
+  flex-wrap: wrap;
+  padding-left: 0;
+  list-style: none;
+}
+
+:where(.com-servicedeskplus .page-link) {
+  display: block;
+  padding: 0.375rem 0.75rem;
+  margin-left: -1px;
+  color: var(--sdp-link);
+  text-decoration: none;
+  border: 1px solid var(--sdp-border);
+}
+
+:where(.com-servicedeskplus .page-item.disabled .page-link) { color: var(--sdp-muted); pointer-events: none; }

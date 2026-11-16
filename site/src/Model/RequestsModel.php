@@ -46,7 +46,9 @@ final class RequestsModel extends BaseModel
             $status,
             $sort,
             $direction,
-            $statuses
+            $statuses,
+            RequestQuery::PAGE_SIZE,
+            $input->getCmd('type', '')
         );
     }
 

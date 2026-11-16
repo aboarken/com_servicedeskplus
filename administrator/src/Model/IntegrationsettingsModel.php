@@ -40,7 +40,10 @@ final class IntegrationsettingsModel extends FormModel
 
     protected function loadFormData()
     {
-        $state = Factory::getApplication()->getUserState('com_servicedeskplus.edit.settings.data', []);
+        // Values of a rejected save are shown once, right after it; later visits show the stored settings.
+        $app   = Factory::getApplication();
+        $state = $app->getUserState('com_servicedeskplus.edit.settings.data', []);
+        $app->setUserState('com_servicedeskplus.edit.settings.data', null);
         $data  = \is_array($state) && $state !== [] ? $state : $this->settings()->toFormData();
 
         // The key field is always empty: a stored key is never sent back to the browser.
@@ -101,7 +104,7 @@ final class IntegrationsettingsModel extends FormModel
 
         $caBundle = trim((string) ($filtered['ca_bundle'] ?? ''));
 
-        if ($caBundle !== '' && !is_file($caBundle)) {
+        if ($caBundle !== '' && (preg_match('/[\x00-\x1F\x7F]/', $caBundle) || !is_file($caBundle) || !is_readable($caBundle))) {
             throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_CA_BUNDLE')]);
         }
 
@@ -167,6 +170,10 @@ final class IntegrationsettingsModel extends FormModel
             }
         } elseif (!$this->settings()->hasServiceKey()) {
             throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_KEY_REQUIRED')]);
+        } elseif ($this->connectionChanged($values)) {
+            // The stored key is sent to the address in these settings. Whoever points it elsewhere
+            // (or weakens the certificate check) must know the key, so it cannot be redirected.
+            throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_KEY_REENTER')]);
         }
 
         $this->component()->getSettingsRepository()->save($values);
@@ -197,6 +204,23 @@ final class IntegrationsettingsModel extends FormModel
         }
 
         return SslPin::readFromServer($settings->baseUrl(), $settings->connectTimeout(), $settings->connectVia());
+    }
+
+    /**
+     * True when the saved key would go to another server, or with a weaker certificate check:
+     * another address or "connect via", certificate check turned off, or another pin or CA file.
+     *
+     * @param  array<string, string>  $values
+     */
+    private function connectionChanged(array $values): bool
+    {
+        $stored = $this->settings();
+
+        return $values['base_url'] !== $stored->baseUrl()
+            || $values['connect_via'] !== $stored->connectVia()
+            || ($values['verify_ssl'] === '0' && $stored->verifySsl())
+            || $values['ssl_pin'] !== $stored->sslPin()
+            || $values['ca_bundle'] !== $stored->caBundle();
     }
 
     private function component(): ServiceDeskPlusComponent

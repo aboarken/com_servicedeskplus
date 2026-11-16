@@ -66,14 +66,6 @@ final class PageStats
         self::$ms += max(0, $ms);
     }
 
-    /**
-     * @return array{calls: int, ms: int, slowest_path: string, slowest_ms: int}
-     */
-    public static function snapshot(): array
-    {
-        return ['calls' => self::$calls, 'ms' => self::$ms, 'slowest_path' => self::$slowestPath, 'slowest_ms' => max(0, self::$slowestMs)];
-    }
-
     public static function flush(): void
     {
         if (self::$calls === 0 || self::$logger === null) {

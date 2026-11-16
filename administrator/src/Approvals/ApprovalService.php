@@ -19,6 +19,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditHistoryInterfac
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Cache\UserCacheInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\Identity;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\DecisionLock;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\RateLimiter;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\RateLimitExceeded;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Support\HtmlText;
@@ -71,7 +72,8 @@ final class ApprovalService
         private readonly int $scanLimit = 50,
         private readonly string $approvalAccountEmail = '',
         private readonly array $modules = ApprovalModule::ALL,
-        private readonly int $concurrency = SdpClient::DEFAULT_CONCURRENCY
+        private readonly int $concurrency = SdpClient::DEFAULT_CONCURRENCY,
+        private readonly ?DecisionLock $lock = null
     ) {
     }
 
@@ -402,6 +404,18 @@ final class ApprovalService
      * @throws ApprovalNotFound|AlreadyDecided|InvalidDecision|RateLimitExceeded|SdpException
      */
     public function decide(Identity $identity, string $requestId, string $levelId, string $approvalId, string $decision, string $comment, string $approverName = '', string $module = ApprovalModule::REQUEST): string
+    {
+        $run = fn (): string => $this->decideNow($identity, $requestId, $levelId, $approvalId, $decision, $comment, $approverName, $module);
+
+        // One decision per approval level at a time: the second one waits, then finds it decided.
+        if ($this->lock === null || $this->safeId($requestId) === null || $this->safeId($levelId) === null) {
+            return $run();
+        }
+
+        return $this->lock->run((ApprovalModule::normalize($module) ?? '') . ':' . $requestId . ':' . $levelId, $run);
+    }
+
+    private function decideNow(Identity $identity, string $requestId, string $levelId, string $approvalId, string $decision, string $comment, string $approverName, string $module): string
     {
         $identity->sdpUserId();
         $userId = $identity->joomlaUserId;

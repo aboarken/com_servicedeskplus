@@ -20,8 +20,6 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Discovery;
  */
 final class FieldInspector
 {
-    public const TYPES = ['date', 'datetime', 'time', 'number', 'bool', 'text', 'list', 'empty'];
-
     /** Field paths whose texts may be shown: the lookup itself or its .name. */
     private const STATUS_PATH = '/(^|\.)(status|approval_status|priority|urgency|impact|request_type|mode|level|state|stage|asset_state|product_type|type|approval_level|risk|change_type|release_type)(\.name)?$/';
 

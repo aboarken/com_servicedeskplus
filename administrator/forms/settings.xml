@@ -48,7 +48,7 @@
             type="text"
             label="COM_SERVICEDESKPLUS_SETTINGS_CA_BUNDLE"
             description="COM_SERVICEDESKPLUS_SETTINGS_CA_BUNDLE_DESC"
-            filter="path"
+            filter="trim"
             size="60"
         />
         <field

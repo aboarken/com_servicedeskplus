@@ -13,6 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\Controller;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Router\Exception\RouteNotFoundException;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\AttachmentValidator;
@@ -28,6 +29,16 @@ use SdpPortal\Component\ServiceDeskPlus\Site\Model\RequestformModel;
 final class RequestController extends BaseController
 {
     use IdentityGuardTrait;
+
+    /**
+     * Pages are shown only through DisplayController, which checks login, the view's permission
+     * and the identity. Joomla also offers every controller's inherited display() as a task
+     * (e.g. task={name}.display), which would skip those checks, so it is refused here.
+     */
+    public function display($cachable = false, $urlparams = [])
+    {
+        throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+    }
 
     private const FORM_URL = 'index.php?option=com_servicedeskplus&view=requestform';
 

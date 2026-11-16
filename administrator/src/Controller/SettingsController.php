@@ -13,6 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Controller;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Router\Exception\RouteNotFoundException;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\IntegrationsettingsModel;
@@ -20,6 +21,16 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\ValidationFailed;
 
 final class SettingsController extends BaseController
 {
+
+    /**
+     * Pages are shown only through DisplayController, which requires core.admin. Joomla also
+     * offers every controller's inherited display() as a task (task={name}.display), which would
+     * skip that check for users who may only open the component, so it is refused here.
+     */
+    public function display($cachable = false, $urlparams = [])
+    {
+        throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+    }
     private const STATE_KEY = 'com_servicedeskplus.edit.settings.data';
 
     public function save(): void

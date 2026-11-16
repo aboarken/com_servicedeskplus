@@ -66,16 +66,29 @@ final class MappingManager
 
         $now = ($this->clock)();
 
-        $this->repository->save(new UserMapping(
-            $joomlaUserId,
-            $sdpUserId,
-            EmailNormalizer::normalize($joomlaEmail),
-            UserMapping::STATUS_ACTIVE,
-            UserMapping::SOURCE_ADMIN,
-            $now,
-            $now,
-            $actorId
-        ));
+        try {
+            $this->repository->save(new UserMapping(
+                $joomlaUserId,
+                $sdpUserId,
+                EmailNormalizer::normalize($joomlaEmail),
+                UserMapping::STATUS_ACTIVE,
+                UserMapping::SOURCE_ADMIN,
+                $now,
+                $now,
+                $actorId
+            ));
+        } catch (\RuntimeException $e) {
+            // The unique index on sdp_user_id refused it: another request mapped this SDP user first.
+            $owner = $this->repository->findBySdpUserId($sdpUserId);
+
+            if ($owner === null || $owner->joomlaUserId === $joomlaUserId) {
+                throw $e;
+            }
+
+            $this->audit->record($joomlaUserId, 'mapping.assign', AuditLogInterface::RESULT_DENIED, null, null, 'sdp_user_already_mapped:' . $owner->joomlaUserId, $actorId);
+
+            throw new MappingException('COM_SERVICEDESKPLUS_MAPPING_ERR_TAKEN');
+        }
 
         $this->audit->record($joomlaUserId, 'mapping.assign', AuditLogInterface::RESULT_OK, null, null, 'sdp_user:' . $sdpUserId, $actorId);
 

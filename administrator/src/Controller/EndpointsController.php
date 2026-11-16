@@ -14,6 +14,7 @@ use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Router\Exception\RouteNotFoundException;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\ListInfo;
@@ -32,6 +33,16 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Extension\ServiceDeskPlusC
  */
 final class EndpointsController extends BaseController
 {
+
+    /**
+     * Pages are shown only through DisplayController, which requires core.admin. Joomla also
+     * offers every controller's inherited display() as a task (task={name}.display), which would
+     * skip that check for users who may only open the component, so it is refused here.
+     */
+    public function display($cachable = false, $urlparams = [])
+    {
+        throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+    }
     public const STATE_CATALOG = 'com_servicedeskplus.endpoints.catalog';
     public const STATE_CHECK   = 'com_servicedeskplus.endpoints.check';
     public const STATE_DIAG    = 'com_servicedeskplus.endpoints.diagnostics';

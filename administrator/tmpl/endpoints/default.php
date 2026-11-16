@@ -6,7 +6,6 @@
 
 \defined('_JEXEC') or die;
 
-use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -111,9 +110,8 @@ $types  = [
 
     <?php
     // Step 2: the check form, pre-filled from "Select" (GET) or from the last check.
-    $in   = Factory::getApplication()->getInput();
     $form = [
-        'path'         => $in->getString('use', '') ?: ($check['path'] ?? '/api/v3/requests'),
+        'path'         => $this->selected ?: ($check['path'] ?? '/api/v3/requests'),
         'search_field' => $check['search_field'] ?? '',
         'search_value' => $check['search_value'] ?? '',
         'rows'         => (int) ($check['rows'] ?? 10),

@@ -67,7 +67,7 @@ ServiceDesk Plus only accepts an approval decision from the assigned approver, w
 - A loan's page shows type, product, serial number, state, purchase date, warranty expiry date, department, the user it is loaned to, loan start and due date.
 
 ### Site templates
-The portal pages follow the installed site template; they are not tied to Cassiopeia. They use Bootstrap 5 class names, which most Joomla templates style; `media/com_servicedeskplus/css/portal.css` adds zero-specificity fallbacks for templates without Bootstrap, so the template's own styles always win. Page layouts (`tmpl`) and the shared layouts (`layouts/pagination.php`, `layouts/conversation.php`) can be overridden in the template (*System → Site Templates → Create Overrides*; layouts under `html/layouts/com_servicedeskplus`).
+The portal pages follow the installed site template; they are not tied to Cassiopeia. They are styled by the component's own `sdp-*` classes in `media/com_servicedeskplus/css/portal.css`, so they look the same on any template; the few Bootstrap class names still used (headings, spinner, screen-reader text) get zero-specificity fallbacks, so the template's own styles always win. Page layouts (`tmpl`) and the shared layouts (`layouts/pagination.php`, `layouts/conversation.php`) can be overridden in the template (*System → Site Templates → Create Overrides*; layouts under `html/layouts/com_servicedeskplus`).
 
 **Note:** Equipment and loan information is provided for viewing only. Submitting loan requests, requesting loan extensions, and requesting equipment returns are not part of this component.
 
@@ -89,8 +89,8 @@ Joomla acts as the user-facing portal, while ServiceDesk Plus remains the primar
 
 | Requirement | Version / Details |
 |---|---|
-| Joomla | 6.2 |
-| PHP | Compatible with the installed Joomla 6.2 requirements |
+| Joomla | 6.0 or later |
+| PHP | 8.3 or later, with the OpenSSL (AES-256-GCM) and cURL extensions |
 | ManageEngine ServiceDesk Plus | REST API access |
 | ServiceDesk Plus deployment | On-Premises |
 | Database | Supported Joomla database engine |
@@ -166,6 +166,11 @@ Administrators can manage access permissions for the component and its available
 
 API credentials should be stored securely and should never be exposed to frontend users or committed to the source repository.
 
+- The API key is stored encrypted and never shown again. It must be entered again whenever the ServiceDesk Plus address, *Connect via*, the certificate pin or CA file changes, or the certificate check is turned off, so the stored key cannot be sent to another server.
+- Users are matched to ServiceDesk Plus by their Joomla e-mail. A user whose Joomla e-mail changes is never matched again automatically: the mapping is suspended until an administrator checks it under *User Mappings* (before *Match again*, make sure the Joomla e-mail really belongs to that person). If several ServiceDesk Plus users share an e-mail, an administrator chooses.
+- Matching trusts the e-mail of each Joomla account. If your site allows self-registration, keep *Users → Options → New User Account Activation* on **Self** or **Administrator**, so nobody can register with another person's address.
+- Every page and action checks login, the feature's permission and the user's own ServiceDesk Plus records; actions need a POST with Joomla's form token.
+
 ## Project Structure
 
 The repository follows the Joomla component architecture.
@@ -174,6 +179,7 @@ The repository follows the Joomla component architecture.
 com_servicedeskplus/
 ├── administrator/
 │   ├── forms/
+│   ├── language/
 │   ├── services/
 │   ├── sql/
 │   ├── src/
@@ -185,14 +191,17 @@ com_servicedeskplus/
 │   └── js/
 ├── site/
 │   ├── language/
+│   ├── layouts/
 │   ├── src/
 │   └── tmpl/
 ├── .github/workflows/
 │   └── release.yml
 ├── build/
 │   ├── build-package.sh
+│   ├── make-changelog-xml.py
 │   ├── make-update-xml.py
 │   └── verify-package.py
+├── docs/release-notes/
 ├── CHANGELOG.md
 ├── LICENSE
 ├── README.md
@@ -248,14 +257,14 @@ Future improvements may include:
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 (GPL-3.0). See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License version 2 or later (GPL-2.0-or-later). See the [LICENSE](LICENSE) file for details.
 
 ## Links
 
 - **GitHub Repository:** https://github.com/aboarken/joomla-servicedeskplus
 - **ManageEngine ServiceDesk Plus:** https://www.manageengine.com/products/service-desk/
 - **Joomla:** https://www.joomla.org/
-- **ServiceDesk Plus API Documentation:** https://www.manageengine.com/products/service-desk/sdpod-v3-api/
+- **ServiceDesk Plus On-Premises API Documentation:** https://servicedeskplus.docs.buildwithfern.com/servicedesk-plus-on-premise
 
 ---
 

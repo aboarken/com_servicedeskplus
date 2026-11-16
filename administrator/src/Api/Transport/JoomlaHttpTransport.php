@@ -339,7 +339,22 @@ final class JoomlaHttpTransport implements ParallelTransportInterface
      */
     private function curlOptions(): array
     {
-        $curl = [
+        $curl = [];
+
+        if ($this->config->isPinned()) {
+            // The pinned public key identifies the server instead of a CA and host name, so an
+            // IP address or a self-signed certificate works. cURL aborts the connection before
+            // any data (including the authtoken header) is sent if the server's key differs.
+            // It comes first, so that cURL refuses it before the checks below are switched off,
+            // and writes (Joomla's client ignores option errors) are never sent unchecked.
+            if (!self::pinningSupported()) {
+                throw new TransportException('Could not reach ServiceDesk Plus (TLS/certificate error: this server\'s cURL cannot check a pinned key; remove the pin or use a CA bundle)');
+            }
+
+            $curl[CURLOPT_PINNEDPUBLICKEY] = $this->config->pinnedPublicKey;
+        }
+
+        $curl += [
             CURLOPT_CONNECTTIMEOUT => $this->config->connectTimeout,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
@@ -356,15 +371,28 @@ final class JoomlaHttpTransport implements ParallelTransportInterface
         }
 
         if ($this->config->isPinned()) {
-            // The pinned public key identifies the server instead of a CA and host name, so an
-            // IP address or a self-signed certificate works. cURL aborts the connection before
-            // any data (including the authtoken header) is sent if the server's key differs.
-            $curl[CURLOPT_PINNEDPUBLICKEY] = $this->config->pinnedPublicKey;
-            $curl[CURLOPT_SSL_VERIFYPEER]  = false;
-            $curl[CURLOPT_SSL_VERIFYHOST]  = 0;
+            $curl[CURLOPT_SSL_VERIFYPEER] = false;
+            $curl[CURLOPT_SSL_VERIFYHOST] = 0;
         }
 
         return $curl;
+    }
+
+    /** True when this PHP's cURL accepts a pinned public key (checked once per request). */
+    private static function pinningSupported(): bool
+    {
+        static $supported = null;
+
+        if ($supported === null) {
+            $probe     = curl_init();
+            $supported = $probe !== false && @curl_setopt($probe, CURLOPT_PINNEDPUBLICKEY, 'sha256//' . base64_encode(str_repeat("\0", 32)));
+
+            if ($probe !== false) {
+                curl_close($probe);
+            }
+        }
+
+        return $supported;
     }
 
     /**

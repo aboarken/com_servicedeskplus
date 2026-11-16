@@ -23,16 +23,13 @@ final class RequestStats
     /** Buckets the Dashboard counts from the rows it reads. */
     public const BUCKETS = ['open', 'on_hold'];
 
-    /** Buckets ServiceDesk Plus counts for the Dashboard (no rows read). */
-    public const COUNTED_BUCKETS = ['resolved', 'closed'];
-
     /**
      * @param  array<string, int>      $service    bucket => count, plus "total"
      * @param  array<string, int>      $incident   bucket => count, plus "total"
      * @param  list<RequestSummary>    $recent     Newest open / on-hold requests
      * @param  bool                    $truncated  More requests exist than were counted
      * @param  array<string, array{incident: ?int, service: ?int, total: ?int}>  $counted
-     *         COUNTED_BUCKETS => counts by SDP; null where SDP gave no count
+     *         resolved / closed => counts by SDP; null where SDP gave no count
      */
     public function __construct(
         public readonly array $service,

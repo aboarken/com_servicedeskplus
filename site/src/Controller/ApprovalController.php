@@ -13,6 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\Controller;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Router\Exception\RouteNotFoundException;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\AlreadyDecided;
@@ -33,6 +34,16 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SubmissionGuard;
 final class ApprovalController extends BaseController
 {
     use IdentityGuardTrait;
+
+    /**
+     * Pages are shown only through DisplayController, which checks login, the view's permission
+     * and the identity. Joomla also offers every controller's inherited display() as a task
+     * (e.g. task={name}.display), which would skip those checks, so it is refused here.
+     */
+    public function display($cachable = false, $urlparams = [])
+    {
+        throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+    }
 
     public function decide(): void
     {
@@ -62,7 +73,9 @@ final class ApprovalController extends BaseController
             . ($module !== ApprovalModule::REQUEST ? '&module=' . $module : '');
         $listUrl   = 'index.php?option=com_servicedeskplus&view=approvals';
 
-        $this->setRedirect(Route::_(preg_match('/^[0-9]{1,20}$/', $approvalId . $requestId . $levelId) ? $detailUrl : $listUrl, false));
+        $validIds  = array_filter([$approvalId, $requestId, $levelId], static fn (string $id): bool => (bool) preg_match('/^[0-9]{1,20}$/', $id));
+
+        $this->setRedirect(Route::_(\count($validIds) === 3 ? $detailUrl : $listUrl, false));
 
         try {
             $identity = $this->currentIdentity();
@@ -80,8 +93,11 @@ final class ApprovalController extends BaseController
 
         $guard = $this->sdpComponent()->getSubmissionGuard();
 
-        if ($guard->consume($token) !== SubmissionGuard::OK) {
-            $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_APPROVAL_ALREADY_SUBMITTED'), 'warning');
+        $check = $guard->consume($token);
+
+        if ($check !== SubmissionGuard::OK) {
+            // UNKNOWN: the page's token expired or was replaced by newer ones; nothing was sent.
+            $this->app->enqueueMessage(Text::_($check === SubmissionGuard::USED ? 'COM_SERVICEDESKPLUS_APPROVAL_ALREADY_SUBMITTED' : 'COM_SERVICEDESKPLUS_APPROVAL_FORM_EXPIRED'), 'warning');
 
             return;
         }

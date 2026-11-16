@@ -1,1 +1,6 @@
 dist/
+.DS_Store
+.idea/
+.vscode/
+*.orig
+*.swp

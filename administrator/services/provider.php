@@ -34,6 +34,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Log\JoomlaLogger;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationReader;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestApprovalsReader;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\DecisionLock;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\RateLimiter;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SecretProvider;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SubmissionGuard;
@@ -195,7 +196,8 @@ return new class () implements ServiceProviderInterface {
                     $settings->rateDecidePerHour(),
                     approvalAccountEmail: $settings->approvalAccountEmail(),
                     modules: $settings->approvalModules(),
-                    concurrency: $settings->parallelRequests()
+                    concurrency: $settings->parallelRequests(),
+                    lock: new DecisionLock((string) (Factory::getApplication()->get('tmp_path') ?: sys_get_temp_dir()))
                 );
             }
         );

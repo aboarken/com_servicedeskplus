@@ -34,6 +34,9 @@ final class HtmlView extends BaseHtmlView
 
     public string $filter = '';
 
+    /** Path chosen with "Select" in the endpoint list (pre-fills step 2). */
+    public string $selected = '';
+
     public function display($tpl = null): void
     {
         $app = Factory::getApplication();
@@ -45,6 +48,7 @@ final class HtmlView extends BaseHtmlView
         $this->check       = \is_array($check) ? $check : null;
         $this->diagnostics = \is_array($diag) ? $diag : null;
         $this->filter      = mb_substr(trim($app->getInput()->getString('filter', '')), 0, 60);
+        $this->selected    = mb_substr(trim($app->getInput()->getString('use', '')), 0, 300);
 
         ToolbarHelper::title(Text::_('COM_SERVICEDESKPLUS_ENDPOINTS_TITLE'), 'search');
 

@@ -140,6 +140,36 @@ final class SdpClient
     }
 
     /**
+     * Read-only check of any v3 path for Find Endpoints: GET only. A list path is sent list_info
+     * (with get_total_count); a path ending in an id is read as one record. The rows are taken from
+     * the first list in the answer, else from its first object.
+     *
+     * @throws SdpException
+     */
+    public function probe(string $path, ?ListInfo $listInfo = null): ProbeResult
+    {
+        $single = (bool) preg_match('#/[0-9]{1,20}$#', $path);
+        $data   = $this->get($path, $single || $listInfo === null ? null : ['list_info' => $listInfo->toArray()]);
+        $meta   = \is_array($data['list_info'] ?? null) ? $data['list_info'] : [];
+        $total  = isset($meta['total_count']) && is_numeric($meta['total_count']) ? (int) $meta['total_count'] : null;
+        $more   = self::toBool($meta['has_more_rows'] ?? false);
+
+        foreach ($data as $key => $value) {
+            if (\is_string($key) && !\in_array($key, ['response_status', 'list_info'], true) && \is_array($value) && array_is_list($value)) {
+                return new ProbeResult($key, array_values(array_filter($value, 'is_array')), false, $total, $more);
+            }
+        }
+
+        foreach ($data as $key => $value) {
+            if (\is_string($key) && !\in_array($key, ['response_status', 'list_info'], true) && \is_array($value)) {
+                return new ProbeResult($key, [$value], true);
+            }
+        }
+
+        return new ProbeResult('', [], $single, $total, $more);
+    }
+
+    /**
      * GET /api/v3/requests (requests/request.html, "Get List Request").
      */
     public function listRequests(ListInfo $listInfo): ListPage

@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.19.0] - 2026-11-16
+
+### Added
+- **Find Endpoints** (*Components → ServiceDesk Plus → Find Endpoints*, and a button on Integration Settings), as in the ZKBioTime component:
+  - **Diagnostics** at the top: one button runs every check from the Joomla server: the connection, a few rows of every endpoint the portal reads (requests, approvals, changes, releases, purchase orders, assets, announcements, users), and whether the other known endpoints answer. With a requester's e-mail it also checks that the portal can match that person and counts their requests and assets. It shows one plain-text report with a **Copy report** button.
+  - **1. Known API Endpoints:** ServiceDesk Plus publishes no list of its API endpoints, so the page lists the ones of the REST API v3 reference (the portal's own first, marked *portal*). **Check which endpoints answer** reads one row of each and shows *Answers* with the total, or why not (*Not on this build*, *No permission*, …).
+  - **2. Check an Endpoint:** any `/api/v3` path, optionally with a search field and value (e.g. `status.name` = `Open`); a path ending in an id is read as one record. It shows the field paths, the kind of value in each (date, number, text, list, …) and the status texts found.
+  - Only field paths, kinds of values, counts and status-like texts (status, priority, urgency, approval status, … not belonging to a person) are shown: never names, e-mails, ids, subjects or other personal values. Only reading (GET) requests are sent. Super User only, every action a POST with a CSRF token, at most 60 per hour, audited (`settings.explore`); results are kept in the administrator's session only.
+
 ## [1.18.3] - 2026-11-16
 
 ### Changed

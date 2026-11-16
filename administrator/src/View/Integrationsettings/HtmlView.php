@@ -70,6 +70,10 @@ final class HtmlView extends BaseHtmlView
             ->icon('icon-lock')
             ->listCheck(false);
 
+        $toolbar->linkButton('endpoints', 'COM_SERVICEDESKPLUS_ENDPOINTS_BUTTON')
+            ->url('index.php?option=com_servicedeskplus&view=endpoints')
+            ->icon('icon-search');
+
         // Leaves the component for the administrator dashboard; unsaved changes are discarded.
         $toolbar->linkButton('close', 'JTOOLBAR_CLOSE')
             ->url('index.php')

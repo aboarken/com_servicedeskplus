@@ -194,7 +194,8 @@ return new class () implements ServiceProviderInterface {
                     $c->get(JoomlaLogger::class),
                     $settings->rateDecidePerHour(),
                     approvalAccountEmail: $settings->approvalAccountEmail(),
-                    modules: $settings->approvalModules()
+                    modules: $settings->approvalModules(),
+                    concurrency: $settings->parallelRequests()
                 );
             }
         );

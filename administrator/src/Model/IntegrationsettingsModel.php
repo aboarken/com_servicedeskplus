@@ -112,6 +112,7 @@ final class IntegrationsettingsModel extends FormModel
             'verify_ssl'           => ((string) ($filtered['verify_ssl'] ?? '1')) === '0' ? '0' : '1',
             'ca_bundle'            => $caBundle,
             'cache_minutes'        => (string) max(0, min(Settings::MAX_CACHE_MINUTES, (int) ($filtered['cache_minutes'] ?? Settings::DEFAULT_CACHE_MINUTES))),
+            'parallel_requests'    => (string) max(1, min(Settings::MAX_PARALLEL_REQUESTS, (int) ($filtered['parallel_requests'] ?? 6))),
             'rate_create_per_hour' => (string) max(1, min(1000, (int) ($filtered['rate_create_per_hour'] ?? 10))),
             'rate_decide_per_hour' => (string) max(1, min(1000, (int) ($filtered['rate_decide_per_hour'] ?? 30))),
             'request_statuses'     => implode(',', Settings::parseList((string) ($filtered['request_statuses'] ?? ''))),

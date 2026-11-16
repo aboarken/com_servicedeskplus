@@ -58,6 +58,11 @@ final class Diagnostics
             return implode("\n", $out);
         }
 
+        // Timing: where the time of a small read goes, and what reuse and parallel reads gain.
+        $out[] = '';
+        $out[] = '1b. Timing (small reads of /api/v3/requests)';
+        $out   = array_merge($out, self::timing($client));
+
         // 2. Endpoints the portal reads.
         $out[] = '';
         $out[] = '2. Endpoints the portal reads';
@@ -103,6 +108,55 @@ final class Diagnostics
         }
 
         return implode("\n", $out);
+    }
+
+    /**
+     * Three reads one after another (the first may open the connection, the next reuse it), then
+     * six at once.
+     *
+     * @return list<string>
+     */
+    private static function timing(SdpClient $client): array
+    {
+        $lines = [];
+        $sum   = 0;
+
+        for ($i = 1; $i <= 3; $i++) {
+            $started = hrtime(true);
+
+            try {
+                $client->probe('/api/v3/requests', new ListInfo(rowCount: 1));
+            } catch (SdpException $e) {
+                return [...$lines, '   Read ' . $i . ' FAILED: ' . self::error($e)];
+            }
+
+            $ms  = (int) ((hrtime(true) - $started) / 1_000_000);
+            $sum += $ms;
+            $t   = $client->lastTiming();
+
+            $lines[] = '   Read ' . $i . ': ' . $ms . ' ms' . ($t === null ? '' : ($t['reused']
+                ? ' (reused connection; ServiceDesk Plus ' . $t['server'] . ' ms)'
+                : ' (new connection: DNS ' . $t['dns'] . ' ms, connect ' . $t['connect'] . ' ms, TLS ' . $t['tls'] . ' ms; ServiceDesk Plus ' . $t['server'] . ' ms)'));
+        }
+
+        $calls = [];
+
+        for ($i = 0; $i < 6; $i++) {
+            $calls[$i] = ['/api/v3/requests', ['list_info' => ['row_count' => 1, 'start_index' => 1]]];
+        }
+
+        $started = hrtime(true);
+        $results = $client->getMany($calls);
+        $ms      = (int) ((hrtime(true) - $started) / 1_000_000);
+        $failed  = \count(array_filter($results, static fn ($r): bool => $r instanceof SdpException));
+        $average = (int) round($sum / 3);
+
+        $lines[] = '   6 reads at once: ' . $ms . ' ms in total' . ($failed > 0 ? ' (' . $failed . ' failed)' : '')
+            . ', one after another they would take about ' . (6 * $average) . ' ms';
+        $lines[] = '   A high "ServiceDesk Plus" time means the server itself is slow to answer;'
+            . ' high DNS, connect or TLS times point to the network, firewall or certificate setup.';
+
+        return $lines;
     }
 
     /**

@@ -3,6 +3,17 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.20.0] - 2026-11-16
+
+### Changed
+- **Faster pages: connections are reused.** Reads from ServiceDesk Plus no longer open a new connection each time: DNS results, open connections and TLS sessions are shared for the rest of the page load, so only the first call pays for the lookup, the connection and the handshake. This speeds up every portal page. Certificate check, pinned key, *Connect via* and timeouts work as before (same CA file as the Joomla HTTP client). Writes (new requests, decisions, notes, uploads) are sent as before.
+- **Faster My Approvals and Dashboard: approvals are checked in parallel.** The approval levels and approvals of the records waiting for approval are read several at a time instead of one after another. On a test server answering in 100 ms, the scan of 35 records (75 calls) went from 10.8 s to 2.6 s, with the same result. A record that cannot be read is still skipped and logged.
+
+### Added
+- **Integration Settings → Limits → Parallel API calls** (1 to 10, default 6): how many reads are sent at once. 1 sends them one after another, as before. Lower it if ServiceDesk Plus answers "too many requests".
+- **Timing in the log** (`administrator/logs/com_servicedeskplus.php`): each call shows where its time went, e.g. `-> HTTP 200, 240 ms (DNS 2 ms, connect 15 ms, TLS 80 ms, server 140 ms)` or `(reused connection, server 140 ms)`, and every page load ends with one summary line: `SDP page summary: 75 calls, 2630 ms waiting for ServiceDesk Plus, slowest call /api/v3/requests 144 ms`.
+- **Find Endpoints → Diagnostics → Timing**: three small reads (new or reused connection, DNS, connect, TLS and server time) and six reads at once, so the report shows whether slowness comes from the network or from ServiceDesk Plus itself.
+
 ## [1.19.0] - 2026-11-16
 
 ### Added

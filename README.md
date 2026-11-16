@@ -132,6 +132,10 @@ The configuration includes:
 
 *Integration Settings → Limits → Cache time (minutes)* sets how long each user's ServiceDesk Plus results (requests, approvals, loans, announcements and the Dashboard figures) are kept, 0 to 60 minutes; default 5. A user's own new requests and approval decisions refresh their lists at once. With 0, every page reads ServiceDesk Plus again; the Dashboard then makes many calls (approvals are found by scanning requests, changes, releases and purchase orders) and loads slowly.
 
+### Speed
+
+Pages read ServiceDesk Plus when their cached results have expired (see *Cache*). Within one page load the connection to ServiceDesk Plus is opened once and reused, and where many records are read (the approval check of My Approvals and the Dashboard) up to *Integration Settings → Limits → Parallel API calls* reads are sent at once (default 6). The log `administrator/logs/com_servicedeskplus.php` shows the time of every call (DNS, connect, TLS, server) and one summary line per page load; *Find Endpoints → Run Diagnostics* has a *Timing* section. Unticking approval modules you do not use (*Integration Settings → Approvals*) also saves calls.
+
 ### User Mapping
 
 The component uses email addresses to associate Joomla users with their corresponding ServiceDesk Plus requesters.

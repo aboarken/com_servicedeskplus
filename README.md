@@ -15,15 +15,17 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 ## Features
 
 ### Dashboard
-- **Summary cards:** open requests, overdue requests, waiting for my approval, loans to return within 30 days, current announcements.
+- **Summary cards:** open requests, on-hold requests, waiting for my approval, loans to return within 30 days, current announcements.
 - **Announcements:** the five newest announcements, right under the cards.
-- **My requests:** service requests and incident requests by status (Open, On Hold, Resolved, Closed, Canceled, other) with totals, counted from the user's 1000 most recent requests, and the five most recent requests.
-- **My approvals:** waiting approvals by type, approved by me and rejected by me (decisions made through the portal).
-- **My loans:** all loans, to return within 30 days (including overdue), overdue.
+- **Recent Requests:** the five newest open and on-hold requests, under the announcements.
+- **My Requests, My Approvals, My Loans** as three blocks side by side (stacked on small screens):
+  - *My Requests:* open and on-hold service requests and incidents with totals. Only open and on-hold requests are read from ServiceDesk Plus (up to 500 of each), so the Dashboard stays fast for users with many closed requests.
+  - *My Approvals:* waiting approvals by type, approved by me and rejected by me (decisions made through the portal).
+  - *My Loans:* all loans, to return within 30 days (including overdue), overdue.
 - Every figure opens its page with the matching filter. Each part is shown only to users with the permission for its page.
 
 ### Service Requests
-- View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, status filter and sorting.
+- View and track submitted service requests (**My Requests**), filtered to **Open** requests by default, with search, type filter (incident or service request), status filter and sorting.
 - Submit new service requests with the **Request Form** menu item (page title **New Request**).
 - Create requests using only a subject and description, with optional attachments.
 - View request details: status, priority, urgency, technician, technician group, category, subcategory, item, dates, approval status, description, resolution, the **approvals** of the request when it has any (level, approver, status, sent and decision dates, comments) and the **conversation** (e-mails and notes visible to the requester).
@@ -59,6 +61,10 @@ ServiceDesk Plus only accepts an approval decision from the assigned approver, w
 - Access assigned equipment information.
 - View equipment and loan records in read-only mode.
 - *My Loans* works like My Requests: search, *Show* (all, to return within 30 days, overdue), sort and pages.
+- A loan's page shows type, product, serial number, state, purchase date, warranty expiry date, department, the user it is loaned to, loan start and due date.
+
+### Site templates
+The portal pages follow the installed site template; they are not tied to Cassiopeia. They use Bootstrap 5 class names, which most Joomla templates style; `media/com_servicedeskplus/css/portal.css` adds zero-specificity fallbacks for templates without Bootstrap, so the template's own styles always win. Page layouts (`tmpl`) and the shared layouts (`layouts/pagination.php`, `layouts/conversation.php`) can be overridden in the template (*System → Site Templates → Create Overrides*; layouts under `html/layouts/com_servicedeskplus`).
 
 **Note:** Equipment and loan information is provided for viewing only. Submitting loan requests, requesting loan extensions, and requesting equipment returns are not part of this component.
 
@@ -88,7 +94,7 @@ Joomla acts as the user-facing portal, while ServiceDesk Plus remains the primar
 
 ## Installation
 
-1. Download `com_servicedeskplus.zip` from the latest release on the [Releases page](https://github.com/aboarken/com_servicedeskplus/releases).
+1. Download `com_servicedeskplus.zip` from the latest release on the [Releases page](https://github.com/aboarken/servicedeskplus/releases).
 2. Log in to your Joomla Administrator.
 3. Navigate to **System → Install → Extensions**.
 4. Upload the component installation package.
@@ -214,7 +220,7 @@ The **Release package** GitHub Actions workflow (`.github/workflows/release.yml`
 - **From the Actions tab:** run *Release package* on `main`. It creates the release `v<version>` with the release notes and the package.
 - **From the Releases page:** publish a release tagged `v<version>` (it must match the manifest version); the workflow then attaches the package.
 
-The latest package can always be downloaded from `https://github.com/aboarken/com_servicedeskplus/releases/latest/download/com_servicedeskplus.zip`.
+The latest package can always be downloaded from `https://github.com/aboarken/servicedeskplus/releases/latest/download/com_servicedeskplus.zip`.
 
 ## Roadmap
 
@@ -235,7 +241,7 @@ This project is licensed under the GNU General Public License v3.0 (GPL-3.0). Se
 
 ## Links
 
-- **GitHub Repository:** https://github.com/aboarken/com_servicedeskplus
+- **GitHub Repository:** https://github.com/aboarken/servicedeskplus
 - **ManageEngine ServiceDesk Plus:** https://www.manageengine.com/products/service-desk/
 - **Joomla:** https://www.joomla.org/
 - **ServiceDesk Plus API Documentation:** https://www.manageengine.com/products/service-desk/sdpod-v3-api/

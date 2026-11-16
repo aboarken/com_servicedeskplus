@@ -30,7 +30,7 @@ final class AssetService
     public const MAX_ASSETS = 200;
 
     /** Bump when LoanAsset changes shape, so old session cache entries are ignored. */
-    private const CACHE_VERSION = 'v3';
+    private const CACHE_VERSION = 'v4';
 
     /**
      * @param  \Closure(): SdpClient  $clientFactory

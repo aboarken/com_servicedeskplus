@@ -13,40 +13,46 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Requests;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Support\SdpFields;
 
 /**
- * Counts of one user's requests for the Dashboard: service requests and incidents by status,
- * overdue requests and the newest requests.
+ * Counts of one user's active requests for the Dashboard: open and on-hold service requests and
+ * incidents, and the newest of those requests. Resolved and closed requests are not read, so the
+ * Dashboard stays fast for users with a long history.
  */
 final class RequestStats
 {
-    public const BUCKETS = ['open', 'on_hold', 'resolved', 'closed', 'canceled', 'other'];
+    /** Buckets the Dashboard counts. */
+    public const BUCKETS = ['open', 'on_hold'];
 
     /**
      * @param  array<string, int>      $service    bucket => count, plus "total"
      * @param  array<string, int>      $incident   bucket => count, plus "total"
-     * @param  list<RequestSummary>    $recent     Newest requests
+     * @param  list<RequestSummary>    $recent     Newest open / on-hold requests
      * @param  bool                    $truncated  More requests exist than were counted
      */
     public function __construct(
         public readonly array $service,
         public readonly array $incident,
-        public readonly int $overdue,
         public readonly array $recent,
         public readonly bool $truncated
     ) {
     }
 
     /**
-     * @param  list<array<string, mixed>>  $requests  SDP request list rows, newest first
+     * @param  list<array<string, mixed>>  $requests  SDP request list rows (any order); rows in
+     *                                               other buckets are ignored
      */
     public static function fromSdp(array $requests, bool $truncated, int $recentCount = 5): self
     {
-        $empty    = array_fill_keys([...self::BUCKETS, 'total'], 0);
+        $empty    = self::empty();
         $service  = $empty;
         $incident = $empty;
-        $overdue  = 0;
+        $active   = [];
 
         foreach ($requests as $r) {
             $bucket = self::bucket(SdpFields::name($r, 'status'));
+
+            if (!\in_array($bucket, self::BUCKETS, true)) {
+                continue;
+            }
 
             if (self::isServiceRequest($r)) {
                 $service[$bucket]++;
@@ -56,18 +62,13 @@ final class RequestStats
                 $incident['total']++;
             }
 
-            if (!\in_array($bucket, ['resolved', 'closed', 'canceled'], true) && filter_var($r['is_overdue'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
-                $overdue++;
-            }
+            $active[] = RequestSummary::fromSdp($r);
         }
 
-        return new self(
-            $service,
-            $incident,
-            $overdue,
-            array_map(static fn (array $r) => RequestSummary::fromSdp($r), \array_slice($requests, 0, $recentCount)),
-            $truncated
-        );
+        // Newest first.
+        usort($active, static fn (RequestSummary $a, RequestSummary $b): int => ($b->createdAt ?? 0) <=> ($a->createdAt ?? 0));
+
+        return new self($service, $incident, \array_slice($active, 0, $recentCount), $truncated);
     }
 
     public static function bucket(string $status): string
@@ -90,6 +91,17 @@ final class RequestStats
      */
     public static function isServiceRequest(array $r): bool
     {
+        return self::serviceFlag($r) ?? (\is_array($r['service_category'] ?? null) && ($r['service_category']['id'] ?? null) !== null);
+    }
+
+    /**
+     * SDP's own service request flag (is_service_request, else the template's
+     * is_service_template), or null when the row has neither.
+     *
+     * @param array<string, mixed> $r
+     */
+    public static function serviceFlag(array $r): ?bool
+    {
         if (\array_key_exists('is_service_request', $r)) {
             return filter_var($r['is_service_request'], FILTER_VALIDATE_BOOLEAN);
         }
@@ -98,7 +110,13 @@ final class RequestStats
             return filter_var($r['template']['is_service_template'], FILTER_VALIDATE_BOOLEAN);
         }
 
-        return \is_array($r['service_category'] ?? null) && ($r['service_category']['id'] ?? null) !== null;
+        return null;
+    }
+
+    /** @return array<string, int> */
+    private static function empty(): array
+    {
+        return array_fill_keys([...self::BUCKETS, 'total'], 0);
     }
 
     /** @return array<string, mixed> */
@@ -107,7 +125,6 @@ final class RequestStats
         return [
             'service'   => $this->service,
             'incident'  => $this->incident,
-            'overdue'   => $this->overdue,
             'recent'    => array_map(static fn (RequestSummary $s) => $s->toArray(), $this->recent),
             'truncated' => $this->truncated,
         ];
@@ -117,9 +134,8 @@ final class RequestStats
     public static function fromArray(array $a): self
     {
         return new self(
-            array_map('intval', (array) ($a['service'] ?? [])) + array_fill_keys([...self::BUCKETS, 'total'], 0),
-            array_map('intval', (array) ($a['incident'] ?? [])) + array_fill_keys([...self::BUCKETS, 'total'], 0),
-            (int) ($a['overdue'] ?? 0),
+            array_map('intval', (array) ($a['service'] ?? [])) + self::empty(),
+            array_map('intval', (array) ($a['incident'] ?? [])) + self::empty(),
             array_map(static fn (array $s) => RequestSummary::fromArray($s), (array) ($a['recent'] ?? [])),
             (bool) ($a['truncated'] ?? false)
         );

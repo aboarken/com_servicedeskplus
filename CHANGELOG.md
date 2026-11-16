@@ -3,6 +3,18 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.16.0] - 2026-11-16
+
+### Added
+- **My Requests type filter:** *Type* (all types, incident, service request) between *Search* and *Status*.
+- **Loan details:** purchase date, warranty expiry date, department and the user the asset is loaned to.
+
+### Changed
+- **Repository renamed** to `aboarken/servicedeskplus`: the update server, changelog and links point to the new address.
+- **Dashboard is faster:** only open and on-hold requests are read from ServiceDesk Plus (up to 500 of each, one search per status); resolved, closed and canceled requests are no longer counted.
+- **Dashboard layout:** the *On Hold requests* card replaces *Overdue requests*; *Recent Requests* (open and on-hold only) sits under *Announcements* with the same heading size; *My Requests*, *My Approvals* and *My Loans* are three blocks side by side (stacked on small screens).
+- **Any site template:** the pages no longer depend on Cassiopeia's styles. Zero-specificity fallbacks in `portal.css` cover templates without Bootstrap, and the pagination and conversation layouts can be overridden in the template (`html/layouts/com_servicedeskplus`).
+
 ## [1.15.0] - 2026-11-15
 
 ### Added

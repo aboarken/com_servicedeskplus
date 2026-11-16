@@ -61,16 +61,19 @@ final class RequestService
     }
 
     /**
-     * Counts for the Dashboard from the user's own requests (newest first, at most $maxRequests).
-     * Rows SDP returns for other requesters are ignored, as in the request list.
+     * Counts for the Dashboard from the user's open and on-hold requests (at most $maxPerStatus
+     * of each status). Only those statuses are read from SDP, one search per status; resolved and
+     * closed requests are not counted. Rows SDP returns for other requesters are ignored, as in
+     * the request list.
      *
      * @throws SdpException
      */
-    public function statsForUser(Identity $identity, int $maxRequests = 1000): RequestStats
+    public function statsForUser(Identity $identity, int $maxPerStatus = 500): RequestStats
     {
         $sdpUserId = $identity->sdpUserId();
         // "requests:" prefix: cleared with the lists when the user creates a request.
-        $cached = $this->cache->get($identity, 'requests:stats');
+        $cacheKey = 'requests:stats:v2';
+        $cached   = $this->cache->get($identity, $cacheKey);
 
         if ($cached !== null) {
             return RequestStats::fromArray($cached);
@@ -80,35 +83,61 @@ final class RequestService
         $rows      = [];
         $truncated = false;
 
-        for ($start = 1; ; $start += ListInfo::MAX_ROW_COUNT) {
-            $page = $client->listRequests(new ListInfo(
-                rowCount: ListInfo::MAX_ROW_COUNT,
-                startIndex: $start,
-                sortField: 'created_time',
-                sortOrder: 'desc',
-                searchCriteria: ['field' => 'requester.id', 'condition' => 'is', 'value' => $sdpUserId]
-            ));
+        foreach ($this->activeStatuses() as $status) {
+            for ($start = 1; ; $start += ListInfo::MAX_ROW_COUNT) {
+                $page = $client->listRequests(new ListInfo(
+                    rowCount: ListInfo::MAX_ROW_COUNT,
+                    startIndex: $start,
+                    sortField: 'created_time',
+                    sortOrder: 'desc',
+                    searchCriteria: [
+                        ['field' => 'requester.id', 'condition' => 'is', 'value' => $sdpUserId],
+                        ['field' => 'status.name', 'condition' => 'is', 'value' => $status, 'logical_operator' => 'AND'],
+                    ]
+                ));
 
-            foreach ($page->items as $item) {
-                if (self::isOwnedBy($item, $sdpUserId)) {
-                    $rows[] = $item;
+                foreach ($page->items as $item) {
+                    if (self::isOwnedBy($item, $sdpUserId)) {
+                        $rows[] = $item;
+                    }
                 }
-            }
 
-            if (!$page->hasMoreRows || $page->items === []) {
-                break;
-            }
+                if (!$page->hasMoreRows || $page->items === []) {
+                    break;
+                }
 
-            if ($start + ListInfo::MAX_ROW_COUNT > $maxRequests) {
-                $truncated = true;
-                break;
+                if ($start + ListInfo::MAX_ROW_COUNT > $maxPerStatus) {
+                    $truncated = true;
+                    break;
+                }
             }
         }
 
         $stats = RequestStats::fromSdp($rows, $truncated);
-        $this->cache->set($identity, 'requests:stats', $stats->toArray());
+        $this->cache->set($identity, $cacheKey, $stats->toArray());
 
         return $stats;
+    }
+
+    /**
+     * Open and on-hold statuses as spelled in the My Requests filter, or SDP's default names
+     * when the filter has none.
+     *
+     * @return list<string>
+     */
+    private function activeStatuses(): array
+    {
+        $found = [];
+
+        foreach ($this->allowedStatuses as $status) {
+            $bucket = RequestStats::bucket($status);
+
+            if (\in_array($bucket, RequestStats::BUCKETS, true)) {
+                $found[$bucket] ??= $status;
+            }
+        }
+
+        return array_values($found + ['open' => 'Open', 'on_hold' => 'On Hold']);
     }
 
     /**
@@ -274,6 +303,10 @@ final class RequestService
             $criteria[] = ['field' => 'subject', 'condition' => 'contains', 'value' => $query->search, 'logical_operator' => 'AND'];
         }
 
+        if ($query->type !== '') {
+            $criteria[] = ['field' => 'is_service_request', 'condition' => 'is', 'value' => $query->type === RequestQuery::TYPE_SERVICE, 'logical_operator' => 'AND'];
+        }
+
         $listInfo = new ListInfo(
             rowCount: $query->limit,
             startIndex: $query->startIndex(),
@@ -283,7 +316,28 @@ final class RequestService
             getTotalCount: true
         );
 
-        $page  = ($this->clientFactory)()->listRequests($listInfo);
+        try {
+            $page = ($this->clientFactory)()->listRequests($listInfo);
+        } catch (SdpException $e) {
+            if ($query->type === '' || $e->getKind() !== SdpException::VALIDATION) {
+                throw $e;
+            }
+
+            // This SDP build does not search on the request type: search without it; the rows
+            // are filtered on their type below.
+            $this->logger->info('SDP rejected the is_service_request search criterion; the request type is filtered in PHP.');
+            array_pop($criteria);
+
+            $page = ($this->clientFactory)()->listRequests(new ListInfo(
+                rowCount: $query->limit,
+                startIndex: $query->startIndex(),
+                sortField: $query->sortField(),
+                sortOrder: $query->direction,
+                searchCriteria: \count($criteria) === 1 ? $criteria[0] : $criteria,
+                getTotalCount: true
+            ));
+        }
+
         $owned = array_values(array_filter($page->items, static fn (array $r) => self::isOwnedBy($r, $sdpUserId)));
 
         if (\count($owned) !== \count($page->items)) {
@@ -295,11 +349,14 @@ final class RequestService
             ));
         }
 
+        // Re-check the type in PHP, in case SDP ignored the criterion.
+        $matching = array_values(array_filter($owned, static fn (array $r) => $query->matchesType($r)));
+
         return new RequestListResult(
-            array_map(static fn (array $r) => RequestSummary::fromSdp($r), $owned),
+            array_map(static fn (array $r) => RequestSummary::fromSdp($r), $matching),
             $query->page,
             $page->hasMoreRows,
-            \count($owned) === \count($page->items) ? $page->totalCount : null
+            \count($matching) === \count($page->items) ? $page->totalCount : null
         );
     }
 
@@ -312,6 +369,10 @@ final class RequestService
         }
 
         if ($query->status !== '' && SdpFields::name($request, 'status') !== $query->status) {
+            return new RequestListResult([], 1, false, 0);
+        }
+
+        if (!$query->matchesType($request)) {
             return new RequestListResult([], 1, false, 0);
         }
 

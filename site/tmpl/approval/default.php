@@ -8,12 +8,15 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Approval\HtmlView $this */
+
+// Layouts from the component, unless the site template overrides them (html/layouts/com_servicedeskplus).
+$layoutOptions = ['component' => 'com_servicedeskplus', 'client' => 0];
 
 $date = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC2')) : '—';
 $item = $this->item;
@@ -40,7 +43,7 @@ $item = $this->item;
         <div class="sdp-text mb-4"><?php echo nl2br($this->escape($item->description !== '' ? $item->description : '—')); ?></div>
 
         <?php if ($item->module === ApprovalModule::REQUEST) : ?>
-            <?php echo LayoutHelper::render('conversation', ['entries' => $this->conversation], JPATH_SITE . '/components/com_servicedeskplus/layouts'); ?>
+            <?php echo (new FileLayout('conversation', null, $layoutOptions))->render(['entries' => $this->conversation]); ?>
         <?php endif; ?>
 
         <h2 class="h4"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_COMMENTS'); ?></h2>

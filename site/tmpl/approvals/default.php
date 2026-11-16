@@ -8,11 +8,14 @@
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Approvals\HtmlView $this */
+
+// Layouts from the component, unless the site template overrides them (html/layouts/com_servicedeskplus).
+$layoutOptions = ['component' => 'com_servicedeskplus', 'client' => 0];
 
 $date  = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC5')) : '—';
 $shows = [
@@ -35,7 +38,6 @@ $resultLabel = [
     'error'  => 'COM_SERVICEDESKPLUS_APPROVAL_RESULT_ERROR',
 ];
 $isPending = $this->show === 'pending';
-$layouts   = JPATH_SITE . '/components/com_servicedeskplus/layouts';
 ?>
 <div class="com-servicedeskplus sdp-approvals">
     <?php if ($this->showPageHeading) : ?>
@@ -153,5 +155,5 @@ $layouts   = JPATH_SITE . '/components/com_servicedeskplus/layouts';
         <p class="text-muted small"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_HISTORY_NOTE'); ?></p>
     <?php endif; ?>
 
-    <?php echo LayoutHelper::render('pagination', ['page' => $this->page, 'pages' => $this->pages, 'url' => fn (int $p): string => $this->pageUrl($p)], $layouts); ?>
+    <?php echo (new FileLayout('pagination', null, $layoutOptions))->render(['page' => $this->page, 'pages' => $this->pages, 'url' => fn (int $p): string => $this->pageUrl($p)]); ?>
 </div>

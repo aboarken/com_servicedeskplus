@@ -67,6 +67,7 @@ final class HtmlView extends BaseHtmlView
 
         $params = array_filter([
             'search' => $q->search,
+            'type'   => $q->type,
             'sort'   => $q->sort . '_' . $q->direction,
             'page'   => $page > 1 ? $page : null,
         ], static fn ($v) => $v !== null && $v !== '');

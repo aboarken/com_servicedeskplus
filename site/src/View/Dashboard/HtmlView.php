@@ -21,9 +21,9 @@ use SdpPortal\Component\ServiceDeskPlus\Site\Model\DashboardModel;
 use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 /**
- * Dashboard: summary cards, then requests by status and type, recent requests, approvals by
- * type and decisions, loans and the latest announcements. Each part follows the permission of
- * its own page and fails on its own.
+ * Dashboard: summary cards, the latest announcements and recent open / on-hold requests, then
+ * three blocks side by side: open and on-hold requests by type, approvals by type and decisions,
+ * and loans. Each part follows the permission of its own page and fails on its own.
  */
 final class HtmlView extends BaseHtmlView
 {
@@ -154,13 +154,13 @@ final class HtmlView extends BaseHtmlView
     }
 
     /**
-     * My Requests filtered on the status of a bucket, or all statuses when the filter has no
-     * status for it.
+     * My Requests filtered on the status of a bucket (all statuses when the filter has no status
+     * for it), and optionally on a request type (RequestQuery::TYPE_*).
      */
-    public function statusUrl(string $bucket): string
+    public function statusUrl(string $bucket, string $type = ''): string
     {
-        return isset($this->statusNames[$bucket])
-            ? $this->url('requests&status=' . rawurlencode($this->statusNames[$bucket]))
-            : $this->url('requests&status=all');
+        $status = isset($this->statusNames[$bucket]) ? rawurlencode($this->statusNames[$bucket]) : 'all';
+
+        return $this->url('requests&status=' . $status . ($type !== '' ? '&type=' . rawurlencode($type) : ''));
     }
 }

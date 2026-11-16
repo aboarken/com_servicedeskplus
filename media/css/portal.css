@@ -60,19 +60,6 @@
   min-height: calc(1.5em + 0.75rem + 2px);
 }
 
-/* Dashboard blocks (My Requests, My Approvals, My Loans): compact tables inside the cards. */
-.com-servicedeskplus .sdp-block .table {
-  font-size: 0.9375rem;
-}
-
-.com-servicedeskplus .sdp-block .table th[scope="row"] {
-  white-space: nowrap;
-}
-
-.com-servicedeskplus .sdp-block .card-header > h2 {
-  margin-top: 0;
-}
-
 /*
  * Template independence
  * ---------------------

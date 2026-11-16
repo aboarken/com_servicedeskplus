@@ -22,7 +22,7 @@ use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 /**
  * Dashboard: summary cards, the latest announcements and recent open / on-hold requests, then
- * three blocks side by side: open and on-hold requests by type, approvals by type and decisions,
+ * three columns side by side: open and on-hold requests by type, approvals by type and decisions,
  * and loans. Each part follows the permission of its own page and fails on its own.
  */
 final class HtmlView extends BaseHtmlView

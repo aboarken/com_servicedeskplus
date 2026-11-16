@@ -18,7 +18,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 - **Summary cards:** open requests, on-hold requests, waiting for my approval, loans to return within 30 days, current announcements.
 - **Announcements:** the five newest announcements, right under the cards.
 - **Recent Requests:** the five newest open and on-hold requests, under the announcements.
-- **My Requests, My Approvals, My Loans** as three blocks side by side (stacked on small screens):
+- **My Requests, My Approvals, My Loans** side by side in three columns (stacked on small screens):
   - *My Requests:* open and on-hold service requests and incidents with totals. Only open and on-hold requests are read from ServiceDesk Plus (up to 500 of each), so the Dashboard stays fast for users with many closed requests.
   - *My Approvals:* waiting approvals by type, approved by me and rejected by me (decisions made through the portal).
   - *My Loans:* all loans, to return within 30 days (including overdue), overdue.

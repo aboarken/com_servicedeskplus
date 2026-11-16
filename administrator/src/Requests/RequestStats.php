@@ -13,27 +13,44 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Requests;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Support\SdpFields;
 
 /**
- * Counts of one user's active requests for the Dashboard: open and on-hold service requests and
- * incidents, and the newest of those requests. Resolved and closed requests are not read, so the
- * Dashboard stays fast for users with a long history.
+ * Counts of one user's requests for the Dashboard: open and on-hold service requests and
+ * incidents with the newest of those requests (read row by row), and resolved and closed requests
+ * (counted by ServiceDesk Plus, without reading them, so the Dashboard stays fast for users with a
+ * long history).
  */
 final class RequestStats
 {
-    /** Buckets the Dashboard counts. */
+    /** Buckets the Dashboard counts from the rows it reads. */
     public const BUCKETS = ['open', 'on_hold'];
+
+    /** Buckets ServiceDesk Plus counts for the Dashboard (no rows read). */
+    public const COUNTED_BUCKETS = ['resolved', 'closed'];
 
     /**
      * @param  array<string, int>      $service    bucket => count, plus "total"
      * @param  array<string, int>      $incident   bucket => count, plus "total"
      * @param  list<RequestSummary>    $recent     Newest open / on-hold requests
      * @param  bool                    $truncated  More requests exist than were counted
+     * @param  array<string, array{incident: ?int, service: ?int, total: ?int}>  $counted
+     *         COUNTED_BUCKETS => counts by SDP; null where SDP gave no count
      */
     public function __construct(
         public readonly array $service,
         public readonly array $incident,
         public readonly array $recent,
-        public readonly bool $truncated
+        public readonly bool $truncated,
+        public readonly array $counted = []
     ) {
+    }
+
+    /**
+     * A copy with the counts of the resolved and closed buckets.
+     *
+     * @param  array<string, array{incident: ?int, service: ?int, total: ?int}>  $counted
+     */
+    public function withCounted(array $counted): self
+    {
+        return new self($this->service, $this->incident, $this->recent, $this->truncated, $counted);
     }
 
     /**
@@ -127,6 +144,7 @@ final class RequestStats
             'incident'  => $this->incident,
             'recent'    => array_map(static fn (RequestSummary $s) => $s->toArray(), $this->recent),
             'truncated' => $this->truncated,
+            'counted'   => $this->counted,
         ];
     }
 
@@ -137,7 +155,15 @@ final class RequestStats
             array_map('intval', (array) ($a['service'] ?? [])) + self::empty(),
             array_map('intval', (array) ($a['incident'] ?? [])) + self::empty(),
             array_map(static fn (array $s) => RequestSummary::fromArray($s), (array) ($a['recent'] ?? [])),
-            (bool) ($a['truncated'] ?? false)
+            (bool) ($a['truncated'] ?? false),
+            array_map(
+                static fn ($c): array => [
+                    'incident' => isset($c['incident']) ? (int) $c['incident'] : null,
+                    'service'  => isset($c['service']) ? (int) $c['service'] : null,
+                    'total'    => isset($c['total']) ? (int) $c['total'] : null,
+                ],
+                array_filter((array) ($a['counted'] ?? []), 'is_array')
+            )
         );
     }
 }

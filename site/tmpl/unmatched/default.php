@@ -10,5 +10,5 @@ use Joomla\CMS\Language\Text;
 
 ?>
 <div class="com-servicedeskplus">
-    <div class="alert alert-warning" role="alert"><?php echo Text::_('COM_SERVICEDESKPLUS_UNMATCHED'); ?></div>
+    <div class="sdp-alert sdp-tone-amber" role="alert"><?php echo Text::_('COM_SERVICEDESKPLUS_UNMATCHED'); ?></div>
 </div>

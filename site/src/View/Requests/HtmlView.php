@@ -53,7 +53,7 @@ final class HtmlView extends BaseHtmlView
         $this->prepareMenuPage('requests', 'COM_SERVICEDESKPLUS_REQUESTS_TITLE');
         $this->getDocument()->setMetaData('robots', 'noindex, nofollow');
         $this->getDocument()->getWebAssetManager()->getRegistry()->addExtensionRegistryFile('com_servicedeskplus');
-        $this->getDocument()->getWebAssetManager()->useStyle('com_servicedeskplus.portal');
+        $this->getDocument()->getWebAssetManager()->useStyle('com_servicedeskplus.portal')->useScript('com_servicedeskplus.filters');
 
         parent::display($tpl);
     }

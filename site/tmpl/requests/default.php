@@ -10,6 +10,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestQuery;
+use SdpPortal\Component\ServiceDeskPlus\Site\View\Ui;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Requests\HtmlView $this */
 
@@ -23,99 +24,98 @@ $sorts  = [
 ];
 $currentSort = $q->sort . '_' . $q->direction;
 $types       = [
-    ''                            => 'COM_SERVICEDESKPLUS_REQUEST_TYPE_ALL',
-    RequestQuery::TYPE_INCIDENT   => 'COM_SERVICEDESKPLUS_REQUEST_TYPE_INCIDENT',
-    RequestQuery::TYPE_SERVICE    => 'COM_SERVICEDESKPLUS_REQUEST_TYPE_SERVICE',
+    ''                          => 'COM_SERVICEDESKPLUS_REQUEST_TYPE_ALL',
+    RequestQuery::TYPE_INCIDENT => 'COM_SERVICEDESKPLUS_REQUEST_TYPE_INCIDENT',
+    RequestQuery::TYPE_SERVICE  => 'COM_SERVICEDESKPLUS_REQUEST_TYPE_SERVICE',
 ];
 ?>
 <div class="com-servicedeskplus sdp-requests">
-    <?php /* Same grid as the filter bar below, so "Submit a Request" lines up with and has the size of "Search". */ ?>
-    <div class="sdp-page-header row g-2 align-items-center mb-3">
-        <div class="col">
-            <?php if ($this->showPageHeading) : ?>
-                <h1 class="h2 mb-0"><?php echo $this->escape($this->pageHeading); ?></h1>
-            <?php endif; ?>
-        </div>
+    <div class="sdp-head">
+        <?php if ($this->showPageHeading) : ?>
+            <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
+        <?php else : ?>
+            <span></span>
+        <?php endif; ?>
         <?php if ($this->canCreate) : ?>
-            <div class="col-12 col-sm-auto col-lg-2">
-                <a class="btn btn-primary w-100 sdp-btn-nowrap" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requestform'); ?>">
-                    <?php echo Text::_('COM_SERVICEDESKPLUS_SUBMIT_A_REQUEST'); ?>
-                </a>
-            </div>
+            <a class="sdp-btn" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requestform'); ?>">
+                + <?php echo Text::_('COM_SERVICEDESKPLUS_SUBMIT_A_REQUEST'); ?>
+            </a>
         <?php endif; ?>
     </div>
 
-    <form class="sdp-filters row g-2 align-items-end mb-3" method="get" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>">
-        <div class="col-12 col-lg-3">
-            <label class="form-label" for="sdp-search"><?php echo Text::_('COM_SERVICEDESKPLUS_SEARCH'); ?></label>
-            <input class="form-control" type="search" id="sdp-search" name="search" maxlength="100"
+    <?php // Filters are applied on change, the search on Enter (media/js/filters.js). ?>
+    <form class="sdp-toolbar" method="get" data-sdp-filters role="search" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>">
+        <div class="sdp-field--search">
+            <label class="sdp-label" for="sdp-search"><?php echo Text::_('COM_SERVICEDESKPLUS_SEARCH'); ?></label>
+            <input class="sdp-input" type="search" id="sdp-search" name="search" maxlength="100" enterkeyhint="search"
                    value="<?php echo $this->escape($q->search); ?>"
                    placeholder="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_SEARCH_HINT')); ?>">
         </div>
-        <div class="col-12 col-sm-4 col-lg-2">
-            <label class="form-label" for="sdp-type"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUEST_TYPE'); ?></label>
-            <select class="form-select" id="sdp-type" name="type">
+        <div>
+            <label class="sdp-label" for="sdp-type"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUEST_TYPE'); ?></label>
+            <select class="sdp-input" id="sdp-type" name="type">
                 <?php foreach ($types as $value => $label) : ?>
                     <option value="<?php echo $value; ?>" <?php echo $value === $q->type ? 'selected' : ''; ?>><?php echo Text::_($label); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-12 col-sm-4 col-lg-3">
-            <label class="form-label" for="sdp-status"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></label>
-            <select class="form-select" id="sdp-status" name="status">
+        <div>
+            <label class="sdp-label" for="sdp-status"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></label>
+            <select class="sdp-input" id="sdp-status" name="status">
                 <option value="<?php echo RequestQuery::ALL_STATUSES; ?>" <?php echo $q->status === '' ? 'selected' : ''; ?>><?php echo Text::_('COM_SERVICEDESKPLUS_ALL_STATUSES'); ?></option>
                 <?php foreach ($this->statuses as $status) : ?>
                     <option value="<?php echo $this->escape($status); ?>" <?php echo $status === $q->status ? 'selected' : ''; ?>><?php echo $this->escape($status); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-12 col-sm-4 col-lg-2">
-            <label class="form-label" for="sdp-sort"><?php echo Text::_('COM_SERVICEDESKPLUS_SORT'); ?></label>
-            <select class="form-select" id="sdp-sort" name="sort">
+        <div>
+            <label class="sdp-label" for="sdp-sort"><?php echo Text::_('COM_SERVICEDESKPLUS_SORT'); ?></label>
+            <select class="sdp-input" id="sdp-sort" name="sort">
                 <?php foreach ($sorts as $value => $label) : ?>
                     <option value="<?php echo $value; ?>" <?php echo $value === $currentSort ? 'selected' : ''; ?>><?php echo Text::_($label); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-12 col-lg-2 sdp-filter-submit">
-            <button class="btn btn-secondary sdp-btn-neutral w-100" type="submit"><?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?></button>
-        </div>
     </form>
 
     <?php if ($this->error !== '') : ?>
-        <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->error); ?></div>
-    <?php elseif ($this->result === null || $this->result->items === []) : ?>
-        <div class="alert alert-info"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTS_NONE'); ?></div>
+        <div class="sdp-alert sdp-tone-red" role="alert"><?php echo $this->escape($this->error); ?></div>
     <?php else : ?>
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTS_TITLE'); ?></caption>
-                <thead>
-                    <tr>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_TECHNICIAN'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_CREATED'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_UPDATED'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($this->result->items as $item) :
-                    $url = Route::_('index.php?option=com_servicedeskplus&view=request&id=' . rawurlencode($item->id));
-                    ?>
-                    <tr>
-                        <td><a href="<?php echo $url; ?>"><?php echo $this->escape($item->id); ?></a></td>
-                        <td><a href="<?php echo $url; ?>"><?php echo $this->escape($item->subject); ?></a></td>
-                        <td><?php echo $this->escape($item->status); ?></td>
-                        <td><?php echo $this->escape($item->technician !== '' ? $item->technician : Text::_('COM_SERVICEDESKPLUS_UNASSIGNED')); ?></td>
-                        <td><?php echo $date($item->createdAt); ?></td>
-                        <td><?php echo $date($item->updatedAt); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+        <section class="sdp-panel">
+            <?php if ($this->result === null || $this->result->items === []) : ?>
+                <p class="sdp-panel-body sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTS_NONE'); ?></p>
+            <?php else : ?>
+                <div class="sdp-table-wrap">
+                    <table class="sdp-table">
+                        <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTS_TITLE'); ?></caption>
+                        <thead>
+                            <tr>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_TECHNICIAN'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_CREATED'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_UPDATED'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($this->result->items as $item) :
+                            $url = Route::_('index.php?option=com_servicedeskplus&view=request&id=' . rawurlencode($item->id));
+                            ?>
+                            <tr>
+                                <td class="sdp-id"><a href="<?php echo $url; ?>"><?php echo $this->escape($item->id); ?></a></td>
+                                <td><a href="<?php echo $url; ?>"><?php echo $this->escape($item->subject); ?></a></td>
+                                <td><?php echo Ui::badge($item->status); ?></td>
+                                <td><?php echo $this->escape($item->technician !== '' ? $item->technician : Text::_('COM_SERVICEDESKPLUS_UNASSIGNED')); ?></td>
+                                <td class="sdp-nowrap"><?php echo $date($item->createdAt); ?></td>
+                                <td class="sdp-nowrap"><?php echo $date($item->updatedAt); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
     <?php endif; ?>
 
     <?php if ($this->result !== null && ($this->result->page > 1 || $this->result->hasMore)) :
@@ -124,7 +124,7 @@ $types       = [
         <nav aria-label="<?php echo $this->escape(Text::_('JLIB_HTML_PAGINATION')); ?>">
             <ul class="pagination">
                 <li class="page-item <?php echo $this->result->page <= 1 ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="<?php echo $this->pageUrl($this->result->page - 1); ?>"><?php echo Text::_('JPREV'); ?></a>
+                    <a class="page-link" href="<?php echo $this->pageUrl($this->result->page - 1); ?>">&larr; <?php echo Text::_('JPREV'); ?></a>
                 </li>
                 <li class="page-item disabled">
                     <span class="page-link">
@@ -132,7 +132,7 @@ $types       = [
                     </span>
                 </li>
                 <li class="page-item <?php echo $this->result->hasMore ? '' : 'disabled'; ?>">
-                    <a class="page-link" href="<?php echo $this->pageUrl($this->result->page + 1); ?>"><?php echo Text::_('JNEXT'); ?></a>
+                    <a class="page-link" href="<?php echo $this->pageUrl($this->result->page + 1); ?>"><?php echo Text::_('JNEXT'); ?> &rarr;</a>
                 </li>
             </ul>
         </nav>

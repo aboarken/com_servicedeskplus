@@ -11,6 +11,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
+use SdpPortal\Component\ServiceDeskPlus\Site\View\Ui;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Approvals\HtmlView $this */
 
@@ -28,131 +29,139 @@ $sorts = [
     'date_desc' => 'COM_SERVICEDESKPLUS_ANNOUNCEMENTS_SORT_DATE_DESC',
     'date_asc'  => 'COM_SERVICEDESKPLUS_ANNOUNCEMENTS_SORT_DATE_ASC',
 ];
+// Decision and result: label and colour.
 $decisionLabel = [
-    'approval.approve' => 'COM_SERVICEDESKPLUS_APPROVAL_HISTORY_APPROVE',
-    'approval.reject'  => 'COM_SERVICEDESKPLUS_APPROVAL_HISTORY_REJECT',
+    'approval.approve' => ['COM_SERVICEDESKPLUS_APPROVAL_HISTORY_APPROVE', 'green'],
+    'approval.reject'  => ['COM_SERVICEDESKPLUS_APPROVAL_HISTORY_REJECT', 'red'],
 ];
 $resultLabel = [
-    'ok'     => 'COM_SERVICEDESKPLUS_APPROVAL_RESULT_OK',
-    'denied' => 'COM_SERVICEDESKPLUS_APPROVAL_RESULT_DENIED',
-    'error'  => 'COM_SERVICEDESKPLUS_APPROVAL_RESULT_ERROR',
+    'ok'     => ['COM_SERVICEDESKPLUS_APPROVAL_RESULT_OK', 'green'],
+    'denied' => ['COM_SERVICEDESKPLUS_APPROVAL_RESULT_DENIED', 'amber'],
+    'error'  => ['COM_SERVICEDESKPLUS_APPROVAL_RESULT_ERROR', 'red'],
 ];
 $isPending = $this->show === 'pending';
 ?>
 <div class="com-servicedeskplus sdp-approvals">
     <?php if ($this->showPageHeading) : ?>
-        <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
+        <div class="sdp-head">
+            <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
+        </div>
     <?php endif; ?>
 
-    <form class="sdp-filters row g-2 align-items-end mb-3" method="get" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=approvals'); ?>">
-        <div class="col-12 col-lg-3">
-            <label class="form-label" for="sdp-search"><?php echo Text::_('COM_SERVICEDESKPLUS_SEARCH'); ?></label>
-            <input class="form-control" type="search" id="sdp-search" name="search" maxlength="100"
+    <?php // Filters are applied on change, the search on Enter (media/js/filters.js). ?>
+    <form class="sdp-toolbar" method="get" data-sdp-filters role="search" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=approvals'); ?>">
+        <div class="sdp-field--search">
+            <label class="sdp-label" for="sdp-search"><?php echo Text::_('COM_SERVICEDESKPLUS_SEARCH'); ?></label>
+            <input class="sdp-input" type="search" id="sdp-search" name="search" maxlength="100" enterkeyhint="search"
                    value="<?php echo $this->escape($this->search); ?>"
                    placeholder="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_APPROVALS_SEARCH_HINT')); ?>">
         </div>
-        <div class="col-12 col-sm-6 col-lg-3">
-            <label class="form-label" for="sdp-show"><?php echo Text::_('COM_SERVICEDESKPLUS_SHOW'); ?></label>
-            <select class="form-select" id="sdp-show" name="show">
+        <div>
+            <label class="sdp-label" for="sdp-show"><?php echo Text::_('COM_SERVICEDESKPLUS_SHOW'); ?></label>
+            <select class="sdp-input" id="sdp-show" name="show">
                 <?php foreach ($shows as $value => $label) : ?>
                     <option value="<?php echo $value; ?>" <?php echo $value === $this->show ? 'selected' : ''; ?>><?php echo Text::_($label); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-12 col-sm-6 col-lg-2">
-            <label class="form-label" for="sdp-type"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></label>
-            <select class="form-select" id="sdp-type" name="type">
+        <div>
+            <label class="sdp-label" for="sdp-type"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></label>
+            <select class="sdp-input" id="sdp-type" name="type">
                 <option value=""><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_ALL_TYPES'); ?></option>
                 <?php foreach ($this->modules as $module) : ?>
                     <option value="<?php echo $module; ?>" <?php echo $module === $this->type ? 'selected' : ''; ?>><?php echo Text::_(ApprovalModule::labelKey($module)); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-12 col-sm-6 col-lg-2">
-            <label class="form-label" for="sdp-sort"><?php echo Text::_('COM_SERVICEDESKPLUS_SORT'); ?></label>
-            <select class="form-select" id="sdp-sort" name="sort">
+        <div>
+            <label class="sdp-label" for="sdp-sort"><?php echo Text::_('COM_SERVICEDESKPLUS_SORT'); ?></label>
+            <select class="sdp-input" id="sdp-sort" name="sort">
                 <?php foreach ($sorts as $value => $label) : ?>
                     <option value="<?php echo $value; ?>" <?php echo $value === $this->sort ? 'selected' : ''; ?>><?php echo Text::_($label); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-12 col-sm-6 col-lg-2 sdp-filter-submit">
-            <button class="btn btn-secondary sdp-btn-neutral w-100" type="submit"><?php echo Text::_('JSEARCH_FILTER_SUBMIT'); ?></button>
-        </div>
     </form>
 
     <?php if ($this->error !== '') : ?>
-        <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->error); ?></div>
-    <?php elseif ($isPending && $this->pending === []) : ?>
-        <div class="alert alert-info"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_NONE'); ?></div>
-    <?php elseif (!$isPending && $this->history === []) : ?>
-        <div class="alert alert-info"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_HISTORY_NONE'); ?></div>
-        <p class="text-muted small"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_HISTORY_NOTE'); ?></p>
-    <?php elseif ($isPending) : ?>
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_PENDING'); ?></caption>
-                <thead>
-                    <tr>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTER'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_SENT_ON'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_LEVEL'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($this->pending as $p) :
-                    $url = Route::_('index.php?option=com_servicedeskplus&view=approval&id=' . rawurlencode($p->approvalId)
-                        . '&request_id=' . rawurlencode($p->requestId) . '&level_id=' . rawurlencode($p->levelId)
-                        . ($p->module !== ApprovalModule::REQUEST ? '&module=' . rawurlencode($p->module) : ''));
-                    ?>
-                    <tr>
-                        <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->requestId); ?></a></td>
-                        <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->subject !== '' ? $p->subject : '—'); ?></a></td>
-                        <td><?php echo Text::_(ApprovalModule::labelKey($p->module)); ?></td>
-                        <td><?php echo $this->escape($p->requester !== '' ? $p->requester : '—'); ?></td>
-                        <td><?php echo $date($p->sentOn); ?></td>
-                        <td><?php echo $this->escape($p->level !== '' ? $p->level : '—'); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+        <div class="sdp-alert sdp-tone-red" role="alert"><?php echo $this->escape($this->error); ?></div>
     <?php else : ?>
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_HISTORY'); ?></caption>
-                <thead>
-                    <tr>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_DECISION'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_RESULT'); ?></th>
-                        <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_DATE'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($this->history as $h) :
-                    // Decisions recorded before 1.10.0 have no module (they were all requests) and no subject.
-                    $hModule  = ApprovalModule::normalize((string) ($h['module'] ?? '')) ?? ApprovalModule::REQUEST;
-                    $hSubject = trim((string) ($h['subject'] ?? ''));
-                    ?>
-                    <tr>
-                        <td><?php echo $this->escape((string) $h['sdp_request_id']); ?></td>
-                        <td><?php echo $hSubject !== '' ? $this->escape($hSubject) : '—'; ?></td>
-                        <td><?php echo Text::_(ApprovalModule::labelKey($hModule)); ?></td>
-                        <td><?php echo Text::_($decisionLabel[$h['action']] ?? 'JNONE'); ?></td>
-                        <td><?php echo Text::_($resultLabel[$h['result']] ?? 'JNONE'); ?></td>
-                        <td><?php echo HTMLHelper::_('date', $h['created'], Text::_('DATE_FORMAT_LC5')); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <p class="text-muted small"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_HISTORY_NOTE'); ?></p>
+        <section class="sdp-panel">
+            <?php if ($isPending && $this->pending === []) : ?>
+                <p class="sdp-panel-body sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_NONE'); ?></p>
+            <?php elseif (!$isPending && $this->history === []) : ?>
+                <p class="sdp-panel-body sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_HISTORY_NONE'); ?></p>
+            <?php elseif ($isPending) : ?>
+                <div class="sdp-table-wrap">
+                    <table class="sdp-table">
+                        <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_PENDING'); ?></caption>
+                        <thead>
+                            <tr>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_REQUESTER'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_SENT_ON'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_LEVEL'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($this->pending as $p) :
+                            $url = Route::_('index.php?option=com_servicedeskplus&view=approval&id=' . rawurlencode($p->approvalId)
+                                . '&request_id=' . rawurlencode($p->requestId) . '&level_id=' . rawurlencode($p->levelId)
+                                . ($p->module !== ApprovalModule::REQUEST ? '&module=' . rawurlencode($p->module) : ''));
+                            ?>
+                            <tr>
+                                <td class="sdp-id"><a href="<?php echo $url; ?>"><?php echo $this->escape($p->requestId); ?></a></td>
+                                <td><a href="<?php echo $url; ?>"><?php echo $this->escape($p->subject !== '' ? $p->subject : '—'); ?></a></td>
+                                <td><?php echo Ui::badge(Text::_(ApprovalModule::labelKey($p->module)), 'purple'); ?></td>
+                                <td><?php echo $this->escape($p->requester !== '' ? $p->requester : '—'); ?></td>
+                                <td class="sdp-nowrap"><?php echo $date($p->sentOn); ?></td>
+                                <td><?php echo $this->escape($p->level !== '' ? $p->level : '—'); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else : ?>
+                <div class="sdp-table-wrap">
+                    <table class="sdp-table">
+                        <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_HISTORY'); ?></caption>
+                        <thead>
+                            <tr>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ID'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_DECISION'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_RESULT'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_DATE'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($this->history as $h) :
+                            // Decisions recorded before 1.10.0 have no module (they were all requests) and no subject.
+                            $hModule   = ApprovalModule::normalize((string) ($h['module'] ?? '')) ?? ApprovalModule::REQUEST;
+                            $hSubject  = trim((string) ($h['subject'] ?? ''));
+                            $decision  = $decisionLabel[$h['action']] ?? ['JNONE', 'muted'];
+                            $result    = $resultLabel[$h['result']] ?? ['JNONE', 'muted'];
+                            ?>
+                            <tr>
+                                <td class="sdp-id"><?php echo $this->escape((string) $h['sdp_request_id']); ?></td>
+                                <td><?php echo $hSubject !== '' ? $this->escape($hSubject) : '—'; ?></td>
+                                <td><?php echo Ui::badge(Text::_(ApprovalModule::labelKey($hModule)), 'purple'); ?></td>
+                                <td><?php echo Ui::badge(Text::_($decision[0]), $decision[1]); ?></td>
+                                <td><?php echo Ui::badge(Text::_($result[0]), $result[1]); ?></td>
+                                <td class="sdp-nowrap"><?php echo HTMLHelper::_('date', $h['created'], Text::_('DATE_FORMAT_LC5')); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+            <?php if (!$isPending) : ?>
+                <div class="sdp-panel-foot sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVALS_HISTORY_NOTE'); ?></div>
+            <?php endif; ?>
+        </section>
     <?php endif; ?>
 
     <?php echo (new FileLayout('pagination', null, $layoutOptions))->render(['page' => $this->page, 'pages' => $this->pages, 'url' => fn (int $p): string => $this->pageUrl($p)]); ?>

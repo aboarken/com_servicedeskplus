@@ -61,10 +61,10 @@ final class RequestService
     }
 
     /**
-     * Counts for the Dashboard from the user's open and on-hold requests (at most $maxPerStatus
-     * of each status). Only those statuses are read from SDP, one search per status; resolved and
-     * closed requests are not counted. Rows SDP returns for other requesters are ignored, as in
-     * the request list.
+     * Counts for the Dashboard. Open and on-hold requests are read (at most $maxPerStatus of each
+     * status, one search per status; rows SDP returns for other requesters are ignored, as in the
+     * request list). Resolved and closed requests are only counted by SDP (get_total_count with
+     * one row), so a long history does not slow the Dashboard down.
      *
      * @throws SdpException
      */
@@ -72,7 +72,7 @@ final class RequestService
     {
         $sdpUserId = $identity->sdpUserId();
         // "requests:" prefix: cleared with the lists when the user creates a request.
-        $cacheKey = 'requests:stats:v2';
+        $cacheKey = 'requests:stats:v3';
         $cached   = $this->cache->get($identity, $cacheKey);
 
         if ($cached !== null) {
@@ -83,7 +83,7 @@ final class RequestService
         $rows      = [];
         $truncated = false;
 
-        foreach ($this->activeStatuses() as $status) {
+        foreach ($this->statusNames(['open' => 'Open', 'on_hold' => 'On Hold']) as $status) {
             for ($start = 1; ; $start += ListInfo::MAX_ROW_COUNT) {
                 $page = $client->listRequests(new ListInfo(
                     rowCount: ListInfo::MAX_ROW_COUNT,
@@ -113,31 +113,99 @@ final class RequestService
             }
         }
 
-        $stats = RequestStats::fromSdp($rows, $truncated);
+        $stats = RequestStats::fromSdp($rows, $truncated)->withCounted($this->countDone($client, $sdpUserId));
         $this->cache->set($identity, $cacheKey, $stats->toArray());
 
         return $stats;
     }
 
     /**
-     * Open and on-hold statuses as spelled in the My Requests filter, or SDP's default names
+     * Resolved and closed requests of the user, counted by SDP: incidents, service requests and
+     * all. The split is left out (null) when SDP cannot search on the request type or its counts
+     * do not add up; a count SDP does not give stays null.
+     *
+     * @return array<string, array{incident: ?int, service: ?int, total: ?int}>
+     */
+    private function countDone(SdpClient $client, string $sdpUserId): array
+    {
+        $counted    = [];
+        $typeSearch = true;
+
+        foreach ($this->statusNames(['resolved' => 'Resolved', 'closed' => 'Closed']) as $bucket => $status) {
+            $counts = ['incident' => null, 'service' => null, 'total' => null];
+
+            try {
+                $counts['total'] = $this->countRequests($client, $sdpUserId, $status, null);
+
+                if ($typeSearch) {
+                    try {
+                        $counts['incident'] = $this->countRequests($client, $sdpUserId, $status, false);
+                        $counts['service']  = $this->countRequests($client, $sdpUserId, $status, true);
+                    } catch (SdpException $e) {
+                        if ($e->getKind() !== SdpException::VALIDATION) {
+                            throw $e;
+                        }
+
+                        $typeSearch = false;
+                        $this->logger->info('SDP rejected the is_service_request search criterion; resolved and closed requests are counted without the type split.');
+                    }
+                }
+
+                // SDP ignored the type criterion (both halves equal the total) or gave no count.
+                if ($counts['incident'] === null || $counts['service'] === null || $counts['incident'] + $counts['service'] !== $counts['total']) {
+                    $counts['incident'] = null;
+                    $counts['service']  = null;
+                }
+            } catch (SdpException $e) {
+                $this->logger->warning(\sprintf('%s requests of SDP user %s could not be counted (%s).', $status, $sdpUserId, $e->getKind()));
+            }
+
+            $counted[$bucket] = $counts;
+        }
+
+        return $counted;
+    }
+
+    /**
+     * Number of the user's requests with a status (and optionally a type), counted by SDP.
+     *
+     * @throws SdpException
+     */
+    private function countRequests(SdpClient $client, string $sdpUserId, string $status, ?bool $service): ?int
+    {
+        $criteria = [
+            ['field' => 'requester.id', 'condition' => 'is', 'value' => $sdpUserId],
+            ['field' => 'status.name', 'condition' => 'is', 'value' => $status, 'logical_operator' => 'AND'],
+        ];
+
+        if ($service !== null) {
+            $criteria[] = ['field' => 'is_service_request', 'condition' => 'is', 'value' => $service, 'logical_operator' => 'AND'];
+        }
+
+        return $client->listRequests(new ListInfo(rowCount: 1, startIndex: 1, searchCriteria: $criteria, getTotalCount: true))->totalCount;
+    }
+
+    /**
+     * Statuses as spelled in the My Requests filter for the given buckets, or SDP's default names
      * when the filter has none.
      *
-     * @return list<string>
+     * @param  array<string, string>  $defaults  bucket => SDP's default status name
+     *
+     * @return array<string, string>  bucket => status name
      */
-    private function activeStatuses(): array
+    private function statusNames(array $defaults): array
     {
         $found = [];
 
         foreach ($this->allowedStatuses as $status) {
             $bucket = RequestStats::bucket($status);
 
-            if (\in_array($bucket, RequestStats::BUCKETS, true)) {
+            if (isset($defaults[$bucket])) {
                 $found[$bucket] ??= $status;
             }
         }
 
-        return array_values($found + ['open' => 'Open', 'on_hold' => 'On Hold']);
+        return array_intersect_key($found + $defaults, $defaults);
     }
 
     /**

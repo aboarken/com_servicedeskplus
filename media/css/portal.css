@@ -1,72 +1,14 @@
-/* ServiceDesk Plus portal: minimal styles on top of the site template. */
-.com-servicedeskplus .sdp-text {
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
-.com-servicedeskplus .sdp-overdue {
-  border-inline-start: 4px solid var(--bs-danger, #dc3545);
-}
+/* ServiceDesk Plus portal: the portal's own design on top of the site template. */
 
 /*
- * Neutral grey button (Search, Cancel). Bootstrap 5 button variables are set explicitly so the
- * buttons stay grey even when a site template recolours .btn-secondary.
+ * Design
+ * ------
+ * Cards, panels, tables, badges, filters and buttons with their own look, so every portal page is
+ * the same on any site template. Fonts and link colours still come from the template.
  */
-.com-servicedeskplus .sdp-btn-neutral {
-  --bs-btn-color: #fff;
-  --bs-btn-bg: #6c757d;
-  --bs-btn-border-color: #6c757d;
-  --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #5c636a;
-  --bs-btn-hover-border-color: #565e64;
-  --bs-btn-focus-shadow-rgb: 130, 138, 145;
-  --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #565e64;
-  --bs-btn-active-border-color: #51585e;
-  --bs-btn-disabled-color: #fff;
-  --bs-btn-disabled-bg: #6c757d;
-  --bs-btn-disabled-border-color: #6c757d;
-  color: var(--bs-btn-color);
-  background-color: var(--bs-btn-bg);
-  border-color: var(--bs-btn-border-color);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.com-servicedeskplus .sdp-btn-neutral:hover,
-.com-servicedeskplus .sdp-btn-neutral:focus-visible {
-  color: var(--bs-btn-hover-color);
-  background-color: var(--bs-btn-hover-bg);
-  border-color: var(--bs-btn-hover-border-color);
-}
-
-.com-servicedeskplus .sdp-btn-neutral:active {
-  color: var(--bs-btn-active-color);
-  background-color: var(--bs-btn-active-bg);
-  border-color: var(--bs-btn-active-border-color);
-}
-
-/* Filter bar on "My Requests": the button lines up with the inputs and never wraps or overflows. */
-.com-servicedeskplus .sdp-filter-submit .btn {
-  min-height: calc(1.5em + 0.75rem + 2px);
-}
-
-/* "Submit a Request" on My Requests: same width and height as the Search button. */
-.com-servicedeskplus .sdp-btn-nowrap {
-  white-space: nowrap;
-}
-
-.com-servicedeskplus .sdp-page-header .btn {
-  min-height: calc(1.5em + 0.75rem + 2px);
-}
-
-/*
- * Dashboard
- * ---------
- * Cards and panels with their own look, so the Dashboard is the same on every site template.
- * Fonts and link colours still come from the template.
- */
-.com-servicedeskplus.sdp-dashboard {
+.com-servicedeskplus {
+  --sdp-primary: #17426f;
+  --sdp-primary-hover: #0f2f51;
   --sdp-card-bg: var(--bs-body-bg, #fff);
   --sdp-card-border: #e5e7eb;
   --sdp-card-line: #eef0f3;
@@ -74,16 +16,206 @@
   --sdp-card-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.06);
   --sdp-card-shadow-hover: 0 8px 20px rgba(16, 24, 40, 0.1);
   --sdp-text-muted: #6b7280;
+  --sdp-focus: 0 0 0 3px rgba(23, 66, 111, 0.2);
 }
 
 /* Tones: --sdp-tone is the strong colour, --sdp-tone-soft its light background. */
-.com-servicedeskplus .sdp-tone-blue { --sdp-tone: #2563eb; --sdp-tone-soft: #eff6ff; }
+.com-servicedeskplus .sdp-tone-blue { --sdp-tone: #17426f; --sdp-tone-soft: #e8eef6; }
 .com-servicedeskplus .sdp-tone-amber { --sdp-tone: #b45309; --sdp-tone-soft: #fffbeb; }
 .com-servicedeskplus .sdp-tone-purple { --sdp-tone: #7c3aed; --sdp-tone-soft: #f5f3ff; }
 .com-servicedeskplus .sdp-tone-green { --sdp-tone: #15803d; --sdp-tone-soft: #f0fdf4; }
 .com-servicedeskplus .sdp-tone-red { --sdp-tone: #dc2626; --sdp-tone-soft: #fef2f2; }
 .com-servicedeskplus .sdp-tone-teal { --sdp-tone: #0f766e; --sdp-tone-soft: #f0fdfa; }
+.com-servicedeskplus .sdp-tone-slate { --sdp-tone: #475569; --sdp-tone-soft: #f1f5f9; }
 .com-servicedeskplus .sdp-tone-muted { --sdp-tone: #6b7280; --sdp-tone-soft: #f3f4f6; }
+
+.com-servicedeskplus .sdp-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Page heading row: title (and meta line) left, main action right */
+.com-servicedeskplus .sdp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1.25rem;
+}
+
+.com-servicedeskplus .sdp-head h1 {
+  margin: 0;
+}
+
+.com-servicedeskplus .sdp-head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--sdp-text-muted);
+}
+
+.com-servicedeskplus .sdp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.com-servicedeskplus .sdp-back:hover {
+  text-decoration: underline;
+}
+
+/* Buttons */
+.com-servicedeskplus .sdp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.125rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--sdp-primary);
+  border: 1px solid var(--sdp-primary);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.com-servicedeskplus .sdp-btn:hover,
+.com-servicedeskplus .sdp-btn:focus-visible {
+  color: #fff;
+  text-decoration: none;
+  background: var(--sdp-primary-hover);
+  border-color: var(--sdp-primary-hover);
+}
+
+.com-servicedeskplus .sdp-btn:focus-visible {
+  outline: 0;
+  box-shadow: var(--sdp-focus);
+}
+
+.com-servicedeskplus .sdp-btn:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.com-servicedeskplus .sdp-btn--green { background: #15803d; border-color: #15803d; }
+
+.com-servicedeskplus .sdp-btn--green:hover,
+.com-servicedeskplus .sdp-btn--green:focus-visible { background: #166534; border-color: #166534; }
+
+.com-servicedeskplus .sdp-btn--red { background: #dc2626; border-color: #dc2626; }
+
+.com-servicedeskplus .sdp-btn--red:hover,
+.com-servicedeskplus .sdp-btn--red:focus-visible { background: #b91c1c; border-color: #b91c1c; }
+
+.com-servicedeskplus .sdp-btn--ghost {
+  color: #374151;
+  background: var(--sdp-card-bg);
+  border-color: #d1d5db;
+}
+
+.com-servicedeskplus .sdp-btn--ghost:hover,
+.com-servicedeskplus .sdp-btn--ghost:focus-visible {
+  color: #111827;
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Filter bar: fields side by side, applied on change and on Enter (filters.js); no Search button */
+.com-servicedeskplus .sdp-toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: end;
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.125rem;
+  background: var(--sdp-card-bg);
+  border: 1px solid var(--sdp-card-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--sdp-card-shadow);
+}
+
+.com-servicedeskplus .sdp-toolbar .sdp-field--search {
+  grid-column: span 2;
+}
+
+@media (max-width: 575.98px) {
+  .com-servicedeskplus .sdp-toolbar .sdp-field--search {
+    grid-column: auto;
+  }
+}
+
+/* Form fields (filter bar, request form, approval comment) */
+.com-servicedeskplus .sdp-label {
+  display: block;
+  margin: 0 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sdp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.com-servicedeskplus .sdp-input {
+  display: block;
+  width: 100%;
+  min-height: 2.5rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: inherit;
+  background-color: var(--sdp-card-bg);
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.com-servicedeskplus select.sdp-input {
+  padding-right: 2.25rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 14px 10px;
+}
+
+.com-servicedeskplus .sdp-input:focus {
+  border-color: var(--sdp-primary);
+  outline: 0;
+  box-shadow: var(--sdp-focus);
+}
+
+.com-servicedeskplus .sdp-form-field {
+  margin: 0 0 1.125rem;
+}
+
+.com-servicedeskplus .sdp-help {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--sdp-text-muted);
+}
+
+.com-servicedeskplus .sdp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
 
 /* Summary cards */
 .com-servicedeskplus .sdp-stats {
@@ -190,10 +322,20 @@
   text-decoration: underline;
 }
 
+.com-servicedeskplus .sdp-panel-count {
+  font-size: 0.8125rem;
+  color: var(--sdp-text-muted);
+  white-space: nowrap;
+}
+
 .com-servicedeskplus .sdp-panel-body {
   flex: 1 1 auto;
   margin: 0;
   padding: 1rem 1.125rem;
+}
+
+.com-servicedeskplus .sdp-panel-body > :last-child {
+  margin-bottom: 0;
 }
 
 .com-servicedeskplus .sdp-panel-foot {
@@ -216,6 +358,10 @@
 .com-servicedeskplus .sdp-note {
   margin: 0.75rem 0 0;
   font-size: 0.8125rem;
+}
+
+.com-servicedeskplus .sdp-panel .alert {
+  margin: 0;
 }
 
 /* Tables inside panels */
@@ -247,6 +393,7 @@
   color: var(--sdp-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
   background: var(--sdp-card-hover);
   border-top: 0;
 }
@@ -261,6 +408,11 @@
 
 .com-servicedeskplus .sdp-table a:hover {
   text-decoration: underline;
+}
+
+/* Overdue loan row: red edge */
+.com-servicedeskplus .sdp-table tr.sdp-overdue > :first-child {
+  box-shadow: inset 4px 0 0 #dc2626;
 }
 
 .com-servicedeskplus .sdp-id {
@@ -347,7 +499,7 @@
   border-top: 1px solid var(--sdp-card-line);
 }
 
-/* Tiles (My Requests: Open, On Hold) */
+/* Tiles (Dashboard, My Requests: Open, On Hold, Resolved, Closed) */
 .com-servicedeskplus .sdp-tiles {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -360,7 +512,8 @@
   border-radius: 0.625rem;
 }
 
-.com-servicedeskplus .sdp-tile-main {
+.com-servicedeskplus .sdp-tile-main,
+.com-servicedeskplus .sdp-tile-main:hover {
   display: block;
   color: var(--sdp-tone);
   text-decoration: none;
@@ -368,7 +521,7 @@
 
 .com-servicedeskplus .sdp-tile-value {
   display: block;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.1;
 }
@@ -397,13 +550,153 @@
   text-decoration: underline;
 }
 
+/* Detail pages: fields as a grid of label / value */
+.com-servicedeskplus .sdp-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1rem 1.5rem;
+  margin: 0;
+  padding: 1.125rem;
+}
+
+.com-servicedeskplus .sdp-fields > div {
+  min-width: 0;
+}
+
+.com-servicedeskplus .sdp-fields dt {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sdp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.com-servicedeskplus .sdp-fields dd {
+  margin: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.com-servicedeskplus .sdp-prose {
+  line-height: 1.65;
+}
+
+/* Conversation: a timeline of e-mails and notes */
+.com-servicedeskplus .sdp-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.com-servicedeskplus .sdp-timeline > li {
+  position: relative;
+  margin: 0;
+  padding: 1rem 1.125rem 1rem 2.5rem;
+  border-top: 1px solid var(--sdp-card-line);
+}
+
+.com-servicedeskplus .sdp-timeline > li:first-child {
+  border-top: 0;
+}
+
+.com-servicedeskplus .sdp-timeline > li::before {
+  position: absolute;
+  top: 1.35rem;
+  left: 1.125rem;
+  width: 0.625rem;
+  height: 0.625rem;
+  content: "";
+  background: var(--sdp-tone, #17426f);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--sdp-tone-soft, #e8eef6);
+}
+
+.com-servicedeskplus .sdp-timeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.625rem;
+  margin: 0 0 0.375rem;
+  font-size: 0.875rem;
+}
+
+.com-servicedeskplus .sdp-timeline-time {
+  color: var(--sdp-text-muted);
+}
+
+.com-servicedeskplus .sdp-timeline-subject {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+/* Messages in the portal's style */
+.com-servicedeskplus .sdp-alert {
+  margin: 0 0 1.25rem;
+  padding: 0.875rem 1.125rem;
+  color: var(--sdp-tone);
+  background: var(--sdp-tone-soft);
+  border: 0;
+  border-left: 4px solid var(--sdp-tone);
+  border-radius: 0.5rem;
+}
+
+.com-servicedeskplus .sdp-alert a {
+  font-weight: 600;
+  color: inherit;
+}
+
+/* Pagination */
+.com-servicedeskplus .pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.com-servicedeskplus .pagination .page-item {
+  margin: 0;
+}
+
+.com-servicedeskplus .pagination .page-link {
+  display: block;
+  margin: 0;
+  padding: 0.4rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sdp-primary);
+  text-decoration: none;
+  background: var(--sdp-card-bg);
+  border: 1px solid var(--sdp-card-border);
+  border-radius: 0.5rem;
+  box-shadow: var(--sdp-card-shadow);
+}
+
+.com-servicedeskplus .pagination .page-link:hover {
+  background: var(--sdp-card-hover);
+}
+
+.com-servicedeskplus .pagination .page-item.disabled .page-link {
+  color: var(--sdp-text-muted);
+  pointer-events: none;
+  box-shadow: none;
+}
+
+.com-servicedeskplus .pagination .page-item.disabled:not(:first-child):not(:last-child) .page-link {
+  background: transparent;
+  border-color: transparent;
+}
+
 /*
  * Template independence
  * ---------------------
- * The portal pages use Bootstrap 5 class names, which Cassiopeia and most Joomla templates style.
- * The rules below give those classes a plain look when the site template does not provide them.
- * Every selector is wrapped in :where(), which has zero specificity, so any style of the
- * installed template wins over these and the pages follow the template wherever it has one.
+ * Some markup still uses Bootstrap 5 class names (alerts, spinner, visually-hidden, a few
+ * utilities), which Cassiopeia and most Joomla templates style. The rules below give those classes
+ * a plain look when the site template does not provide them. Every selector is wrapped in :where(),
+ * which has zero specificity, so any style of the installed template wins over these.
  */
 :where(.com-servicedeskplus) {
   --sdp-border: var(--bs-border-color, #dee2e6);
@@ -517,60 +810,6 @@
   border: 0;
 }
 
-/* Tables */
-:where(.com-servicedeskplus .table-responsive) {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-:where(.com-servicedeskplus .table) {
-  width: 100%;
-  margin-bottom: 1rem;
-  border-collapse: collapse;
-  caption-side: bottom;
-}
-
-:where(.com-servicedeskplus .table :is(th, td)) {
-  padding: 0.5rem;
-  text-align: inherit;
-  border-bottom: 1px solid var(--sdp-border);
-}
-
-:where(.com-servicedeskplus .table :is(th, td).text-end) { text-align: right; }
-:where(.com-servicedeskplus .table > thead th) { vertical-align: bottom; border-bottom-width: 2px; }
-:where(.com-servicedeskplus .table-sm :is(th, td)) { padding: 0.25rem; }
-:where(.com-servicedeskplus .table-striped > tbody > tr:nth-of-type(odd) > *) { background-color: var(--sdp-stripe); }
-
-/* Description lists (request and loan details) */
-:where(.com-servicedeskplus dl.row > dt) { font-weight: 600; }
-:where(.com-servicedeskplus dl.row > dd) { margin-left: 0; margin-bottom: 0.5rem; }
-
-/* Cards */
-:where(.com-servicedeskplus .card) {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background-color: var(--bs-body-bg, #fff);
-  border: 1px solid var(--sdp-border);
-  border-radius: var(--sdp-radius);
-}
-
-:where(.com-servicedeskplus .card-header) {
-  padding: 0.5rem 1rem;
-  background-color: rgba(0, 0, 0, 0.03);
-  border-bottom: 1px solid var(--sdp-border);
-}
-
-:where(.com-servicedeskplus .card-body) { flex: 1 1 auto; padding: 1rem; }
-
-:where(.com-servicedeskplus .stretched-link)::after {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  content: "";
-}
-
 /* Alerts */
 :where(.com-servicedeskplus .alert) {
   position: relative;
@@ -587,42 +826,7 @@
 :where(.com-servicedeskplus .alert-secondary) { color: #2b2f32; background-color: #e2e3e5; border-color: #c4c8cb; }
 :where(.com-servicedeskplus .alert-link) { font-weight: 700; color: inherit; }
 
-/* Forms */
-:where(.com-servicedeskplus .form-label) { display: inline-block; margin-bottom: 0.5rem; }
-:where(.com-servicedeskplus .form-text) { margin-top: 0.25rem; font-size: 0.875em; color: var(--sdp-muted); }
-
-:where(.com-servicedeskplus :is(.form-control, .form-select)) {
-  display: block;
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  font: inherit;
-  line-height: 1.5;
-  color: inherit;
-  background-color: var(--bs-body-bg, #fff);
-  border: 1px solid var(--sdp-border);
-  border-radius: var(--sdp-radius);
-}
-
-/* Buttons */
-:where(.com-servicedeskplus .btn) {
-  display: inline-block;
-  padding: 0.375rem 0.75rem;
-  font: inherit;
-  line-height: 1.5;
-  text-align: center;
-  text-decoration: none;
-  vertical-align: middle;
-  cursor: pointer;
-  border: 1px solid transparent;
-  border-radius: var(--sdp-radius);
-}
-
-:where(.com-servicedeskplus .btn:disabled) { opacity: 0.65; cursor: default; }
-:where(.com-servicedeskplus .btn-primary) { color: #fff; background-color: #0d6efd; border-color: #0d6efd; }
-:where(.com-servicedeskplus .btn-secondary) { color: #fff; background-color: #6c757d; border-color: #6c757d; }
-:where(.com-servicedeskplus .btn-success) { color: #fff; background-color: #198754; border-color: #198754; }
-:where(.com-servicedeskplus .btn-danger) { color: #fff; background-color: #dc3545; border-color: #dc3545; }
-
+/* Busy spinner in buttons (submit-once.js) */
 :where(.com-servicedeskplus .spinner-border) {
   display: inline-block;
   width: 2rem;
@@ -639,22 +843,3 @@
 @keyframes sdp-spin {
   to { transform: rotate(360deg); }
 }
-
-/* Pagination */
-:where(.com-servicedeskplus .pagination) {
-  display: flex;
-  flex-wrap: wrap;
-  padding-left: 0;
-  list-style: none;
-}
-
-:where(.com-servicedeskplus .page-link) {
-  display: block;
-  padding: 0.375rem 0.75rem;
-  margin-left: -1px;
-  color: var(--sdp-link);
-  text-decoration: none;
-  border: 1px solid var(--sdp-border);
-}
-
-:where(.com-servicedeskplus .page-item.disabled .page-link) { color: var(--sdp-muted); pointer-events: none; }

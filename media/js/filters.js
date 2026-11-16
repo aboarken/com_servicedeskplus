@@ -1,0 +1,58 @@
+/**
+ * Filter bars of the portal lists (forms marked data-sdp-filters) have no Search button:
+ *  - choosing an option in a list (status, type, show, sort) applies it at once;
+ *  - the search text is applied with Enter, or when the field is cleared with its "x".
+ * A filter change always starts again at page 1 (the form does not send "page").
+ *
+ * @license GNU General Public License version 2 or later
+ */
+(() => {
+  'use strict';
+
+  const submit = (form) => {
+    if (form.dataset.sdpSubmitting === '1') {
+      return;
+    }
+
+    form.dataset.sdpSubmitting = '1';
+    form.setAttribute('aria-busy', 'true');
+
+    if (typeof form.requestSubmit === 'function') {
+      form.requestSubmit();
+    } else {
+      form.submit();
+    }
+  };
+
+  const init = (form) => {
+    form.querySelectorAll('select').forEach((select) => {
+      select.addEventListener('change', () => submit(form));
+    });
+
+    form.querySelectorAll('input[type="search"], input[type="text"]').forEach((input) => {
+      const initial = input.value;
+
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.isComposing) {
+          event.preventDefault();
+          submit(form);
+        }
+      });
+
+      // The clear button ("x") of a search field: show everything again.
+      input.addEventListener('search', () => {
+        if (input.value === '' && initial !== '') {
+          submit(form);
+        }
+      });
+    });
+  };
+
+  const start = () => document.querySelectorAll('form[data-sdp-filters]').forEach(init);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();

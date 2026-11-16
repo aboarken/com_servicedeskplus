@@ -18,11 +18,13 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 - **Summary cards:** open requests, on-hold requests, waiting for my approval, loans to return within 30 days, current announcements.
 - **Announcements:** the five newest announcements, right under the cards.
 - **Recent Requests:** the five newest open and on-hold requests, under the announcements.
+- **My Requests block:** Open, On Hold, Resolved and Closed tiles, each with its incident and service request count. Resolved and closed requests are counted by ServiceDesk Plus without reading them.
 - **My Requests, My Approvals, My Loans** side by side in three columns (stacked on small screens):
   - *My Requests:* open and on-hold service requests and incidents with totals. Only open and on-hold requests are read from ServiceDesk Plus (up to 500 of each), so the Dashboard stays fast for users with many closed requests.
   - *My Approvals:* waiting approvals by type, approved by me and rejected by me (decisions made through the portal).
   - *My Loans:* all loans, to return within 30 days (including overdue), overdue.
-- Coloured cards, panels and counts (green for good, amber and red for what needs attention), styled by the component so the Dashboard looks the same on any site template.
+- Coloured cards, panels and counts (green for good, amber and red for what needs attention), styled by the component so the Dashboard looks the same on any site template. All other portal pages use the same design.
+- List filters apply as soon as an option is chosen; the search is applied with Enter (no Search button).
 - Every figure opens its page with the matching filter. Each part is shown only to users with the permission for its page.
 
 ### Service Requests

@@ -9,45 +9,54 @@
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
+use SdpPortal\Component\ServiceDeskPlus\Site\View\Ui;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Announcement\HtmlView $this */
 
-$date = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC2')) : '';
-$item = $this->item;
+$date  = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC2')) : '';
+$field = static fn (string $labelKey, string $html): string => '<div><dt>' . Text::_($labelKey) . '</dt><dd>' . $html . '</dd></div>';
+$item  = $this->item;
 ?>
 <div class="com-servicedeskplus sdp-announcement">
-    <p><a href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=announcements'); ?>">&larr; <?php echo Text::_('COM_SERVICEDESKPLUS_BACK_TO_ANNOUNCEMENTS'); ?></a></p>
+    <a class="sdp-back" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=announcements'); ?>">&larr; <?php echo Text::_('COM_SERVICEDESKPLUS_BACK_TO_ANNOUNCEMENTS'); ?></a>
 
     <?php if ($item === null) : ?>
-        <div class="alert alert-danger" role="alert"><?php echo $this->escape($this->error); ?></div>
+        <div class="sdp-alert sdp-tone-red" role="alert"><?php echo $this->escape($this->error); ?></div>
     <?php else : ?>
-        <h1 class="h2"><?php echo $this->escape($item->title !== '' ? $item->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></h1>
+        <div class="sdp-head">
+            <div>
+                <h1 class="h2"><?php echo $this->escape($item->title !== '' ? $item->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></h1>
+                <div class="sdp-head-meta">
+                    <span><?php echo Text::sprintf('COM_SERVICEDESKPLUS_ANNOUNCEMENT_ID', $this->escape($item->id)); ?></span>
+                    <?php if ($item->type !== '') : ?>
+                        <?php echo Ui::badge($item->type, 'teal'); ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
-        <p class="text-muted"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_ANNOUNCEMENT_ID', $this->escape($item->id)); ?></p>
+        <section class="sdp-panel">
+            <dl class="sdp-fields">
+                <?php
+                if ($date($item->date()) !== '') {
+                    echo $field('COM_SERVICEDESKPLUS_ANNOUNCEMENT_START', $date($item->date()));
+                }
 
-        <dl class="row">
-            <?php if ($date($item->date()) !== '') : ?>
-                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_START'); ?></dt>
-                <dd class="col-sm-9"><?php echo $date($item->date()); ?></dd>
-            <?php endif; ?>
-            <?php if ($item->toTime !== null) : ?>
-                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_END'); ?></dt>
-                <dd class="col-sm-9"><?php echo $date($item->toTime); ?></dd>
-            <?php endif; ?>
-            <?php if ($item->type !== '') : ?>
-                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE'); ?></dt>
-                <dd class="col-sm-9"><?php echo $this->escape($item->type); ?></dd>
-            <?php endif; ?>
-            <?php if ($item->createdBy !== '') : ?>
-                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_POSTED_BY'); ?></dt>
-                <dd class="col-sm-9"><?php echo $this->escape($item->createdBy); ?></dd>
-            <?php endif; ?>
-            <?php if ($item->priority !== '') : ?>
-                <dt class="col-sm-3"><?php echo Text::_('COM_SERVICEDESKPLUS_PRIORITY'); ?></dt>
-                <dd class="col-sm-9"><?php echo $this->escape($item->priority); ?></dd>
-            <?php endif; ?>
-        </dl>
+                echo $field('COM_SERVICEDESKPLUS_ANNOUNCEMENT_END', $item->toTime !== null ? $date($item->toTime) : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_NO_END'));
 
-        <div class="sdp-text mb-4"><?php echo nl2br($this->escape($item->content !== '' ? $item->content : '—')); ?></div>
+                if ($item->createdBy !== '') {
+                    echo $field('COM_SERVICEDESKPLUS_ANNOUNCEMENT_POSTED_BY', $this->escape($item->createdBy));
+                }
+
+                if ($item->priority !== '') {
+                    echo $field('COM_SERVICEDESKPLUS_PRIORITY', $this->escape($item->priority));
+                }
+                ?>
+            </dl>
+        </section>
+
+        <section class="sdp-panel">
+            <div class="sdp-panel-body sdp-text sdp-prose"><?php echo nl2br($this->escape($item->content !== '' ? $item->content : '—')); ?></div>
+        </section>
     <?php endif; ?>
 </div>

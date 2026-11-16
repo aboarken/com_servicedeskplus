@@ -10,16 +10,16 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestQuery;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestStats;
+use SdpPortal\Component\ServiceDeskPlus\Site\View\Ui;
 
 /** @var \SdpPortal\Component\ServiceDeskPlus\Site\View\Dashboard\HtmlView $this */
 
 /*
  * Layout: summary cards, then panels (Announcements, Recent Requests, then My Requests, My Approvals
  * and My Loans side by side). Styles are in media/com_servicedeskplus/css/portal.css (.sdp-*), so the
- * Dashboard looks the same on any site template. Colours ("tones"): blue open, amber on hold or
- * due soon, purple waiting approval, green approved / nothing overdue, red rejected / overdue,
- * teal announcements, muted for zero.
+ * Dashboard looks the same on any site template. Colours ("tones"): blue (#17426f) open, amber on
+ * hold or due soon, green resolved / approved / nothing overdue, slate closed, purple waiting
+ * approval, red rejected / overdue, teal announcements, muted for zero.
  */
 
 $date = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $ts), Text::_('DATE_FORMAT_LC5')) : '—';
@@ -49,12 +49,15 @@ $panelHead = static fn (string $title, string $url = '', string $linkText = ''):
     . '</div>';
 
 $viewAll = Text::_('COM_SERVICEDESKPLUS_DASHBOARD_VIEW_ALL');
-$error   = fn (string $message): string => '<div class="sdp-panel-body"><div class="alert alert-danger mb-0" role="alert">' . $e($message) . '</div></div>';
-$badge   = static fn (string $status): string => match (RequestStats::bucket($status)) {
-    'open'    => 'blue',
-    'on_hold' => 'amber',
-    default   => 'muted',
-};
+$error   = fn (string $message): string => '<div class="sdp-panel-body"><div class="sdp-alert sdp-tone-red" role="alert">' . $e($message) . '</div></div>';
+$badge   = static fn (string $status): string => Ui::tone($status);
+// My Requests tiles: bucket => label, tone.
+$tiles = [
+    'open'     => ['COM_SERVICEDESKPLUS_DASHBOARD_OPEN', 'blue'],
+    'on_hold'  => ['COM_SERVICEDESKPLUS_DASHBOARD_ON_HOLD', 'amber'],
+    'resolved' => ['COM_SERVICEDESKPLUS_DASHBOARD_RESOLVED', 'green'],
+    'closed'   => ['COM_SERVICEDESKPLUS_DASHBOARD_CLOSED', 'slate'],
+];
 ?>
 <div class="com-servicedeskplus sdp-dashboard">
     <?php if ($this->showPageHeading) : ?>
@@ -165,19 +168,24 @@ $badge   = static fn (string $status): string => match (RequestStats::bucket($st
                 <?php elseif ($r !== null) : ?>
                     <div class="sdp-panel-body">
                         <div class="sdp-tiles">
-                            <?php foreach (['open' => ['COM_SERVICEDESKPLUS_DASHBOARD_OPEN', 'blue'], 'on_hold' => ['COM_SERVICEDESKPLUS_DASHBOARD_ON_HOLD', 'amber']] as $bucket => [$labelKey, $tone]) :
-                                $s = (int) ($r->service[$bucket] ?? 0);
-                                $i = (int) ($r->incident[$bucket] ?? 0);
+                            <?php foreach ($tiles as $bucket => [$labelKey, $tone]) :
+                                // Open and on hold: counted from the rows read; resolved and closed: counted by SDP.
+                                $counted = $r->counted[$bucket] ?? null;
+                                $i       = $counted !== null ? $counted['incident'] : (int) ($r->incident[$bucket] ?? 0);
+                                $s       = $counted !== null ? $counted['service'] : (int) ($r->service[$bucket] ?? 0);
+                                $total   = $counted !== null ? $counted['total'] : $i + $s;
                                 ?>
-                                <div class="sdp-tile sdp-tone-<?php echo $s + $i > 0 ? $tone : 'muted'; ?>">
+                                <div class="sdp-tile sdp-tone-<?php echo $total ? $tone : 'muted'; ?>">
                                     <a class="sdp-tile-main" href="<?php echo $this->statusUrl($bucket); ?>">
-                                        <span class="sdp-tile-value"><?php echo $s + $i; ?></span>
+                                        <span class="sdp-tile-value"><?php echo $total ?? '—'; ?></span>
                                         <span class="sdp-tile-label"><?php echo Text::_($labelKey); ?></span>
                                     </a>
-                                    <div class="sdp-tile-meta">
-                                        <a href="<?php echo $this->statusUrl($bucket, RequestQuery::TYPE_SERVICE); ?>"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_DASHBOARD_N_SERVICE', $s); ?></a>
-                                        <a href="<?php echo $this->statusUrl($bucket, RequestQuery::TYPE_INCIDENT); ?>"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_DASHBOARD_N_INCIDENT', $i); ?></a>
-                                    </div>
+                                    <?php if ($i !== null && $s !== null) : ?>
+                                        <div class="sdp-tile-meta">
+                                            <a href="<?php echo $this->statusUrl($bucket, RequestQuery::TYPE_INCIDENT); ?>"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_DASHBOARD_N_INCIDENT', $i); ?></a>
+                                            <a href="<?php echo $this->statusUrl($bucket, RequestQuery::TYPE_SERVICE); ?>"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_DASHBOARD_N_SERVICE', $s); ?></a>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
                         </div>

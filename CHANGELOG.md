@@ -3,6 +3,16 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.18.0] - 2026-11-16
+
+### Added
+- **Dashboard, My Requests block:** *Resolved* and *Closed* tiles next to *Open* and *On Hold*. They are counted by ServiceDesk Plus (one-row searches with a total count), so they do not slow the Dashboard down. Each tile lists incidents first, then service requests.
+
+### Changed
+- **Open** colour is now #17426f (cards, tiles, badges, buttons).
+- **All portal pages use the Dashboard design:** My Requests, My Approvals, My Loans and Announcements have a filter panel and a table panel with coloured status, type and decision badges; request, approval, loan and announcement pages show their fields in panels, the conversation as a timeline, and coloured Approve / Reject buttons; the request form is a panel too.
+- **Filters apply at once:** there is no Search button any more. Choosing a status, type, show or sort option applies it; the search text is applied with Enter (or when cleared).
+
 ## [1.17.0] - 2026-11-16
 
 ### Changed

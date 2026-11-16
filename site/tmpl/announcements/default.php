@@ -76,7 +76,6 @@ $sorts = [
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_PRIORITY'); ?></th>
-                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_POSTED_BY'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_START'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_END'); ?></th>
                             </tr>
@@ -90,7 +89,6 @@ $sorts = [
                                 <td><a href="<?php echo $url; ?>"><?php echo $this->escape($item->title !== '' ? $item->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></a></td>
                                 <td><?php echo Ui::badge($item->type, 'teal'); ?></td>
                                 <td><?php echo $text($item->priority); ?></td>
-                                <td><?php echo $text($item->createdBy); ?></td>
                                 <td class="sdp-nowrap"><?php echo $date($item->date()); ?></td>
                                 <td class="sdp-nowrap"><?php echo $item->toTime !== null ? $date($item->toTime) : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_NO_END'); ?></td>
                             </tr>

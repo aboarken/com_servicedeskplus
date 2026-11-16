@@ -99,6 +99,7 @@ $tiles = [
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_SUBJECT'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_START'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_END'); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -110,6 +111,7 @@ $tiles = [
                                 <td><a href="<?php echo $url; ?>"><?php echo $e($a->title !== '' ? $a->title : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_UNTITLED')); ?></a></td>
                                 <td><?php echo $a->type !== '' ? '<span class="sdp-badge sdp-tone-teal">' . $e($a->type) . '</span>' : '—'; ?></td>
                                 <td class="sdp-nowrap"><?php echo $date($a->date()); ?></td>
+                                <td class="sdp-nowrap"><?php echo $a->toTime !== null ? $date($a->toTime) : Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_NO_END'); ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>

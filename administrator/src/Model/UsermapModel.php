@@ -43,9 +43,12 @@ final class UsermapModel extends FormModel
 
     protected function loadFormData()
     {
-        $state = Factory::getApplication()->getUserState(self::STATE_KEY, []);
+        // Values of a rejected save are shown once, and only on the form of the same user.
+        $app   = Factory::getApplication();
+        $state = $app->getUserState(self::STATE_KEY, []);
+        $app->setUserState(self::STATE_KEY, null);
 
-        if (\is_array($state) && $state !== []) {
+        if (\is_array($state) && $state !== [] && (int) ($state['joomla_user_id'] ?? 0) === $this->requestedUserId()) {
             return $state;
         }
 

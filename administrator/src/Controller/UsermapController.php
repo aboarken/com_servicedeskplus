@@ -14,6 +14,7 @@ use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Router\Exception\RouteNotFoundException;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\User\User;
 use Joomla\CMS\User\UserFactoryInterface;
@@ -30,6 +31,16 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\UsermapModel;
  */
 final class UsermapController extends BaseController
 {
+
+    /**
+     * Pages are shown only through DisplayController, which requires core.admin. Joomla also
+     * offers every controller's inherited display() as a task (task={name}.display), which would
+     * skip that check for users who may only open the component, so it is refused here.
+     */
+    public function display($cachable = false, $urlparams = [])
+    {
+        throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+    }
     private const LIST_URL = 'index.php?option=com_servicedeskplus&view=usermappings';
     private const EDIT_URL = 'index.php?option=com_servicedeskplus&view=usermap&layout=edit';
 

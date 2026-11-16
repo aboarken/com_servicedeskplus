@@ -97,7 +97,7 @@ Joomla acts as the user-facing portal, while ServiceDesk Plus remains the primar
 
 ## Installation
 
-1. Download `com_servicedeskplus.zip` from the latest release on the [Releases page](https://github.com/aboarken/servicedeskplus/releases).
+1. Download `com_servicedeskplus.zip` from the latest release on the [Releases page](https://github.com/aboarken/joomla-servicedeskplus/releases).
 2. Log in to your Joomla Administrator.
 3. Navigate to **System → Install → Extensions**.
 4. Upload the component installation package.
@@ -223,7 +223,7 @@ The **Release package** GitHub Actions workflow (`.github/workflows/release.yml`
 - **From the Actions tab:** run *Release package* on `main`. It creates the release `v<version>` with the release notes and the package.
 - **From the Releases page:** publish a release tagged `v<version>` (it must match the manifest version); the workflow then attaches the package.
 
-The latest package can always be downloaded from `https://github.com/aboarken/servicedeskplus/releases/latest/download/com_servicedeskplus.zip`.
+The latest package can always be downloaded from `https://github.com/aboarken/joomla-servicedeskplus/releases/latest/download/com_servicedeskplus.zip`.
 
 ## Roadmap
 
@@ -244,7 +244,7 @@ This project is licensed under the GNU General Public License v3.0 (GPL-3.0). Se
 
 ## Links
 
-- **GitHub Repository:** https://github.com/aboarken/servicedeskplus
+- **GitHub Repository:** https://github.com/aboarken/joomla-servicedeskplus
 - **ManageEngine ServiceDesk Plus:** https://www.manageengine.com/products/service-desk/
 - **Joomla:** https://www.joomla.org/
 - **ServiceDesk Plus API Documentation:** https://www.manageengine.com/products/service-desk/sdpod-v3-api/

@@ -2,7 +2,7 @@
 <extension type="component" method="upgrade">
     <name>com_servicedeskplus</name>
     <author>SDP Portal</author>
-    <authorUrl>https://github.com/aboarken/servicedeskplus</authorUrl>
+    <authorUrl>https://github.com/aboarken/joomla-servicedeskplus</authorUrl>
     <creationDate>2026-11</creationDate>
     <copyright>(C) 2026</copyright>
     <license>GNU General Public License version 2 or later</license>
@@ -48,10 +48,10 @@
          every GitHub release by .github/workflows/release.yml; "latest" always means the newest release. -->
     <!-- Shown when the version is clicked in System > Manage > Extensions; built from CHANGELOG.md
          by build/make-changelog-xml.py and attached to every release. -->
-    <changelogurl>https://github.com/aboarken/servicedeskplus/releases/latest/download/changelog.xml</changelogurl>
+    <changelogurl>https://github.com/aboarken/joomla-servicedeskplus/releases/latest/download/changelog.xml</changelogurl>
 
     <updateservers>
-        <server type="extension" priority="1" name="ServiceDesk Plus">https://github.com/aboarken/servicedeskplus/releases/latest/download/updates.xml</server>
+        <server type="extension" priority="1" name="ServiceDesk Plus">https://github.com/aboarken/joomla-servicedeskplus/releases/latest/download/updates.xml</server>
     </updateservers>
 
     <administration>

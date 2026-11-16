@@ -4,7 +4,7 @@
 Usage: build/make-update-xml.py <package.zip> <version> <output.xml>
 
 Joomla reads this file from the update server named in servicedeskplus.xml
-(https://github.com/aboarken/servicedeskplus/releases/latest/download/updates.xml),
+(https://github.com/aboarken/joomla-servicedeskplus/releases/latest/download/updates.xml),
 so it is attached to every GitHub release next to com_servicedeskplus.zip. It names the
 version, the download URL of that release's package and the package's SHA-256 checksum,
 which Joomla checks before installing.
@@ -14,7 +14,7 @@ import re
 import sys
 from xml.sax.saxutils import escape
 
-REPO = 'https://github.com/aboarken/servicedeskplus'
+REPO = 'https://github.com/aboarken/joomla-servicedeskplus'
 PACKAGE = 'com_servicedeskplus.zip'
 
 

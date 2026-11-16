@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.18.3] - 2026-11-16
+
+### Changed
+- **Repository renamed** to `aboarken/joomla-servicedeskplus`: the update server, changelog and links point to the new address.
+
 ## [1.18.2] - 2026-11-16
 
 ### Changed

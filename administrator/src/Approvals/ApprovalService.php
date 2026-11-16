@@ -469,7 +469,7 @@ final class ApprovalService
         $verb    = $decision === 'approve' ? 'Approved' : 'Rejected';
         $line    = $name !== '' ? \sprintf('%s by %s via the Joomla portal.', $verb, $name) : $verb . ' via the Joomla portal.';
 
-        return mb_substr($comment !== '' ? $line . ' Custom comment: ' . $comment : $line, 0, self::SDP_COMMENT_MAX);
+        return mb_substr($comment !== '' ? $line . ' Approval comment: ' . $comment : $line, 0, self::SDP_COMMENT_MAX);
     }
 
     /**

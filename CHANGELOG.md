@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.18.2] - 2026-11-16
+
+### Changed
+- **Approval comment in ServiceDesk Plus:** the approver's own text now follows "Approval comment:" instead of "Custom comment:", e.g. `Approved by (username) Full Name via the Joomla portal. Approval comment: <the user's comment>`. Decisions recorded earlier keep their wording.
+
 ## [1.18.1] - 2026-11-16
 
 ### Added

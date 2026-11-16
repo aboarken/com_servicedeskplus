@@ -6,7 +6,7 @@
     <creationDate>2026-11</creationDate>
     <copyright>(C) 2026</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.18.3</version>
+    <version>1.19.0</version>
     <description>COM_SERVICEDESKPLUS_XML_DESCRIPTION</description>
     <namespace path="src">SdpPortal\Component\ServiceDeskPlus</namespace>
 
@@ -59,6 +59,7 @@
         <submenu>
             <menu link="option=com_servicedeskplus&amp;view=integrationsettings">COM_SERVICEDESKPLUS_SUBMENU_SETTINGS</menu>
             <menu link="option=com_servicedeskplus&amp;view=usermappings">COM_SERVICEDESKPLUS_SUBMENU_MAPPINGS</menu>
+            <menu link="option=com_servicedeskplus&amp;view=endpoints">COM_SERVICEDESKPLUS_SUBMENU_ENDPOINTS</menu>
         </submenu>
         <files folder="administrator">
             <filename>access.xml</filename>

@@ -140,6 +140,36 @@ final class SdpClient
     }
 
     /**
+     * Read-only check of any v3 path for Find Endpoints: GET only. A list path is sent list_info
+     * (with get_total_count); a path ending in an id is read as one record. The rows are taken from
+     * the first list in the answer, else from its first object.
+     *
+     * @throws SdpException
+     */
+    public function probe(string $path, ?ListInfo $listInfo = null): ProbeResult
+    {
+        $single = (bool) preg_match('#/[0-9]{1,20}$#', $path);
+        $data   = $this->get($path, $single || $listInfo === null ? null : ['list_info' => $listInfo->toArray()]);
+        $meta   = \is_array($data['list_info'] ?? null) ? $data['list_info'] : [];
+        $total  = isset($meta['total_count']) && is_numeric($meta['total_count']) ? (int) $meta['total_count'] : null;
+        $more   = self::toBool($meta['has_more_rows'] ?? false);
+
+        foreach ($data as $key => $value) {
+            if (\is_string($key) && !\in_array($key, ['response_status', 'list_info'], true) && \is_array($value) && array_is_list($value)) {
+                return new ProbeResult($key, array_values(array_filter($value, 'is_array')), false, $total, $more);
+            }
+        }
+
+        foreach ($data as $key => $value) {
+            if (\is_string($key) && !\in_array($key, ['response_status', 'list_info'], true) && \is_array($value)) {
+                return new ProbeResult($key, [$value], true);
+            }
+        }
+
+        return new ProbeResult('', [], $single, $total, $more);
+    }
+
+    /**
      * GET /api/v3/requests (requests/request.html, "Get List Request").
      */
     public function listRequests(ListInfo $listInfo): ListPage
@@ -412,9 +442,7 @@ final class SdpClient
     }
 
     /**
-     * GET /api/v3/assets.
-     *
-     * UNVERIFIED: assets are not in the On-Premises v3 reference.
+     * GET /api/v3/assets (On Premise API collection, Asset > "Asset (old)" > "Get all assets").
      * Only these methods name the path.
      */
     public function listAssets(ListInfo $listInfo): ListPage
@@ -423,7 +451,7 @@ final class SdpClient
     }
 
     /**
-     * All pages of GET /api/v3/assets. UNVERIFIED, see listAssets().
+     * All pages of GET /api/v3/assets. See listAssets().
      *
      * @return list<array<string, mixed>>
      */
@@ -433,7 +461,7 @@ final class SdpClient
     }
 
     /**
-     * GET /api/v3/assets/{asset_id}. UNVERIFIED, see listAssets().
+     * GET /api/v3/assets/{asset_id}. See listAssets().
      *
      * @return array<string, mixed>
      */
@@ -474,11 +502,10 @@ final class SdpClient
     /**
      * Attach one file to an existing request.
      *
-     * UNVERIFIED: the On-Premises v3 reference documents no upload endpoint (request responses only
-     * show "attachments" with content_url /api/v3/requests/{id}/attachments/{id}/download). Two
-     * forms used by SDP builds are tried in order, and the one that worked is logged:
-     *   1. PUT  /api/v3/requests/{id}/upload    multipart field "input_file"
-     *   2. POST /api/v3/requests/{id}/_uploads  multipart field "filename"
+     * Two forms are tried in order, and the one that worked is logged:
+     *   1. PUT  /api/v3/requests/{id}/upload    multipart field "input_file" (On Premise API
+     *      collection, Request > Request Attachment > "Add and associate attachment")
+     *   2. POST /api/v3/requests/{id}/_uploads  multipart field "filename" (undocumented, older builds)
      * The second is only tried when the first answers "not found" / "method not allowed".
      *
      * @return array<string, mixed>  SDP response

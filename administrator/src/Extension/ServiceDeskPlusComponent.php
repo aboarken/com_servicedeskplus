@@ -17,12 +17,14 @@ use Psr\Container\ContainerInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\AnnouncementService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\AssetService;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\IdentityResolver;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\MappingManager;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapRepositoryInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\ConversationReader;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestApprovalsReader;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\RateLimiter;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SubmissionGuard;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Service\SdpClientFactory;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Settings\SettingsRepository;
@@ -95,6 +97,16 @@ final class ServiceDeskPlusComponent extends MVCComponent implements RouterServi
     public function getApprovalService(): ApprovalService
     {
         return $this->service(ApprovalService::class);
+    }
+
+    public function getAuditLog(): AuditLogInterface
+    {
+        return $this->service(AuditLogInterface::class);
+    }
+
+    public function getRateLimiter(): RateLimiter
+    {
+        return $this->service(RateLimiter::class);
     }
 
     public function getSubmissionGuard(): SubmissionGuard

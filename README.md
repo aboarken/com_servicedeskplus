@@ -144,6 +144,10 @@ The Joomla server must be able to communicate with the ServiceDesk Plus server t
 
 For on-premises deployments, ensure that the required network connectivity, firewall rules, and API permissions are configured.
 
+### Find Endpoints
+
+*Components → ServiceDesk Plus → Find Endpoints* (Super User only) helps when a page shows nothing or an error. **Run Diagnostics** checks the connection and every endpoint the portal reads, and with a requester's e-mail also whether that person can be matched; it gives a text report to copy and send to support. **Check which endpoints answer** shows which REST API v3 endpoints exist on your build and whether the API technician may read them, and **Check an Endpoint** shows the fields any `/api/v3` path returns. Only field paths, kinds of values, counts and status texts are shown, never personal values; only reading requests are sent, at most 60 checks per hour, each recorded in the audit log.
+
 ## Notifications
 
 ServiceDesk Plus remains responsible for request-related notifications.

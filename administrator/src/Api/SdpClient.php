@@ -513,16 +513,8 @@ final class SdpClient
     }
 
     /**
-     * GET /api/v3/assets (On Premise API collection, Asset > "Asset (old)" > "Get all assets").
-     * Only these methods name the path.
-     */
-    public function listAssets(ListInfo $listInfo): ListPage
-    {
-        return $this->listPage('/api/v3/assets', 'assets', $listInfo);
-    }
-
-    /**
-     * All pages of GET /api/v3/assets. See listAssets().
+     * All pages of GET /api/v3/assets (On Premise API collection, Asset > "Asset (old)" >
+     * "Get all assets"). Only these methods name the path.
      *
      * @return list<array<string, mixed>>
      */
@@ -532,7 +524,7 @@ final class SdpClient
     }
 
     /**
-     * GET /api/v3/assets/{asset_id}. See listAssets().
+     * GET /api/v3/assets/{asset_id}. See listAllAssets().
      *
      * @return array<string, mixed>
      */
@@ -654,7 +646,8 @@ final class SdpClient
             '/api/v3/users',
             'users',
             new ListInfo(rowCount: ListInfo::MAX_ROW_COUNT, searchFields: ['email_id' => $email]),
-            ListInfo::MAX_ROW_COUNT,
+            // SDP may also return partial matches; read far enough to reach the exact address.
+            5 * ListInfo::MAX_ROW_COUNT,
             ['fields_required' => ['id', 'name', 'email_id']]
         );
     }
@@ -788,20 +781,42 @@ final class SdpClient
             $paths[$key]    = $path;
         }
 
-        $started   = hrtime(true);
-        $responses = $this->transport->getAll($requests, $concurrency);
-        $secrets   = $this->secrets;
+        $started = hrtime(true);
+        $secrets = $this->secrets;
+
+        try {
+            $responses = $this->transport->getAll($requests, $concurrency);
+        } catch (TransportException $e) {
+            // The batch could not start (e.g. cURL refused the TLS settings): every read failed.
+            $responses = array_fill_keys(array_keys($requests), $e);
+        }
+
+        // Reads that could not connect are tried once more, together (as a single read would be
+        // tried once more). If ServiceDesk Plus is down this costs one extra round, not one per read.
+        $failed = array_filter($responses, static fn ($r): bool => $r instanceof TransportException);
+
+        if ($failed !== []) {
+            $this->logger->warning(\sprintf('SDP %d of %d parallel reads failed to connect (trying them again): %s', \count($failed), \count($calls), Redactor::scrub((string) reset($failed)->getMessage(), $secrets)));
+            usleep(self::RETRY_DELAY_US);
+
+            try {
+                foreach ($this->transport->getAll(array_intersect_key($requests, $failed), $concurrency) as $key => $retry) {
+                    $responses[$key] = $retry;
+                }
+            } catch (TransportException) {
+                // Still failing: the first errors are kept.
+            }
+        }
 
         foreach ($responses as $key => $response) {
+            if ($response instanceof TransportException) {
+                $this->logger->warning(\sprintf('SDP GET %s failed: %s', $paths[$key], Redactor::scrub($response->getMessage(), $secrets)));
+                $out[$key] = new SdpException(SdpException::NETWORK, 'Could not reach ServiceDesk Plus', 0, null, '', $response);
+
+                continue;
+            }
+
             try {
-                if ($response instanceof TransportException) {
-                    // Tried once more on its own, like a single read.
-                    $this->logger->warning(\sprintf('SDP GET %s failed (trying again): %s', $paths[$key], Redactor::scrub($response->getMessage(), $secrets)));
-                    $out[$key] = $this->get($paths[$key], $calls[$key][1]);
-
-                    continue;
-                }
-
                 $out[$key] = $this->finish('GET', $paths[$key], $response, null, $secrets, true);
             } catch (SdpException $e) {
                 $out[$key] = $e;

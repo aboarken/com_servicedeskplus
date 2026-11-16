@@ -3,6 +3,33 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.20.1] - 2026-11-16
+
+Security and clean-up release after a review of the whole component.
+
+### Security
+- **No automatic matching after an e-mail change.** A Joomla user who was not matched (or matched ambiguously) and then changed their e-mail was matched automatically to the ServiceDesk Plus user with the new address. Anyone could take over the requests and approvals of a person who has no portal account yet by entering that person's address in their own profile. Now any changed e-mail suspends the mapping until an administrator checks it (*User Mappings*), as it already did for active mappings.
+- **Several ServiceDesk Plus users with one e-mail** are no longer resolved to the newest one: the mapping is *ambiguous* and an administrator chooses.
+- **The API key must be entered again** when the ServiceDesk Plus address, *Connect via*, the certificate pin or CA file changes, or the certificate check is turned off. Before, someone allowed to configure the component (without being a Super User) could point the stored key at another server and receive it with *Test connection*.
+- **Pages could be opened without their permission** through the inherited `display` task of the request, approval, settings, user-mapping and Find Endpoints controllers (e.g. `task=request.display&view=announcements`), skipping the check of *View announcements*, *View requests*, … on the site and of *Super User* (`core.admin`) in the administrator. Only the user's own data could be read; these tasks are now refused.
+- **Pinned certificates, fail safe:** the pin is set before the usual certificate check is switched off, and a cURL build that cannot check a pinned key now refuses the connection instead of sending requests unchecked.
+- **One decision per approval level at a time:** a double submit, a second tab or another approver of the same level now waits for the first decision and then finds the level decided, instead of adding contradictory decisions through the API technician account.
+
+### Fixed
+- When ServiceDesk Plus cannot be reached, the parallel approval check (1.20.0) tried every read again one by one, which could keep a page loading for minutes. Failed reads are now tried once more together.
+- Approval decision: after an error the user is sent back to the approval (ids were checked together, which failed for long ids); an expired page says so instead of "already submitted".
+- Integration Settings and the mapping form: values of a rejected save are shown once (the mapping form only for the same user), not on every later visit; with the mapping form this could save one user's values while editing another.
+- Mapping the same ServiceDesk Plus user from two requests at once shows "already mapped" instead of a database error.
+- CA bundle field: Windows paths and paths with spaces were silently emptied; the file must now exist and be readable.
+- The search for a user's e-mail reads up to 500 results (was 100), so the exact address is found among partial matches.
+
+### Removed
+- Unused code: `SdpClient::listAssets()`, `IdentityResolver::reset()`, `PageStats::snapshot()`, `RequestStats::COUNTED_BUCKETS`, `FieldInspector::TYPES`, an unused property of the My Approvals view, six unused Dashboard strings, and the unused Bootstrap grid, utility and alert fallbacks in `portal.css` (the pages use the component's own classes since 1.18).
+
+### Changed
+- The package is built from the files tracked in git only; `.gitignore` lists editor files.
+- README: licence (GPL-2.0-or-later), requirements (Joomla 6.0+, PHP 8.3+), how the pages are styled, project structure, On-Premises API documentation link, and a security section.
+
 ## [1.20.0] - 2026-11-16
 
 ### Changed

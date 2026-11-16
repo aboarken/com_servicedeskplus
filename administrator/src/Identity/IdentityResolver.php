@@ -20,8 +20,10 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
  *
  * Rules:
  *  - Emails are compared after trim + lowercase, and must be equal (not "contains").
- *  - Zero matches means "not matched". If several SDP users have the email, the newest one
- *    (highest SDP user id, i.e. created last) is used and the choice is written to the audit log.
+ *  - Zero matches means "not matched". Several SDP users with the email means "ambiguous": an
+ *    admin chooses.
+ *  - A Joomla e-mail that differs from the one stored with any mapping row (active, unmatched or
+ *    ambiguous) suspends it: a changed e-mail is never matched automatically.
  *  - One SDP user can only be mapped to one Joomla user. If the chosen SDP user is already mapped
  *    to another Joomla user, the result is "ambiguous" and an admin must decide.
  *  - If the Joomla email no longer equals the email stored with an active mapping, the mapping is
@@ -71,14 +73,6 @@ final class IdentityResolver
         return $this->memo[$joomlaUserId] = $this->doResolve($joomlaUserId, EmailNormalizer::normalize($joomlaEmail));
     }
 
-    /**
-     * Forget per-request results (used after an admin change).
-     */
-    public function reset(): void
-    {
-        $this->memo = [];
-    }
-
     private function doResolve(int $userId, string $email): Identity
     {
         $now     = ($this->clock)();
@@ -103,8 +97,18 @@ final class IdentityResolver
                 return Identity::matched($userId, (string) $mapping->sdpUserId);
             }
 
-            // Unmatched or ambiguous: reuse the recent result unless the email changed.
-            if ($mapping->email === $email && $this->age($mapping, $now) < self::RECHECK_SECONDS) {
+            // Unmatched or ambiguous with another e-mail: the user changed their Joomla e-mail.
+            // Matching it automatically would let anyone take over an SDP user who has no
+            // portal account yet by entering that person's address in their profile, so an
+            // admin decides (User Mappings: Re-match or New).
+            if ($mapping->email !== $email) {
+                $this->suspend($mapping, $now, 'joomla_email_changed');
+
+                return Identity::notMatched($userId, UserMapping::STATUS_SUSPENDED);
+            }
+
+            // Unmatched or ambiguous: reuse the recent result.
+            if ($this->age($mapping, $now) < self::RECHECK_SECONDS) {
                 return Identity::notMatched($userId, $mapping->status);
             }
         }
@@ -133,13 +137,14 @@ final class IdentityResolver
             return $this->storeNotMatched($userId, $email, UserMapping::STATUS_UNMATCHED, $now, 'no_sdp_user');
         }
 
-        // Several SDP users with this email: use the newest (highest id). Ids are compared as
-        // numbers without converting them, since they can exceed PHP_INT_MAX on some builds.
-        $candidates = array_map('strval', array_keys($ids));
-        usort($candidates, static fn (string $a, string $b): int => [\strlen($b), $b] <=> [\strlen($a), $a]);
+        // Several SDP users with this e-mail: an admin chooses (User Mappings), so a newer
+        // duplicate record never takes over someone's requests and approvals silently.
+        if (\count($ids) > 1) {
+            return $this->storeNotMatched($userId, $email, UserMapping::STATUS_AMBIGUOUS, $now, 'several_sdp_users:' . implode(',', array_map('strval', array_keys($ids))));
+        }
 
-        $sdpUserId = $candidates[0];
-        $detail    = 'sdp_user:' . $sdpUserId . (\count($candidates) > 1 ? ' newest_of:' . implode(',', $candidates) : '');
+        $sdpUserId = (string) array_key_first($ids);
+        $detail    = 'sdp_user:' . $sdpUserId;
         $owner     = $this->repository->findBySdpUserId($sdpUserId);
 
         if ($owner !== null && $owner->joomlaUserId !== $userId) {
@@ -193,7 +198,7 @@ final class IdentityResolver
     private function storeNotMatched(int $userId, string $email, string $status, \DateTimeImmutable $now, string $reason): Identity
     {
         $this->repository->save(new UserMapping($userId, null, $email, $status, UserMapping::SOURCE_AUTO, null, $now));
-        $this->audit->record($userId, 'identity.' . $status, AuditLogInterface::RESULT_DENIED, null, null, $reason);
+        $this->audit->record($userId, 'identity.' . $status, AuditLogInterface::RESULT_DENIED, null, null, mb_substr($reason, 0, 255));
 
         return Identity::notMatched($userId, $status);
     }

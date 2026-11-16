@@ -11,9 +11,15 @@ out="$root/dist/com_servicedeskplus-$version.zip"
 mkdir -p "$root/dist"
 rm -f "$out"
 
-# Only what the manifest installs, plus the licence, in a stable sorted order.
+# Only what the manifest installs, plus the licence, in a stable sorted order. In a git checkout
+# only tracked files are packed, so local editor files or test output never end up in the zip.
 cd "$root"
-find servicedeskplus.xml script.php LICENSE administrator site media -type f \
-  ! -name '.DS_Store' ! -name '*.orig' | LC_ALL=C sort | zip -X -q "$out" -@
+paths=(servicedeskplus.xml script.php LICENSE administrator site media)
+
+if git -C "$root" rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+  git -C "$root" ls-files -- "${paths[@]}"
+else
+  find "${paths[@]}" -type f ! -name '.DS_Store' ! -name '*.orig'
+fi | LC_ALL=C sort | zip -X -q "$out" -@
 
 echo "$out"

@@ -6,7 +6,7 @@
     <creationDate>2026-11</creationDate>
     <copyright>(C) 2026</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.20.0</version>
+    <version>1.20.1</version>
     <description>COM_SERVICEDESKPLUS_XML_DESCRIPTION</description>
     <namespace path="src">SdpPortal\Component\ServiceDeskPlus</namespace>
 
@@ -44,12 +44,12 @@
         <folder>js</folder>
     </media>
 
-    <!-- Joomla checks this for updates (System > Update > Extensions). The file is attached to
-         every GitHub release by .github/workflows/release.yml; "latest" always means the newest release. -->
     <!-- Shown when the version is clicked in System > Manage > Extensions; built from CHANGELOG.md
          by build/make-changelog-xml.py and attached to every release. -->
     <changelogurl>https://github.com/aboarken/joomla-servicedeskplus/releases/latest/download/changelog.xml</changelogurl>
 
+    <!-- Joomla checks this for updates (System > Update > Extensions). The file is attached to
+         every GitHub release by .github/workflows/release.yml; "latest" always means the newest release. -->
     <updateservers>
         <server type="extension" priority="1" name="ServiceDesk Plus">https://github.com/aboarken/joomla-servicedeskplus/releases/latest/download/updates.xml</server>
     </updateservers>

@@ -46,8 +46,6 @@ final class HtmlView extends BaseHtmlView
 
     public string $type = '';
 
-    public bool $canDecide = false;
-
     public string $error = '';
 
     public function display($tpl = null): void
@@ -59,7 +57,6 @@ final class HtmlView extends BaseHtmlView
         $this->modules   = $model->getModules();
         $this->type      = ApprovalModule::normalize(Factory::getApplication()->getInput()->getCmd('type', '')) ?? '';
         $this->type      = \in_array($this->type, $this->modules, true) ? $this->type : '';
-        $this->canDecide = Factory::getApplication()->getIdentity()->authorise('sdp.approval.decide', 'com_servicedeskplus');
 
         if ($this->show === 'pending') {
             try {

@@ -704,6 +704,34 @@
   border-color: transparent;
 }
 
+/* Page shown with older data while it is refreshed (refresh.js) */
+.com-servicedeskplus .sdp-refresh-note {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #17426f;
+  background: #eef4fb;
+  border-radius: 0.5rem;
+}
+
+.com-servicedeskplus .sdp-refresh-note--error {
+  color: #92400e;
+  background: #fffbeb;
+}
+
+.com-servicedeskplus[aria-busy="true"] .sdp-refresh-note::before {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.5rem;
+  vertical-align: -0.1em;
+  content: "";
+  border: 0.15em solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: sdp-spin 0.75s linear infinite;
+}
+
 /*
  * Template independence
  * ---------------------

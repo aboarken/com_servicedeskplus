@@ -143,4 +143,7 @@
   } else {
     init();
   }
+
+  // The page content was replaced by its refreshed version (refresh.js).
+  document.addEventListener('sdp:refreshed', init);
 })();

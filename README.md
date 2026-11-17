@@ -130,7 +130,7 @@ The configuration includes:
 
 ### Cache
 
-*Integration Settings → Limits → Cache time (minutes)* sets how long each user's ServiceDesk Plus results (requests, approvals, loans, announcements and the Dashboard figures) are kept, 0 to 60 minutes; default 5. A user's own new requests and approval decisions refresh their lists at once. With 0, every page reads ServiceDesk Plus again; the Dashboard then makes many calls (approvals are found by scanning requests, changes, releases and purchase orders) and loads slowly.
+Pages open at once: when a user's results are older than the cache time, the page shows their last results (up to 7 days old, marked *Updating…*) and refreshes itself in the background. Results are stored per user in the database table `#__sdp_cache`, so they survive logout; they are only shown to the same user and deleted after 7 days. *Integration Settings → Limits → Cache time (minutes)* sets how long each user's ServiceDesk Plus results (requests, approvals, loans, announcements and the Dashboard figures) are kept, 0 to 60 minutes; default 5. A user's own new requests and approval decisions refresh their lists at once. With 0, every page reads ServiceDesk Plus again; the Dashboard then makes many calls (approvals are found by scanning requests, changes, releases and purchase orders) and loads slowly.
 
 ### Speed
 

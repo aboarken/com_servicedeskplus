@@ -23,7 +23,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\AssetService;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\LoanAssetConfig;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\DbAuditLog;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Cache\StoredUserCache;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Cache\DbUserCache;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Cache\UserCacheInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Extension\ServiceDeskPlusComponent;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\DbUserMapRepository;
@@ -42,7 +42,6 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Service\SdpClientFactory;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Settings\SettingsRepository;
 
 return new class () implements ServiceProviderInterface {
-    private const CACHE_SESSION_KEY  = 'com_servicedeskplus.cache';
     private const TOKENS_SESSION_KEY = 'com_servicedeskplus.submissions';
 
     public function register(Container $container): void
@@ -87,13 +86,13 @@ return new class () implements ServiceProviderInterface {
 
         $container->share(RateLimiter::class, static fn (Container $c): RateLimiter => new RateLimiter($c->get(DbAuditLog::class)));
 
-        // Per-user cache stored in the user's own session.
+        // Per-user cache in #__sdp_cache: survives logout, and parallel requests do not overwrite it.
         $container->share(
             UserCacheInterface::class,
-            static fn (Container $c): UserCacheInterface => new StoredUserCache(
-                static fn (): array => (array) Factory::getApplication()->getSession()->get(self::CACHE_SESSION_KEY, []),
-                static fn (array $data) => Factory::getApplication()->getSession()->set(self::CACHE_SESSION_KEY, $data),
-                $c->get(SettingsRepository::class)->load()->cacheTtl()
+            static fn (Container $c): UserCacheInterface => new DbUserCache(
+                $c->get(DatabaseInterface::class),
+                $c->get(SettingsRepository::class)->load()->cacheTtl(),
+                $c->get(JoomlaLogger::class)
             )
         );
 

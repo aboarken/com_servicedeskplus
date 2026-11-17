@@ -3,6 +3,21 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.21.0] - 2026-11-17
+
+### Changed
+- **Every portal page opens at once.** When a user's ServiceDesk Plus results are older than the cache time, the page is shown straight away with their last results (up to 7 days old) and the note *"Showing your data from … Updating…"*, and the page loads itself again in the background and replaces its content with the fresh version. This covers the Dashboard, My Requests, My Approvals, My Loans, Announcements and the detail pages.
+  - If the user has started typing or choosing something on the page, it is not replaced: *"Newer data is available. Reload the page"* is shown instead, so nothing entered is lost.
+  - If ServiceDesk Plus cannot be reached, the last results stay, with *"Could not update just now"*.
+  - If the page no longer exists for the user (e.g. a request that is no longer theirs), it is loaded normally, so the older copy is never kept.
+  - A user's own new requests and approval decisions still clear their results at once, so they never see an older state of their own action.
+  - Without JavaScript the page shows the last results; reloading it after the cache time reads them again.
+- **The per-user cache is kept in the database** (new table `#__sdp_cache`) instead of the Joomla session, so it survives logout and session expiry, and pages loading at the same time never overwrite each other's results. Entries are only ever shown to the same Joomla user with the same ServiceDesk Plus mapping, and are deleted after 7 days.
+- *Integration Settings → Limits → Cache time*: description updated (results are used as they are for this time, then shown while refreshing).
+
+### Removed
+- The session-based cache (`StoredUserCache`).
+
 ## [1.20.1] - 2026-11-16
 
 Security and clean-up release after a review of the whole component.

@@ -13,7 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Cache;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\Identity;
 
 /**
- * Short-lived cache whose keys always include the Joomla and SDP user ids.
+ * Per-user cache whose keys always include the Joomla and SDP user ids.
  * Only data already checked for ownership may be stored.
  */
 interface UserCacheInterface
@@ -26,4 +26,13 @@ interface UserCacheInterface
 
     /** Remove every entry of this user whose key starts with $prefix. */
     public function clear(Identity $identity, string $prefix = ''): void;
+
+    /**
+     * Whether get() may return an entry older than the cache time (up to a few days), for a page
+     * that is shown at once and then refreshed in the background.
+     */
+    public function allowStale(bool $allow): void;
+
+    /** When the oldest entry get() returned past its cache time was stored (Unix time), or null. */
+    public function staleSince(): ?int;
 }

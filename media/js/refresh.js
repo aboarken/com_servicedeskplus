@@ -9,6 +9,9 @@
  *    unavailable), the shown content stays and the note says so.
  * Scripts of the page re-attach to the new content on the "sdp:refreshed" event.
  *
+ * The page content is found by its data-sdp-root attribute, never by the class
+ * "com-servicedeskplus": some site templates put that class on <body> as well.
+ *
  * @license GNU General Public License version 2 or later
  */
 (() => {
@@ -21,9 +24,10 @@
   }
 
   const text = (key) => (Joomla.Text._(key) || key).replace('%s', options.since || '');
+  const ROOT = '[data-sdp-root]';
 
   const start = () => {
-    const root = document.querySelector('.com-servicedeskplus');
+    const root = document.querySelector(ROOT);
 
     if (!root) {
       return;
@@ -41,9 +45,16 @@
     root.prepend(note);
     root.setAttribute('aria-busy', 'true');
 
-    const fail = () => {
-      note.textContent = text('COM_SERVICEDESKPLUS_REFRESH_FAILED');
+    // The reason (ServiceDesk Plus's message shown by the page, or the HTTP status) is added, so
+    // the note says why the page could not be updated.
+    const fail = (reason) => {
+      const why = reason instanceof Error ? reason.message : (reason || '');
+      note.textContent = text('COM_SERVICEDESKPLUS_REFRESH_FAILED') + (why ? ' (' + why + ')' : '');
       note.classList.add('sdp-refresh-note--error');
+
+      if (window.console) {
+        console.warn('ServiceDesk Plus portal: page not updated', why || '');
+      }
     };
 
     fetch(options.url, {
@@ -61,18 +72,26 @@
         }
 
         if (!response.ok) {
-          throw new Error(String(response.status));
+          throw new Error('HTTP ' + response.status);
         }
 
         return response.text();
       })
       .then((html) => {
-        const fresh = new DOMParser().parseFromString(html, 'text/html').querySelector('.com-servicedeskplus');
+        const fresh = new DOMParser().parseFromString(html, 'text/html').querySelector(ROOT);
 
-        // Another page (e.g. login, "could not be matched") or an error where there was none.
-        if (!fresh || fresh.className !== root.className
-          || (fresh.querySelector('[role="alert"]') && !root.querySelector('[role="alert"]'))) {
-          fail();
+        // Another page (e.g. login, "could not be matched").
+        if (!fresh || fresh.getAttribute('data-sdp-root') !== root.getAttribute('data-sdp-root')) {
+          fail(fresh ? fresh.textContent.trim().slice(0, 200) : 'other page');
+
+          return;
+        }
+
+        // An error (e.g. ServiceDesk Plus unavailable) where the shown page had none.
+        const alert = fresh.querySelector('[role="alert"]');
+
+        if (alert && !root.querySelector('[role="alert"]')) {
+          fail(alert.textContent.trim().slice(0, 200));
 
           return;
         }

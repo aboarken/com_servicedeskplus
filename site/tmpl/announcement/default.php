@@ -17,7 +17,7 @@ $date  = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m
 $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Text::_($labelKey) . '</dt><dd>' . $html . '</dd></div>';
 $item  = $this->item;
 ?>
-<div class="com-servicedeskplus sdp-announcement">
+<div class="com-servicedeskplus sdp-announcement" data-sdp-root="announcement">
     <a class="sdp-back" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=announcements'); ?>">&larr; <?php echo Text::_('COM_SERVICEDESKPLUS_BACK_TO_ANNOUNCEMENTS'); ?></a>
 
     <?php if ($item === null) : ?>

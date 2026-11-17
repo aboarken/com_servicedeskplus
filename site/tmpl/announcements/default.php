@@ -26,7 +26,7 @@ $sorts = [
     'title_asc' => 'COM_SERVICEDESKPLUS_ANNOUNCEMENTS_SORT_TITLE_ASC',
 ];
 ?>
-<div class="com-servicedeskplus sdp-announcements">
+<div class="com-servicedeskplus sdp-announcements" data-sdp-root="announcements">
     <?php if ($this->showPageHeading) : ?>
         <div class="sdp-head">
             <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>

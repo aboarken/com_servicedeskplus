@@ -18,7 +18,7 @@ $text  = fn (string $v): string => $v !== '' ? $this->escape($v) : '—';
 $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Text::_($labelKey) . '</dt><dd>' . $html . '</dd></div>';
 $item  = $this->item;
 ?>
-<div class="com-servicedeskplus sdp-asset">
+<div class="com-servicedeskplus sdp-asset" data-sdp-root="asset">
     <a class="sdp-back" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=assets'); ?>">&larr; <?php echo Text::_('COM_SERVICEDESKPLUS_BACK_TO_ASSETS'); ?></a>
 
     <?php if ($item === null) : ?>

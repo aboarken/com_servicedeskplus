@@ -59,7 +59,7 @@ $tiles = [
     'closed'   => ['COM_SERVICEDESKPLUS_DASHBOARD_CLOSED', 'slate'],
 ];
 ?>
-<div class="com-servicedeskplus sdp-dashboard">
+<div class="com-servicedeskplus sdp-dashboard" data-sdp-root="dashboard">
     <?php if ($this->showPageHeading) : ?>
         <h1 class="h2 mb-3"><?php echo $e($this->pageHeading); ?></h1>
     <?php endif; ?>

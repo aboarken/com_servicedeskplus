@@ -23,7 +23,7 @@ $date  = static fn (?int $ts): string => $ts ? HTMLHelper::_('date', gmdate('Y-m
 $item  = $this->item;
 $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Text::_($labelKey) . '</dt><dd>' . $html . '</dd></div>';
 ?>
-<div class="com-servicedeskplus sdp-approval">
+<div class="com-servicedeskplus sdp-approval" data-sdp-root="approval">
     <a class="sdp-back" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=approvals'); ?>">&larr; <?php echo Text::_('COM_SERVICEDESKPLUS_BACK_TO_APPROVALS'); ?></a>
 
     <?php if ($item === null) : ?>

@@ -29,7 +29,7 @@ $types       = [
     RequestQuery::TYPE_SERVICE  => 'COM_SERVICEDESKPLUS_REQUEST_TYPE_SERVICE',
 ];
 ?>
-<div class="com-servicedeskplus sdp-requests">
+<div class="com-servicedeskplus sdp-requests" data-sdp-root="requests">
     <div class="sdp-head">
         <?php if ($this->showPageHeading) : ?>
             <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>

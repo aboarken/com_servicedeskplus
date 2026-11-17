@@ -41,7 +41,7 @@ $resultLabel = [
 ];
 $isPending = $this->show === 'pending';
 ?>
-<div class="com-servicedeskplus sdp-approvals">
+<div class="com-servicedeskplus sdp-approvals" data-sdp-root="approvals">
     <?php if ($this->showPageHeading) : ?>
         <div class="sdp-head">
             <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>

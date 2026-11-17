@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.21.1] - 2026-11-17
+
+### Fixed
+- **Pages showed "Could not update just now" and never updated** on sites whose template puts the class `com-servicedeskplus` on the page `<body>` (e.g. Helix Ultimate and other templates that add the component name to the body). The background refresh took the whole page for the portal content: the note appeared above the site header and the fresh page was rejected. The portal content is now found by its own `data-sdp-root` attribute.
+- The fallback styles in `portal.css` are scoped to the portal content the same way, so they no longer reach the rest of the page on such templates.
+
+### Changed
+- When a page cannot be updated, the note says why, e.g. *"(ServiceDesk Plus could not be reached.)"* or *"(HTTP 500)"*, and the reason is written to the browser console.
+
 ## [1.21.0] - 2026-11-17
 
 ### Changed

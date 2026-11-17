@@ -30,7 +30,7 @@ $sorts = [
     'name_asc' => 'COM_SERVICEDESKPLUS_LOANS_SORT_NAME_ASC',
 ];
 ?>
-<div class="com-servicedeskplus sdp-assets">
+<div class="com-servicedeskplus sdp-assets" data-sdp-root="assets">
     <?php if ($this->showPageHeading) : ?>
         <div class="sdp-head">
             <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>

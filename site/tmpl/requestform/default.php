@@ -16,7 +16,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestService;
 
 $limits = AttachmentValidator::limitsForMessages();
 ?>
-<div class="com-servicedeskplus sdp-requestform">
+<div class="com-servicedeskplus sdp-requestform" data-sdp-root="requestform">
     <a class="sdp-back" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>">&larr; <?php echo Text::_('COM_SERVICEDESKPLUS_BACK_TO_REQUESTS'); ?></a>
 
     <?php if ($this->showPageHeading) : ?>

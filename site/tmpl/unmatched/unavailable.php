@@ -9,6 +9,6 @@
 use Joomla\CMS\Language\Text;
 
 ?>
-<div class="com-servicedeskplus">
+<div class="com-servicedeskplus" data-sdp-root="unavailable">
     <div class="sdp-alert sdp-tone-red" role="alert"><?php echo Text::_('COM_SERVICEDESKPLUS_UNAVAILABLE'); ?></div>
 </div>

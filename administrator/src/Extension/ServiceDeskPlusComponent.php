@@ -29,6 +29,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\RateLimiter;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SubmissionGuard;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Service\SdpClientFactory;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Settings\SettingsRepository;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Users\UserProfileService;
 
 /**
  * Component class. Gives controllers and models access to the services registered in
@@ -78,6 +79,11 @@ final class ServiceDeskPlusComponent extends MVCComponent implements RouterServi
     public function getConversationReader(): ConversationReader
     {
         return $this->service(ConversationReader::class);
+    }
+
+    public function getUserProfileService(): UserProfileService
+    {
+        return $this->service(UserProfileService::class);
     }
 
     public function getAnnouncementService(): AnnouncementService

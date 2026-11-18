@@ -3,6 +3,19 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.22.0] - 2026-11-18
+
+### Added
+- **Dashboard → Your details:** the user's **Department, Job Title, Employee ID and Name** at the top, from their own ServiceDesk Plus user record (`GET /api/v3/users/{id}`: `department`, `jobtitle`, `employee_id`, `name`; the Joomla name when ServiceDesk Plus has none). Read once and cached like the other results; when it cannot be read the Dashboard simply shows no header.
+- **Dashboard charts**, made from the open and on-hold requests already read for the figures (no extra ServiceDesk Plus calls):
+  - *Requests by Status:* Open, On Hold, Resolved and Closed as stacked bars of incidents and service requests (resolved and closed without the type split show one grey bar); each bar opens My Requests with that status.
+  - *Open Requests by Age:* under 1 week, 1–4 weeks, 1–3 months, over 3 months.
+  - *Open Requests by Priority:* most frequent first, then requests without a priority; past six priorities the rest are added up as *Other*.
+  - Each chart has a legend or labels, a tooltip on hover and a *Show figures* table; colours are checked for colour-blind readers.
+
+### Removed
+- **Dashboard → Announcements** panel and *Announcements* summary card, and **Recent Requests** panel. The Dashboard no longer reads announcements, which saves ServiceDesk Plus calls. The Announcements page itself is unchanged. The *View announcements* permission alone no longer opens the Dashboard.
+
 ## [1.21.1] - 2026-11-17
 
 ### Fixed

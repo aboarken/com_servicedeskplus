@@ -34,7 +34,7 @@ final class DisplayController extends BaseController
 
     /** view => required permission; a list means any one of them */
     private const VIEWS = [
-        'dashboard'     => ['sdp.request.view', 'sdp.approval.view', 'sdp.asset.view', 'sdp.announcement.view'],
+        'dashboard'     => ['sdp.request.view', 'sdp.approval.view', 'sdp.asset.view'],
         'requests'      => 'sdp.request.view',
         'request'       => 'sdp.request.view',
         'requestform'   => 'sdp.request.create',

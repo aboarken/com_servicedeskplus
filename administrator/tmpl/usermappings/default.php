@@ -28,11 +28,10 @@ $badge = [
     <?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
 
     <?php if ($this->pending > 0) : ?>
-        <div class="alert alert-info"><?php echo Text::plural(
-            'COM_SERVICEDESKPLUS_MAPPINGS_PENDING_NOTICE',
-            $this->pending,
-            Route::_('index.php?option=com_servicedeskplus&view=usermappings&filter[status]=pending')
-        ); ?></div>
+        <div class="alert alert-info">
+            <?php echo $this->escape(Text::plural('COM_SERVICEDESKPLUS_MAPPINGS_PENDING_NOTICE', $this->pending)); ?>
+            <a class="alert-link" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=usermappings&filter[status]=pending'); ?>"><?php echo Text::_('COM_SERVICEDESKPLUS_MAPPINGS_PENDING_SHOW'); ?></a>
+        </div>
     <?php endif; ?>
 
     <?php if ($this->items === []) : ?>

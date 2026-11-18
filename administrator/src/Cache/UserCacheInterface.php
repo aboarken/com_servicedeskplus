@@ -35,4 +35,10 @@ interface UserCacheInterface
 
     /** When the oldest entry get() returned past its cache time was stored (Unix time), or null. */
     public function staleSince(): ?int;
+
+    /** Remove every entry of one Joomla user (mapping suspended, changed or removed). */
+    public function clearUser(int $joomlaUserId): void;
+
+    /** Remove every entry of every user (the ServiceDesk Plus connection changed). */
+    public function clearAll(): void;
 }

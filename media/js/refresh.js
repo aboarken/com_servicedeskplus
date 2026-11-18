@@ -4,7 +4,8 @@
  *  - "Updating…" is shown meanwhile (role=status, so screen readers hear it);
  *  - if the user has started typing or choosing in the page, it is not replaced: a "Reload" link
  *    is offered instead, so nothing they entered is lost;
- *  - if the page no longer exists for the user (403/404), it is loaded normally instead;
+ *  - if the page no longer exists for the user (403/404), or is another page now (login,
+ *    "could not be matched"), it is loaded normally instead, so the older copy is never kept;
  *  - if the refresh fails, or brings an error where the shown page had none (ServiceDesk Plus
  *    unavailable), the shown content stays and the note says so.
  * Scripts of the page re-attach to the new content on the "sdp:refreshed" event.
@@ -19,7 +20,16 @@
 
   const options = window.Joomla && Joomla.getOptions ? Joomla.getOptions('com_servicedeskplus.refresh') : null;
 
-  if (!options || !options.url) {
+  // Only ever this site: the page's own path, never another origin.
+  const sameOrigin = (url) => {
+    try {
+      return new URL(url, window.location.href).origin === window.location.origin;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  if (!options || !options.url || !sameOrigin(options.url) || (options.page && !sameOrigin(options.page))) {
     return;
   }
 
@@ -80,9 +90,16 @@
       .then((html) => {
         const fresh = new DOMParser().parseFromString(html, 'text/html').querySelector(ROOT);
 
-        // Another page (e.g. login, "could not be matched").
+        // Another page now (login, "could not be matched", "waiting for approval"): the user may
+        // no longer see this content, so the older copy is not kept; the page is loaded normally.
         if (!fresh || fresh.getAttribute('data-sdp-root') !== root.getAttribute('data-sdp-root')) {
-          fail(fresh ? fresh.textContent.trim().slice(0, 200) : 'other page');
+          if (options.page) {
+            window.location.replace(options.page);
+
+            return;
+          }
+
+          fail('other page');
 
           return;
         }

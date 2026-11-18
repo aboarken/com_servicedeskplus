@@ -113,7 +113,8 @@ return new class () implements ServiceProviderInterface {
                 $c->get(UserMapRepositoryInterface::class),
                 $serviceClient($c),
                 $c->get(AuditLogInterface::class),
-                $c->get(JoomlaLogger::class)
+                $c->get(JoomlaLogger::class),
+                cache: $c->get(UserCacheInterface::class)
             )
         );
 
@@ -122,7 +123,8 @@ return new class () implements ServiceProviderInterface {
             static fn (Container $c): MappingManager => new MappingManager(
                 $c->get(UserMapRepositoryInterface::class),
                 $serviceClient($c),
-                $c->get(AuditLogInterface::class)
+                $c->get(AuditLogInterface::class),
+                cache: $c->get(UserCacheInterface::class)
             )
         );
 

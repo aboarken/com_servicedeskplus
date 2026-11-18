@@ -25,9 +25,10 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapping;
  *  2. a known view and the Joomla ACL permission for its feature,
  *  3. a matched SDP identity (otherwise only the "could not be matched" notice).
  *
- * Pages are shown at once: when the user's cached ServiceDesk Plus results are older than the
- * cache time (but at most a few days), they are shown as they are, with "Updating…", and the
- * page asks itself again in the background (sdp_fresh=1) and replaces its content.
+ * The Dashboard and the lists are shown at once: when the user's cached ServiceDesk Plus results
+ * are older than the cache time (but at most a few days), they are shown as they are, with
+ * "Updating…", and the page asks itself again in the background (sdp_fresh=1) and replaces its
+ * content. Pages of one record are never shown from results older than the cache time.
  */
 final class DisplayController extends BaseController
 {
@@ -46,6 +47,14 @@ final class DisplayController extends BaseController
         'announcements' => 'sdp.announcement.view',
         'announcement'  => 'sdp.announcement.view',
     ];
+
+    /**
+     * Views that may be shown with older results while they refresh: the Dashboard and the lists,
+     * which only hold the user's own rows. Pages of one record (a request with its conversation, a
+     * loan, an approval, an announcement) always check ServiceDesk Plus once the cache time has
+     * passed, so a record that is no longer the user's is never shown from an older copy.
+     */
+    private const STALE_VIEWS = ['dashboard', 'requests', 'approvals', 'assets', 'announcements'];
 
     protected $default_view = 'requests';
 
@@ -71,7 +80,7 @@ final class DisplayController extends BaseController
         // Normal page loads may show older results while refreshing; the refresh itself may not.
         $fresh = $this->input->getBool('sdp_fresh', false);
         $cache = $this->sdpComponent()->getUserCache();
-        $cache->allowStale(!$fresh && $this->input->getCmd('format', 'html') === 'html');
+        $cache->allowStale(!$fresh && \in_array($view, self::STALE_VIEWS, true) && $this->input->getCmd('format', 'html') === 'html');
 
         try {
             $identity = $this->currentIdentity();
@@ -104,7 +113,8 @@ final class DisplayController extends BaseController
      */
     private function refreshInBackground(int $since): void
     {
-        $page = clone Uri::getInstance();
+        // Path and query of this page on this site only: never a "//host" (protocol-relative) path.
+        $page = new Uri('/' . ltrim(Uri::getInstance()->toString(['path', 'query']), '/'));
         $page->setVar('sdp_fresh', '1');
         $part = clone $page;
         $part->setVar('tmpl', 'component');

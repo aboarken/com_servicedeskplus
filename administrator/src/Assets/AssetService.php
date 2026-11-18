@@ -127,6 +127,7 @@ final class AssetService
 
         if (!$this->config->isAssignedTo($asset, $sdpUserId) || !$this->config->isLoan($asset)) {
             $this->audit->record($identity->joomlaUserId, 'asset.view', AuditLogInterface::RESULT_DENIED, null, null, 'asset:' . $assetId);
+            $this->cache->clear($identity, $cacheKey);
 
             throw new AssetNotFound();
         }

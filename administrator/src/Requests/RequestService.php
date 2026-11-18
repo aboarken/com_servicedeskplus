@@ -468,6 +468,10 @@ final class RequestService
 
         if (!self::isOwnedBy($request, $identity->sdpUserId())) {
             $this->audit->record($identity->joomlaUserId, 'request.view', AuditLogInterface::RESULT_DENIED, $requestId, null, 'not_requester');
+            // No older copy of it, its conversation or its approvals stays for this user.
+            foreach (['request:', 'conversation:', 'request_approvals:'] as $prefix) {
+                $this->cache->clear($identity, $prefix . $requestId);
+            }
 
             throw new RequestNotFound();
         }

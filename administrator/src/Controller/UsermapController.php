@@ -25,6 +25,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\EmailNormalizer;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\MappingException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\MappingManager;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\UsermapModel;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Model\ValidationFailed;
 
 /**
  * Admin actions on identity mappings. All tasks need POST + CSRF token + core.admin.
@@ -62,11 +63,23 @@ final class UsermapController extends BaseController
     {
         $this->guard();
 
-        $data      = $this->input->post->get('jform', [], 'array');
-        $joomlaId  = (int) ($data['joomla_user_id'] ?? 0);
-        $sdpUserId = trim((string) ($data['sdp_user_id'] ?? ''));
+        $data     = (array) $this->input->post->get('jform', [], 'array');
+        $joomlaId = (int) ($data['joomla_user_id'] ?? 0);
+        $backUrl  = self::EDIT_URL . ($joomlaId > 0 ? '&joomla_user_id=' . $joomlaId : '');
+
+        try {
+            /** @var UsermapModel $model */
+            $model = $this->getModel('Usermap', 'Administrator', ['ignore_request' => true]);
+            $clean = $model->validated($data);
+        } catch (ValidationFailed $e) {
+            $this->fail(implode(' ', $e->getMessages()), $data, $backUrl);
+
+            return;
+        }
+
+        $joomlaId  = $clean['joomla_user_id'];
+        $sdpUserId = $clean['sdp_user_id'];
         $user      = $this->loadUser($joomlaId);
-        $backUrl   = self::EDIT_URL . ($joomlaId > 0 ? '&joomla_user_id=' . $joomlaId : '');
 
         if ($user === null) {
             $this->fail(Text::_('COM_SERVICEDESKPLUS_MAPPING_ERR_USER'), $data, $backUrl);

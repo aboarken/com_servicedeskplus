@@ -13,6 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Identity;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpClient;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Cache\UserCacheInterface;
 
 /**
  * Admin operations on #__sdp_user_map. Every change is audited with the admin as actor.
@@ -30,7 +31,8 @@ final class MappingManager
         private readonly UserMapRepositoryInterface $repository,
         private readonly \Closure $clientFactory,
         private readonly AuditLogInterface $audit,
-        ?\Closure $clock = null
+        ?\Closure $clock = null,
+        private readonly ?UserCacheInterface $cache = null
     ) {
         $this->clock = $clock ?? static fn (): \DateTimeImmutable => new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
@@ -91,6 +93,7 @@ final class MappingManager
         }
 
         $this->audit->record($joomlaUserId, 'mapping.assign', AuditLogInterface::RESULT_OK, null, null, 'sdp_user:' . $sdpUserId, $actorId);
+        $this->cache?->clearUser($joomlaUserId);
 
         return $sdpUser;
     }
@@ -108,6 +111,18 @@ final class MappingManager
 
         if ($mapping === null || $mapping->sdpUserId === null) {
             throw new MappingException('COM_SERVICEDESKPLUS_MAPPING_ERR_NOTHING_TO_CONFIRM');
+        }
+
+        // Confirm only links what the e-mails support right now: the SDP user stored with the row
+        // must still have the user's current Joomla e-mail. Otherwise someone could be found with
+        // a colleague's address, change their e-mail back, and be confirmed with the colleague's
+        // SDP user. A deliberate link of different addresses stays possible by editing the mapping.
+        $sdpUser = $this->fetchSdpUser($mapping->sdpUserId);
+
+        if (EmailNormalizer::normalize($sdpUser['email_id'] ?? '') !== EmailNormalizer::normalize($joomlaEmail)) {
+            $this->audit->record($joomlaUserId, 'mapping.confirm', AuditLogInterface::RESULT_DENIED, null, null, 'email_differs sdp_user:' . $mapping->sdpUserId, $actorId);
+
+            throw new MappingException('COM_SERVICEDESKPLUS_MAPPING_ERR_CONFIRM_EMAIL');
         }
 
         return $this->assign($joomlaUserId, $joomlaEmail, $mapping->sdpUserId, $actorId);
@@ -128,6 +143,7 @@ final class MappingManager
         ]));
 
         $this->audit->record($joomlaUserId, 'mapping.suspend', AuditLogInterface::RESULT_OK, null, null, '', $actorId);
+        $this->cache?->clearUser($joomlaUserId);
     }
 
     /**
@@ -137,6 +153,7 @@ final class MappingManager
     {
         $this->repository->delete($joomlaUserId);
         $this->audit->record($joomlaUserId, 'mapping.rematch', AuditLogInterface::RESULT_OK, null, null, '', $actorId);
+        $this->cache?->clearUser($joomlaUserId);
     }
 
     /**

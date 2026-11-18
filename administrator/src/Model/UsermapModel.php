@@ -11,6 +11,8 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Model;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\FormModel;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Extension\ServiceDeskPlusComponent;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapping;
@@ -32,6 +34,39 @@ final class UsermapModel extends FormModel
         }
 
         return $form;
+    }
+
+    /**
+     * The posted mapping, filtered and validated by the form (forms/usermap.xml) on the server,
+     * as the browser already does.
+     *
+     * @param  array<string, mixed>  $data  Raw posted jform data
+     *
+     * @return array{joomla_user_id: int, sdp_user_id: string}
+     *
+     * @throws ValidationFailed
+     */
+    public function validated(array $data): array
+    {
+        $form = $this->getForm($data, false);
+
+        if (!$form instanceof Form) {
+            throw new ValidationFailed([Text::_('JLIB_FORM_ERROR_FORM_NOT_LOADED')]);
+        }
+
+        $filtered = $form->filter($data);
+
+        if ($form->validate($filtered) !== true) {
+            $messages = [];
+
+            foreach ($form->getErrors() as $error) {
+                $messages[] = $error instanceof \Throwable ? $error->getMessage() : (string) $error;
+            }
+
+            throw new ValidationFailed($messages ?: [Text::_('JLIB_APPLICATION_ERROR_SAVE_FAILED')]);
+        }
+
+        return ['joomla_user_id' => (int) ($filtered['joomla_user_id'] ?? 0), 'sdp_user_id' => trim((string) ($filtered['sdp_user_id'] ?? ''))];
     }
 
     public function getMapping(): ?UserMapping

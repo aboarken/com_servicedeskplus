@@ -34,6 +34,9 @@ final class DbUserCache implements UserCacheInterface
     /** Values larger than this (JSON bytes) are not cached. */
     private const MAX_BYTES = 4_000_000;
 
+    /** Most entries kept per user; the oldest are removed (many different searches, pages, ...). */
+    public const MAX_ROWS_PER_USER = 150;
+
     private bool $allowStale = false;
 
     private ?int $staleSince = null;
@@ -135,9 +138,13 @@ final class DbUserCache implements UserCacheInterface
                 }
             }
 
-            // Now and then, remove what is too old to be shown.
+            // Now and then, remove what is too old to be shown and keep this user's rows bounded.
             if (random_int(1, 50) === 1) {
                 $this->purge($now);
+            }
+
+            if (random_int(1, 10) === 1) {
+                $this->trim($userId);
             }
         } catch (\RuntimeException $e) {
             // The cache is an optimisation: a failed write never breaks the page.
@@ -178,6 +185,58 @@ final class DbUserCache implements UserCacheInterface
                 unset($this->memo[$memoKey]);
             }
         }
+    }
+
+    public function clearUser(int $joomlaUserId): void
+    {
+        try {
+            $query = $this->db->createQuery()
+                ->delete($this->db->quoteName(self::TABLE))
+                ->where($this->db->quoteName('user_id') . ' = :user')
+                ->bind(':user', $joomlaUserId, ParameterType::INTEGER);
+            $this->db->setQuery($query)->execute();
+        } catch (\RuntimeException $e) {
+            $this->logger->warning('Cache clear failed: ' . $e->getMessage());
+        }
+
+        $this->memo = [];
+    }
+
+    public function clearAll(): void
+    {
+        try {
+            $this->db->setQuery($this->db->createQuery()->delete($this->db->quoteName(self::TABLE)))->execute();
+        } catch (\RuntimeException $e) {
+            $this->logger->warning('Cache clear failed: ' . $e->getMessage());
+        }
+
+        $this->memo = [];
+    }
+
+    /**
+     * Keep the newest MAX_ROWS_PER_USER rows of one user.
+     */
+    private function trim(int $userId): void
+    {
+        $query = $this->db->createQuery()
+            ->select($this->db->quoteName('created'))
+            ->from($this->db->quoteName(self::TABLE))
+            ->where($this->db->quoteName('user_id') . ' = :user')
+            ->order($this->db->quoteName('created') . ' DESC')
+            ->bind(':user', $userId, ParameterType::INTEGER);
+        $cutoff = $this->db->setQuery($query, self::MAX_ROWS_PER_USER, 1)->loadResult();
+
+        if (!\is_string($cutoff) || $cutoff === '') {
+            return;
+        }
+
+        $delete = $this->db->createQuery()
+            ->delete($this->db->quoteName(self::TABLE))
+            ->where($this->db->quoteName('user_id') . ' = :user')
+            ->where($this->db->quoteName('created') . ' < :cutoff')
+            ->bind(':user', $userId, ParameterType::INTEGER)
+            ->bind(':cutoff', $cutoff);
+        $this->db->setQuery($delete)->execute();
     }
 
     /**

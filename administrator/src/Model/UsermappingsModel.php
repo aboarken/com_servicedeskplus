@@ -67,9 +67,11 @@ final class UsermappingsModel extends ListModel
 
         if ($search !== '') {
             if (preg_match('/^[0-9]{1,20}$/', $search)) {
+                // A Joomla user id fits in 9 digits; longer numbers can only be SDP ids.
+                $jid = \strlen($search) <= 9 ? (int) $search : 0;
                 $query->where('(' . $db->quoteName('m.sdp_user_id') . ' = :sid OR ' . $db->quoteName('m.joomla_user_id') . ' = :jid)')
                     ->bind(':sid', $search)
-                    ->bind(':jid', $search, ParameterType::INTEGER);
+                    ->bind(':jid', $jid, ParameterType::INTEGER);
             } else {
                 $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search) . '%';
                 $query->where('(' . implode(' OR ', [

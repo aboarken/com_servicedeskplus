@@ -30,7 +30,7 @@ final class RequestStats
      * @param  array<string, array{incident: ?int, service: ?int, total: ?int}>  $counted
      *         resolved / closed => counts by SDP; null where SDP gave no count
      * @param  array<string, int>      $age        AGE_BUCKETS => open and on-hold requests
-     * @param  list<array{name: string, count: int, other: bool}>  $priority  most frequent first
+     * @param  list<array{name: string, count: int, other: bool}>  $priority  in natural order (see topPriorities())
      */
     public function __construct(
         public readonly array $service,

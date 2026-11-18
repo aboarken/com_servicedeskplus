@@ -14,6 +14,7 @@ use Psr\Log\LoggerInterface;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpClient;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Cache\UserCacheInterface;
 
 /**
  * Maps the logged-in Joomla user to exactly one SDP user by email.
@@ -55,7 +56,8 @@ final class IdentityResolver
         private readonly \Closure $clientFactory,
         private readonly AuditLogInterface $audit,
         private readonly LoggerInterface $logger,
-        ?\Closure $clock = null
+        ?\Closure $clock = null,
+        private readonly ?UserCacheInterface $cache = null
     ) {
         $this->clock = $clock ?? static fn (): \DateTimeImmutable => new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
@@ -171,7 +173,13 @@ final class IdentityResolver
         // Joomla lets users change their own e-mail without verifying it, so an address alone does
         // not prove who someone is: the SDP user found is kept, and an administrator confirms it
         // (User Mappings → Confirm) before the user sees anything of that SDP user.
-        $this->repository->save(new UserMapping($userId, $sdpUserId, $email, UserMapping::STATUS_PENDING, UserMapping::SOURCE_AUTO, null, $now));
+        try {
+            $this->repository->save(new UserMapping($userId, $sdpUserId, $email, UserMapping::STATUS_PENDING, UserMapping::SOURCE_AUTO, null, $now));
+        } catch (\RuntimeException) {
+            // Another account was stored with this SDP user at the same moment (unique index).
+            return $this->storeNotMatched($userId, $email, UserMapping::STATUS_AMBIGUOUS, $now, 'sdp_user_already_mapped');
+        }
+
         $this->audit->record($userId, 'identity.pending', AuditLogInterface::RESULT_OK, null, null, $detail);
 
         return Identity::notMatched($userId, UserMapping::STATUS_PENDING);
@@ -211,6 +219,7 @@ final class IdentityResolver
     {
         $this->repository->save($mapping->with(['status' => UserMapping::STATUS_SUSPENDED, 'checkedAt' => $now]));
         $this->audit->record($mapping->joomlaUserId, 'identity.suspended', AuditLogInterface::RESULT_DENIED, null, null, $reason);
+        $this->cache?->clearUser($mapping->joomlaUserId);
     }
 
     private function storeNotMatched(int $userId, string $email, string $status, \DateTimeImmutable $now, string $reason): Identity

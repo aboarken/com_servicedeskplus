@@ -18,7 +18,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestQuery;
  * My Loans side by side. Styles are in media/com_servicedeskplus/css/portal.css (.sdp-*), so the
  * Dashboard looks the same on any site template. Colours ("tones"): blue (#17426f) open, amber on
  * hold or due soon, green resolved / approved / nothing overdue, slate closed, purple waiting
- * approval, red rejected / overdue, teal announcements, muted for zero.
+ * approval, red rejected / overdue, muted for zero.
  */
 
 $e    = fn (string $text): string => $this->escape($text);

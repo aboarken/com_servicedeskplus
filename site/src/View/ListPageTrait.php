@@ -29,8 +29,6 @@ trait ListPageTrait
 
     public int $pages = 1;
 
-    public int $total = 0;
-
     /**
      * Read search, show and sort from the URL; unknown values fall back to the first allowed one.
      *
@@ -58,8 +56,7 @@ trait ListPageTrait
      */
     protected function pageOf(array $items, int $size = 25): array
     {
-        $this->total = \count($items);
-        $this->pages = max(1, (int) ceil($this->total / $size));
+        $this->pages = max(1, (int) ceil(\count($items) / $size));
         $this->page  = min(max(1, Factory::getApplication()->getInput()->getInt('page', 1)), $this->pages);
 
         return \array_slice($items, ($this->page - 1) * $size, $size);

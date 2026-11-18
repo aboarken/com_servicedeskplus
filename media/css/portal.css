@@ -709,8 +709,8 @@
  * Series colours are validated for colour-blind readers (blue / orange, adjacent CVD ΔE 24.7;
  * priorities low blue, normal yellow, medium aqua, high orange, urgent violet, critical magenta:
  * no two neighbours below CVD ΔE 9.1 or normal-vision ΔE 22.9);
- * every chart also has a legend or labels and a "Show figures" table, so colour is never the
- * only cue. Values and labels use text colours, never the series colour.
+ * every chart also has a legend or labels with the figures (and a table for screen readers), so
+ * colour is never the only cue. Values and labels use text colours, never the series colour.
  */
 .com-servicedeskplus {
   --sdp-series-1: #2a78d6;

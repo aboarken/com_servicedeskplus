@@ -3,6 +3,32 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.23.1] - 2026-11-18
+
+Security and clean-up release after an audit of the whole component: security, structure against the Joomla Manual, and unused code.
+
+### Security
+- **Confirm checks the e-mails again.** *User Mappings → Confirm* now refuses a mapping when the e-mail of the ServiceDesk Plus user found for the account is not the account's current Joomla e-mail. Before, someone could set a colleague's address, open the portal once (found, *Waiting for approval*), change the address back, and be confirmed together with others. Linking different addresses on purpose is still possible by opening the mapping and saving it.
+- **Pages of one record are never shown from older results.** Since 1.21.0 a request page could be shown from a copy up to 7 days old while its conversation and approvals were read live, also for a request that had been given to someone else in ServiceDesk Plus. Now only the Dashboard and the lists (which hold the user's own rows) open with older results; a request, loan, approval or announcement page always checks ServiceDesk Plus again after the cache time, and a "not yours" answer deletes the older copies.
+- **Confirmed mappings are checked against ServiceDesk Plus once a day again.** Since 1.23.0 every new mapping was stored as made by an administrator, which is never re-checked. A confirmed e-mail match is an e-mail match again: it is suspended when the ServiceDesk Plus user is gone or its e-mail changed.
+- **Cached results are deleted when they must no longer be used:** a user's entries when their mapping is suspended, changed or matched again; every entry when the ServiceDesk Plus address changes. At most 150 entries are kept per user (many different searches could fill the table).
+- **Background update:** only this site's own address is ever loaded; a page that became another page (login, *could not be matched*, *waiting for approval*) is loaded normally instead of keeping the older content.
+- **Without JavaScript** the Dashboard and lists no longer stay on older results: the page reloads itself once for current ones.
+
+### Fixed
+- Two accounts found for the same ServiceDesk Plus user at the same moment: the second is stored as *SDP user already linked* instead of showing an error page.
+- User Mappings: searching a long number no longer fails on PostgreSQL.
+- Updating removes the old session cache class left by versions before 1.21.0.
+
+### Changed (Joomla Manual)
+- Saving a mapping passes through the form's filter and validation on the server.
+- No HTML in the *waiting for approval* notice texts.
+- The installer checks for the PHP cURL extension, which every ServiceDesk Plus call needs.
+- **SECURITY.md**: how to report a security problem privately. README: the portal's permissions are not granted to any group after installation; cache behaviour; project structure.
+
+### Removed
+- Unused code: `ListPage::$startIndex` / `$rowCount`, `ListPageTrait::$total`, the unused payload of the `sdp:refreshed` event; outdated comments.
+
 ## [1.23.0] - 2026-11-18
 
 ### Security

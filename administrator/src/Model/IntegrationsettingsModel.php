@@ -176,7 +176,14 @@ final class IntegrationsettingsModel extends FormModel
             throw new ValidationFailed([Text::_('COM_SERVICEDESKPLUS_SETTINGS_ERR_KEY_REENTER')]);
         }
 
+        $newServer = $values['base_url'] !== $this->settings()->baseUrl();
+
         $this->component()->getSettingsRepository()->save($values);
+
+        // Results cached from another ServiceDesk Plus server must never be shown again.
+        if ($newServer) {
+            $this->component()->getUserCache()->clearAll();
+        }
     }
 
     /**

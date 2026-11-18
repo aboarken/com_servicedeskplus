@@ -133,7 +133,7 @@ The configuration includes:
 
 ### Cache
 
-Pages open at once: when a user's results are older than the cache time, the page shows their last results (up to 7 days old, marked *Updating…*) and refreshes itself in the background. Results are stored per user in the database table `#__sdp_cache`, so they survive logout; they are only shown to the same user and deleted after 7 days. *Integration Settings → Limits → Cache time (minutes)* sets how long each user's ServiceDesk Plus results (requests, approvals, loans, announcements and the Dashboard figures) are kept, 0 to 60 minutes; default 5. A user's own new requests and approval decisions refresh their lists at once. With 0, every page reads ServiceDesk Plus again; the Dashboard then makes many calls (approvals are found by scanning requests, changes, releases and purchase orders) and loads slowly.
+The Dashboard and the lists (My Requests, My Approvals, My Loans, Announcements) open at once: when a user's results are older than the cache time, the page shows their last results (up to 7 days old, marked *Updating…*) and refreshes itself in the background. Pages of one record (a request, a loan, an approval, an announcement) always read ServiceDesk Plus again after the cache time, so a record that is no longer the user's is never shown from an older copy. A user's cached results are deleted when their mapping is suspended, changed or matched again, and all cached results are deleted when the ServiceDesk Plus address changes; at most 150 entries are kept per user. Results are stored per user in the database table `#__sdp_cache`, so they survive logout; they are only shown to the same user and deleted after 7 days. *Integration Settings → Limits → Cache time (minutes)* sets how long each user's ServiceDesk Plus results (requests, approvals, loans, announcements and the Dashboard figures) are kept, 0 to 60 minutes; default 5. A user's own new requests and approval decisions refresh their lists at once. With 0, every page reads ServiceDesk Plus again; the Dashboard then makes many calls (approvals are found by scanning requests, changes, releases and purchase orders) and loads slowly.
 
 ### Speed
 
@@ -165,7 +165,9 @@ The component does not generate separate Joomla email notifications for submitte
 
 The component is designed to work with Joomla's access control system (ACL).
 
-Administrators can manage access permissions for the component and its available functionality.
+Administrators can manage access permissions for the component and its available functionality (*Components → ServiceDesk Plus → Options → Permissions*). The portal's own permissions (view requests, create requests, view and decide approvals, view loans, view announcements) are **not granted to any group after installation**, except Super Users: grant them to the user groups that should use each page.
+
+To report a security problem, see [SECURITY.md](SECURITY.md).
 
 API credentials should be stored securely and should never be exposed to frontend users or committed to the source repository.
 
@@ -191,7 +193,8 @@ com_servicedeskplus/
 │   └── config.xml
 ├── media/
 │   ├── css/
-│   └── js/
+│   ├── js/
+│   └── joomla.asset.json
 ├── site/
 │   ├── language/
 │   ├── layouts/
@@ -208,6 +211,7 @@ com_servicedeskplus/
 ├── CHANGELOG.md
 ├── LICENSE
 ├── README.md
+├── SECURITY.md
 ├── script.php
 └── servicedeskplus.xml
 ```

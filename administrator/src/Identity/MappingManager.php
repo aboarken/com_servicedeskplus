@@ -13,6 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Identity;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpClient;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Cache\UserCacheInterface;
 
 /**
  * Admin operations on #__sdp_user_map. Every change is audited with the admin as actor.
@@ -30,7 +31,8 @@ final class MappingManager
         private readonly UserMapRepositoryInterface $repository,
         private readonly \Closure $clientFactory,
         private readonly AuditLogInterface $audit,
-        ?\Closure $clock = null
+        ?\Closure $clock = null,
+        private readonly ?UserCacheInterface $cache = null
     ) {
         $this->clock = $clock ?? static fn (): \DateTimeImmutable => new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
@@ -43,7 +45,7 @@ final class MappingManager
      *
      * @throws MappingException|SdpException
      */
-    public function assign(int $joomlaUserId, string $joomlaEmail, string $sdpUserId, int $actorId): array
+    public function assign(int $joomlaUserId, string $joomlaEmail, string $sdpUserId, int $actorId, string $source = UserMapping::SOURCE_ADMIN): array
     {
         if ($joomlaUserId <= 0) {
             throw new MappingException('COM_SERVICEDESKPLUS_MAPPING_ERR_USER');
@@ -72,7 +74,7 @@ final class MappingManager
                 $sdpUserId,
                 EmailNormalizer::normalize($joomlaEmail),
                 UserMapping::STATUS_ACTIVE,
-                UserMapping::SOURCE_ADMIN,
+                $source === UserMapping::SOURCE_AUTO ? UserMapping::SOURCE_AUTO : UserMapping::SOURCE_ADMIN,
                 $now,
                 $now,
                 $actorId
@@ -91,12 +93,13 @@ final class MappingManager
         }
 
         $this->audit->record($joomlaUserId, 'mapping.assign', AuditLogInterface::RESULT_OK, null, null, 'sdp_user:' . $sdpUserId, $actorId);
+        $this->cache?->clearUser($joomlaUserId);
 
         return $sdpUser;
     }
 
     /**
-     * Re-confirm a suspended mapping: keeps the SDP user, accepts the user's current Joomla email.
+     * Approve a mapping waiting for approval, or re-confirm a suspended one: keeps the SDP user, accepts the user's current Joomla email.
      *
      * @return array<string, mixed>
      *
@@ -110,7 +113,22 @@ final class MappingManager
             throw new MappingException('COM_SERVICEDESKPLUS_MAPPING_ERR_NOTHING_TO_CONFIRM');
         }
 
-        return $this->assign($joomlaUserId, $joomlaEmail, $mapping->sdpUserId, $actorId);
+        // Confirm only links what the e-mails support right now: the SDP user stored with the row
+        // must still have the user's current Joomla e-mail. Otherwise someone could be found with
+        // a colleague's address, change their e-mail back, and be confirmed with the colleague's
+        // SDP user. A deliberate link of different addresses stays possible by editing the mapping.
+        $sdpUser = $this->fetchSdpUser($mapping->sdpUserId);
+
+        if (EmailNormalizer::normalize($sdpUser['email_id'] ?? '') !== EmailNormalizer::normalize($joomlaEmail)) {
+            $this->audit->record($joomlaUserId, 'mapping.confirm', AuditLogInterface::RESULT_DENIED, null, null, 'email_differs sdp_user:' . $mapping->sdpUserId, $actorId);
+
+            throw new MappingException('COM_SERVICEDESKPLUS_MAPPING_ERR_CONFIRM_EMAIL');
+        }
+
+        // The e-mails match, so it stays an e-mail match ("auto"): it is checked against
+        // ServiceDesk Plus again once a day and suspended if the SDP user is gone or its e-mail
+        // changed. A mapping set by hand (New / Edit) is "admin" and is not re-checked.
+        return $this->assign($joomlaUserId, $joomlaEmail, $mapping->sdpUserId, $actorId, UserMapping::SOURCE_AUTO);
     }
 
     public function suspend(int $joomlaUserId, int $actorId): void
@@ -128,6 +146,7 @@ final class MappingManager
         ]));
 
         $this->audit->record($joomlaUserId, 'mapping.suspend', AuditLogInterface::RESULT_OK, null, null, '', $actorId);
+        $this->cache?->clearUser($joomlaUserId);
     }
 
     /**
@@ -137,6 +156,7 @@ final class MappingManager
     {
         $this->repository->delete($joomlaUserId);
         $this->audit->record($joomlaUserId, 'mapping.rematch', AuditLogInterface::RESULT_OK, null, null, '', $actorId);
+        $this->cache?->clearUser($joomlaUserId);
     }
 
     /**

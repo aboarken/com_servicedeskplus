@@ -738,6 +738,10 @@
   margin: 0 0 1.25rem;
 }
 
+.com-servicedeskplus .sdp-profile .sdp-panel-title {
+  color: var(--sdp-primary);
+}
+
 .com-servicedeskplus .sdp-profile-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

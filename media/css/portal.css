@@ -706,7 +706,9 @@
 
 /*
  * Dashboard: the user's details and the request charts.
- * Series colours are validated for colour-blind readers (blue / orange, adjacent CVD ΔE 24.7);
+ * Series colours are validated for colour-blind readers (blue / orange, adjacent CVD ΔE 24.7;
+ * priorities low blue, normal yellow, medium aqua, high orange, urgent violet, critical magenta:
+ * no two neighbours below CVD ΔE 9.1 or normal-vision ΔE 22.9);
  * every chart also has a legend or labels and a "Show figures" table, so colour is never the
  * only cue. Values and labels use text colours, never the series colour.
  */
@@ -718,6 +720,14 @@
   --sdp-seq-2: #6ca2e3;
   --sdp-seq-3: #2a78d6;
   --sdp-seq-4: #1b4f8f;
+  --sdp-cat-1: #2a78d6;
+  --sdp-cat-2: #eda100;
+  --sdp-cat-3: #1baf7a;
+  --sdp-cat-4: #eb6834;
+  --sdp-cat-5: #6250d6;
+  --sdp-cat-6: #e87ba4;
+  --sdp-cat-none: #9ca3af;
+  --sdp-cat-other: #cbd5e1;
   --sdp-chart-grid: #e5e7eb;
   --sdp-text: #111827;
 }
@@ -769,6 +779,10 @@
   color: var(--sdp-text-muted);
 }
 
+.com-servicedeskplus .sdp-chart-note--foot {
+  margin: 1rem 0 0;
+}
+
 .com-servicedeskplus .sdp-legend {
   display: flex;
   flex-wrap: wrap;
@@ -794,9 +808,30 @@
 }
 
 /* Vertical stacked columns (requests by status) */
+.com-servicedeskplus .sdp-column-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.com-servicedeskplus .sdp-column-group + .sdp-column-group {
+  padding-left: 1rem;
+  border-left: 1px dashed var(--sdp-chart-grid);
+}
+
+.com-servicedeskplus .sdp-column-group-label {
+  margin: 1.75rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sdp-text-muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .com-servicedeskplus .sdp-columns {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
   align-items: end;
   border-bottom: 1px solid var(--sdp-chart-grid);
@@ -849,51 +884,124 @@
   white-space: nowrap;
 }
 
-.com-servicedeskplus .sdp-columns + .sdp-chart-figures {
-  margin-top: 2rem;
+.com-servicedeskplus .sdp-cat-1 { background: var(--sdp-cat-1); }
+.com-servicedeskplus .sdp-cat-2 { background: var(--sdp-cat-2); }
+.com-servicedeskplus .sdp-cat-3 { background: var(--sdp-cat-3); }
+.com-servicedeskplus .sdp-cat-4 { background: var(--sdp-cat-4); }
+.com-servicedeskplus .sdp-cat-5 { background: var(--sdp-cat-5); }
+.com-servicedeskplus .sdp-cat-6 { background: var(--sdp-cat-6); }
+.com-servicedeskplus .sdp-cat-none { background: var(--sdp-cat-none); }
+.com-servicedeskplus .sdp-cat-other { background: var(--sdp-cat-other); }
+
+/* Donut (open requests by age) */
+.com-servicedeskplus .sdp-donut-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: center;
 }
 
-/* Horizontal bars (by age, by priority) */
-.com-servicedeskplus .sdp-hbars {
+.com-servicedeskplus .sdp-donut {
+  flex: 0 0 auto;
+  width: 150px;
+  height: 150px;
+}
+
+.com-servicedeskplus .sdp-donut-track,
+.com-servicedeskplus .sdp-donut-slice {
+  fill: none;
+  stroke-width: 18;
+}
+
+.com-servicedeskplus .sdp-donut-track {
+  stroke: #f1f5f9;
+}
+
+.com-servicedeskplus .sdp-donut-slice {
+  transform: rotate(-90deg);
+  transform-origin: 60px 60px;
+}
+
+.com-servicedeskplus .sdp-donut-slice:hover {
+  filter: brightness(0.92);
+}
+
+.com-servicedeskplus .sdp-seq-stroke-1 { stroke: var(--sdp-seq-1); }
+.com-servicedeskplus .sdp-seq-stroke-2 { stroke: var(--sdp-seq-2); }
+.com-servicedeskplus .sdp-seq-stroke-3 { stroke: var(--sdp-seq-3); }
+.com-servicedeskplus .sdp-seq-stroke-4 { stroke: var(--sdp-seq-4); }
+
+.com-servicedeskplus .sdp-donut-total {
+  font-size: 20px;
+  font-weight: 700;
+  fill: var(--sdp-text);
+}
+
+.com-servicedeskplus .sdp-donut-caption {
+  font-size: 10px;
+  fill: var(--sdp-text-muted);
+}
+
+/* Segmented bar (open requests by priority) */
+.com-servicedeskplus .sdp-segbar {
+  display: flex;
+  gap: 2px;
+  height: 18px;
+  margin: 0.25rem 0 1rem;
+  overflow: visible;
+}
+
+.com-servicedeskplus .sdp-segbar-part {
+  position: relative;
+  flex-basis: 0;
+  min-width: 3px;
+}
+
+.com-servicedeskplus .sdp-segbar-part:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.com-servicedeskplus .sdp-segbar-part:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.com-servicedeskplus .sdp-segbar-part:only-child {
+  border-radius: 4px;
+}
+
+/* Legend with counts and shares (donut and segmented bar) */
+.com-servicedeskplus .sdp-share-legend {
   display: grid;
-  gap: 0.5rem;
+  flex: 1 1 180px;
+  gap: 0.375rem;
   margin: 0;
   padding: 0;
+  font-size: 0.8125rem;
   list-style: none;
 }
 
-.com-servicedeskplus .sdp-hbar {
-  position: relative;
+.com-servicedeskplus .sdp-share-legend li {
   display: grid;
-  grid-template-columns: minmax(6.5rem, 35%) 1fr 2.5rem;
+  grid-template-columns: 0.75rem 1fr auto 3rem;
   gap: 0.5rem;
   align-items: center;
-  font-size: 0.8125rem;
 }
 
-.com-servicedeskplus .sdp-hbar-label {
+.com-servicedeskplus .sdp-share-label {
   overflow: hidden;
   color: var(--sdp-text-muted);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.com-servicedeskplus .sdp-hbar-track {
-  display: block;
-  height: 12px;
-  border-left: 1px solid var(--sdp-chart-grid);
-}
-
-.com-servicedeskplus .sdp-hbar-fill {
-  display: block;
-  height: 100%;
-  min-width: 2px;
-  border-radius: 0 4px 4px 0;
-}
-
-.com-servicedeskplus .sdp-hbar-value {
+.com-servicedeskplus .sdp-share-value {
   font-weight: 600;
   color: var(--sdp-text);
+  text-align: right;
+}
+
+.com-servicedeskplus .sdp-share-pct {
+  color: var(--sdp-text-muted);
   text-align: right;
 }
 
@@ -917,31 +1025,9 @@
   transform: translateX(-50%);
 }
 
-.com-servicedeskplus .sdp-hbar[data-sdp-tip]:hover::after {
-  bottom: 100%;
-}
-
-.com-servicedeskplus .sdp-hbar:hover .sdp-hbar-fill,
-.com-servicedeskplus .sdp-column:hover .sdp-column-stack {
+.com-servicedeskplus .sdp-column:hover .sdp-column-stack,
+.com-servicedeskplus .sdp-segbar-part:hover {
   filter: brightness(0.92);
-}
-
-.com-servicedeskplus .sdp-chart-figures {
-  margin-top: 1rem;
-  font-size: 0.8125rem;
-}
-
-.com-servicedeskplus .sdp-chart-figures summary {
-  color: var(--sdp-primary);
-  cursor: pointer;
-}
-
-.com-servicedeskplus .sdp-chart-figures .sdp-table {
-  margin-top: 0.5rem;
-}
-
-.com-servicedeskplus .sdp-num {
-  text-align: right;
 }
 
 /* Page shown with older data while it is refreshed (refresh.js) */

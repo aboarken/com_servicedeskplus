@@ -100,8 +100,12 @@ $tiles = [
 
     <?php // Charts from the requests read for the figures above (no extra ServiceDesk Plus calls) ?>
     <?php if ($this->showRequests && $r !== null && $this->requestsError === '') :
-        // Requests by status: per bucket incidents + service requests; resolved and closed may
-        // come without the type split (then one neutral segment).
+        $num = static fn (?int $n): string => $n === null ? '—' : number_format($n);
+        $pct = static fn (int $value, int $total): float => $total > 0 ? round(100 * $value / $total, 2) : 0.0;
+
+        // Requests by status, per bucket: incidents + service requests (resolved and closed may come
+        // without the type split: one neutral segment). Active (open, on hold) and completed
+        // (resolved, closed) are drawn on separate scales: completed counts are usually far larger.
         $columns = [];
         $unsplit = false;
 
@@ -115,18 +119,38 @@ $tiles = [
             $columns[$bucket] = ['label' => Text::_($labelKey), 'i' => $i, 's' => $s, 'total' => $total, 'split' => $split];
         }
 
-        $maxStatus = max(1, ...array_map(static fn (array $c): int => (int) $c['total'], array_values($columns)));
-        $active    = array_sum($r->age);
+        $groups = [
+            'COM_SERVICEDESKPLUS_CHART_GROUP_ACTIVE'    => ['open', 'on_hold'],
+            'COM_SERVICEDESKPLUS_CHART_GROUP_COMPLETED' => ['resolved', 'closed'],
+        ];
+
+        // Open requests by age: a donut; ordinal buckets in one blue ramp, lighter = newer.
         $ageLabels = [
             'week'    => 'COM_SERVICEDESKPLUS_CHART_AGE_WEEK',
             'month'   => 'COM_SERVICEDESKPLUS_CHART_AGE_MONTH',
             'quarter' => 'COM_SERVICEDESKPLUS_CHART_AGE_QUARTER',
             'older'   => 'COM_SERVICEDESKPLUS_CHART_AGE_OLDER',
         ];
-        $maxAge      = max(1, ...array_values($r->age ?: [0]));
-        $priorities  = array_map(static fn (array $pr): array => $pr + ['label' => $pr['other'] ? Text::_('COM_SERVICEDESKPLUS_CHART_PRIORITY_OTHER') : ($pr['name'] !== '' ? $pr['name'] : Text::_('COM_SERVICEDESKPLUS_CHART_PRIORITY_NONE'))], $r->priority);
-        $maxPriority = max(1, ...array_map(static fn (array $pr): int => $pr['count'], $priorities ?: [['count' => 0]]));
-        $pct         = static fn (int $value, int $max): string => rtrim(rtrim(number_format(100 * $value / $max, 2, '.', ''), '0'), '.');
+        $ageTotal = array_sum($r->age);
+        $radius   = 42;
+        $circ     = 2 * M_PI * $radius;
+
+        // Open requests by priority: one segmented bar. A known priority always has the same
+        // colour (validated order: no two neighbours too alike); other names take the free colours.
+        $fixedSlots = ['low' => 1, 'normal' => 2, 'medium' => 3, 'high' => 4, 'urgent' => 5, 'critical' => 6];
+        $freeSlots  = array_values(array_diff([1, 2, 3, 4, 5, 6], array_values(array_intersect_key($fixedSlots, array_flip(array_map(static fn (array $pr): string => mb_strtolower(trim($pr['name'])), $r->priority))))));
+        $priorities = [];
+
+        foreach ($r->priority as $pr) {
+            $key  = mb_strtolower(trim($pr['name']));
+            $tone = $pr['other'] ? 'other' : ($pr['name'] === '' ? 'none' : (string) ($fixedSlots[$key] ?? (array_shift($freeSlots) ?? 6)));
+            $priorities[] = $pr + [
+                'label' => $pr['other'] ? Text::_('COM_SERVICEDESKPLUS_CHART_PRIORITY_OTHER') : ($pr['name'] !== '' ? $pr['name'] : Text::_('COM_SERVICEDESKPLUS_CHART_PRIORITY_NONE')),
+                'tone'  => $tone,
+            ];
+        }
+
+        $priorityTotal = array_sum(array_column($priorities, 'count'));
         ?>
         <div class="sdp-panels sdp-charts">
             <section class="sdp-panel sdp-chart" aria-labelledby="sdp-chart-status">
@@ -139,51 +163,59 @@ $tiles = [
                             <li><span class="sdp-swatch sdp-series-none" aria-hidden="true"></span><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_NOT_SPLIT'); ?></li>
                         <?php endif; ?>
                     </ul>
-                    <div class="sdp-columns" aria-hidden="true">
-                        <?php foreach ($columns as $bucket => $c) :
-                            $total = (int) $c['total'];
-                            $tip   = $c['split']
-                                ? Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_STATUS', $c['label'], (int) $c['i'], (int) $c['s'])
-                                : Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_TOTAL', $c['label'], $total);
+                    <div class="sdp-column-groups" aria-hidden="true">
+                        <?php foreach ($groups as $groupKey => $buckets) :
+                            $groupMax = max(1, ...array_map(static fn (string $b): int => (int) $columns[$b]['total'], $buckets));
                             ?>
-                            <a class="sdp-column" href="<?php echo $this->statusUrl($bucket); ?>" data-sdp-tip="<?php echo $e($tip); ?>" tabindex="-1">
-                                <span class="sdp-column-value"><?php echo $c['total'] === null ? '—' : $total; ?></span>
-                                <span class="sdp-column-track">
-                                    <span class="sdp-column-stack" style="height: <?php echo $pct($total, $maxStatus); ?>%">
-                                        <?php if ($c['split']) : ?>
-                                            <?php if ((int) $c['s'] > 0) : ?><span class="sdp-seg sdp-series-2" style="flex-grow: <?php echo (int) $c['s']; ?>"></span><?php endif; ?>
-                                            <?php if ((int) $c['i'] > 0) : ?><span class="sdp-seg sdp-series-1" style="flex-grow: <?php echo (int) $c['i']; ?>"></span><?php endif; ?>
-                                        <?php elseif ($total > 0) : ?>
-                                            <span class="sdp-seg sdp-series-none" style="flex-grow: 1"></span>
-                                        <?php endif; ?>
-                                    </span>
-                                </span>
-                                <span class="sdp-column-label"><?php echo $e($c['label']); ?></span>
-                            </a>
+                            <div class="sdp-column-group">
+                                <div class="sdp-columns">
+                                    <?php foreach ($buckets as $bucket) :
+                                        $c     = $columns[$bucket];
+                                        $total = (int) $c['total'];
+                                        $tip   = $c['split']
+                                            ? Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_STATUS', $c['label'], $num($c['i']), $num($c['s']))
+                                            : Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_TOTAL', $c['label'], $num($total));
+                                        ?>
+                                        <a class="sdp-column" href="<?php echo $this->statusUrl($bucket); ?>" data-sdp-tip="<?php echo $e($tip); ?>" tabindex="-1">
+                                            <span class="sdp-column-value"><?php echo $num($c['total']); ?></span>
+                                            <span class="sdp-column-track">
+                                                <span class="sdp-column-stack" style="height: <?php echo $pct($total, $groupMax); ?>%">
+                                                    <?php if ($c['split']) : ?>
+                                                        <?php if ((int) $c['s'] > 0) : ?><span class="sdp-seg sdp-series-2" style="flex-grow: <?php echo (int) $c['s']; ?>"></span><?php endif; ?>
+                                                        <?php if ((int) $c['i'] > 0) : ?><span class="sdp-seg sdp-series-1" style="flex-grow: <?php echo (int) $c['i']; ?>"></span><?php endif; ?>
+                                                    <?php elseif ($total > 0) : ?>
+                                                        <span class="sdp-seg sdp-series-none" style="flex-grow: 1"></span>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </span>
+                                            <span class="sdp-column-label"><?php echo $e($c['label']); ?></span>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </div>
+                                <p class="sdp-column-group-label"><?php echo Text::_($groupKey); ?></p>
+                            </div>
                         <?php endforeach; ?>
                     </div>
-                    <details class="sdp-chart-figures">
-                        <summary><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SHOW_FIGURES'); ?></summary>
-                        <table class="sdp-table">
-                            <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_STATUS_TITLE'); ?></caption>
-                            <thead><tr>
-                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></th>
-                                <th scope="col" class="sdp-num"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_INCIDENTS'); ?></th>
-                                <th scope="col" class="sdp-num"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SERVICE'); ?></th>
-                                <th scope="col" class="sdp-num"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_TOTAL'); ?></th>
-                            </tr></thead>
-                            <tbody>
-                            <?php foreach ($columns as $bucket => $c) : ?>
-                                <tr>
-                                    <th scope="row"><a href="<?php echo $this->statusUrl($bucket); ?>"><?php echo $e($c['label']); ?></a></th>
-                                    <td class="sdp-num"><?php echo $c['i'] ?? '—'; ?></td>
-                                    <td class="sdp-num"><?php echo $c['s'] ?? '—'; ?></td>
-                                    <td class="sdp-num"><?php echo $c['total'] ?? '—'; ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </details>
+                    <p class="sdp-chart-note sdp-chart-note--foot"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SCALES_NOTE'); ?></p>
+                    <table class="visually-hidden">
+                        <caption><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_STATUS_TITLE'); ?></caption>
+                        <thead><tr>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_INCIDENTS'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SERVICE'); ?></th>
+                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_TOTAL'); ?></th>
+                        </tr></thead>
+                        <tbody>
+                        <?php foreach ($columns as $bucket => $c) : ?>
+                            <tr>
+                                <th scope="row"><a href="<?php echo $this->statusUrl($bucket); ?>"><?php echo $e($c['label']); ?></a></th>
+                                <td><?php echo $num($c['i']); ?></td>
+                                <td><?php echo $num($c['s']); ?></td>
+                                <td><?php echo $num($c['total']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
@@ -191,29 +223,47 @@ $tiles = [
                 <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-age">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_AGE_TITLE'))); ?>
                 <div class="sdp-panel-body">
                     <p class="sdp-chart-note"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_ACTIVE_NOTE'); ?></p>
-                    <?php if ($active === 0) : ?>
+                    <?php if ($ageTotal === 0) : ?>
                         <p class="sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_EMPTY'); ?></p>
                     <?php else : ?>
-                        <ul class="sdp-hbars" aria-hidden="true">
-                            <?php $step = 0; foreach ($ageLabels as $key => $labelKey) : $n = (int) ($r->age[$key] ?? 0); $step++; ?>
-                                <li class="sdp-hbar" data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_TOTAL', Text::_($labelKey), $n)); ?>">
-                                    <span class="sdp-hbar-label"><?php echo Text::_($labelKey); ?></span>
-                                    <span class="sdp-hbar-track"><?php if ($n > 0) : ?><span class="sdp-hbar-fill sdp-seq-<?php echo $step; ?>" style="width: <?php echo $pct($n, $maxAge); ?>%"></span><?php endif; ?></span>
-                                    <span class="sdp-hbar-value"><?php echo $n; ?></span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <details class="sdp-chart-figures">
-                            <summary><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SHOW_FIGURES'); ?></summary>
-                            <table class="sdp-table">
-                                <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_AGE_TITLE'); ?></caption>
-                                <tbody>
-                                <?php foreach ($ageLabels as $key => $labelKey) : ?>
-                                    <tr><th scope="row"><?php echo Text::_($labelKey); ?></th><td class="sdp-num"><?php echo (int) ($r->age[$key] ?? 0); ?></td></tr>
+                        <div class="sdp-donut-wrap">
+                            <svg class="sdp-donut" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+                                <circle class="sdp-donut-track" cx="60" cy="60" r="<?php echo $radius; ?>"></circle>
+                                <?php
+                                $offset = 0.0;
+                                $shown  = count(array_filter($r->age));
+                                $step   = 0;
+
+                                foreach ($ageLabels as $key => $labelKey) :
+                                    $step++;
+                                    $n = (int) ($r->age[$key] ?? 0);
+
+                                    if ($n === 0) {
+                                        continue;
+                                    }
+
+                                    $length = $circ * $n / $ageTotal;
+                                    // 2px surface gap between slices (none when one slice is the whole ring).
+                                    $dash   = $shown > 1 ? max(0.5, $length - 2) : $length;
+                                    ?>
+                                    <circle class="sdp-donut-slice sdp-seq-stroke-<?php echo $step; ?>" cx="60" cy="60" r="<?php echo $radius; ?>"
+                                        stroke-dasharray="<?php echo round($dash, 3) . ' ' . round($circ - $dash, 3); ?>"
+                                        stroke-dashoffset="<?php echo round(-$offset, 3); ?>"><title><?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', Text::_($labelKey), $num($n), round($pct($n, $ageTotal)))); ?></title></circle>
+                                    <?php $offset += $length; endforeach; ?>
+                                <text class="sdp-donut-total" x="60" y="58" text-anchor="middle"><?php echo $num($ageTotal); ?></text>
+                                <text class="sdp-donut-caption" x="60" y="74" text-anchor="middle"><?php echo $e(Text::_('COM_SERVICEDESKPLUS_CHART_DONUT_CAPTION')); ?></text>
+                            </svg>
+                            <ul class="sdp-share-legend">
+                                <?php $step = 0; foreach ($ageLabels as $key => $labelKey) : $step++; $n = (int) ($r->age[$key] ?? 0); ?>
+                                    <li>
+                                        <span class="sdp-swatch sdp-seq-<?php echo $step; ?>" aria-hidden="true"></span>
+                                        <span class="sdp-share-label"><?php echo Text::_($labelKey); ?></span>
+                                        <span class="sdp-share-value"><?php echo $num($n); ?></span>
+                                        <span class="sdp-share-pct"><?php echo round($pct($n, $ageTotal)); ?>%</span>
+                                    </li>
                                 <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </details>
+                            </ul>
+                        </div>
                     <?php endif; ?>
                 </div>
             </section>
@@ -222,29 +272,25 @@ $tiles = [
                 <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-priority">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_PRIORITY_TITLE'))); ?>
                 <div class="sdp-panel-body">
                     <p class="sdp-chart-note"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_ACTIVE_NOTE'); ?></p>
-                    <?php if ($priorities === []) : ?>
+                    <?php if ($priorityTotal === 0) : ?>
                         <p class="sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_EMPTY'); ?></p>
                     <?php else : ?>
-                        <ul class="sdp-hbars" aria-hidden="true">
+                        <div class="sdp-segbar" aria-hidden="true">
                             <?php foreach ($priorities as $pr) : ?>
-                                <li class="sdp-hbar" data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_TOTAL', $pr['label'], $pr['count'])); ?>">
-                                    <span class="sdp-hbar-label"><?php echo $e($pr['label']); ?></span>
-                                    <span class="sdp-hbar-track"><span class="sdp-hbar-fill sdp-series-1" style="width: <?php echo $pct($pr['count'], $maxPriority); ?>%"></span></span>
-                                    <span class="sdp-hbar-value"><?php echo (int) $pr['count']; ?></span>
+                                <span class="sdp-segbar-part sdp-cat-<?php echo $pr['tone']; ?>" style="flex-grow: <?php echo (int) $pr['count']; ?>"
+                                    data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', $pr['label'], $num($pr['count']), round($pct($pr['count'], $priorityTotal)))); ?>"></span>
+                            <?php endforeach; ?>
+                        </div>
+                        <ul class="sdp-share-legend">
+                            <?php foreach ($priorities as $pr) : ?>
+                                <li>
+                                    <span class="sdp-swatch sdp-cat-<?php echo $pr['tone']; ?>" aria-hidden="true"></span>
+                                    <span class="sdp-share-label"><?php echo $e($pr['label']); ?></span>
+                                    <span class="sdp-share-value"><?php echo $num($pr['count']); ?></span>
+                                    <span class="sdp-share-pct"><?php echo round($pct($pr['count'], $priorityTotal)); ?>%</span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
-                        <details class="sdp-chart-figures">
-                            <summary><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SHOW_FIGURES'); ?></summary>
-                            <table class="sdp-table">
-                                <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_PRIORITY_TITLE'); ?></caption>
-                                <tbody>
-                                <?php foreach ($priorities as $pr) : ?>
-                                    <tr><th scope="row"><?php echo $e($pr['label']); ?></th><td class="sdp-num"><?php echo (int) $pr['count']; ?></td></tr>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </details>
                     <?php endif; ?>
                 </div>
             </section>
@@ -271,13 +317,13 @@ $tiles = [
                                 ?>
                                 <div class="sdp-tile sdp-tone-<?php echo $total ? $tone : 'muted'; ?>">
                                     <a class="sdp-tile-main" href="<?php echo $this->statusUrl($bucket); ?>">
-                                        <span class="sdp-tile-value"><?php echo $total ?? '—'; ?></span>
+                                        <span class="sdp-tile-value"><?php echo $total === null ? '—' : number_format($total); ?></span>
                                         <span class="sdp-tile-label"><?php echo Text::_($labelKey); ?></span>
                                     </a>
                                     <?php if ($i !== null && $s !== null) : ?>
                                         <div class="sdp-tile-meta">
-                                            <a href="<?php echo $this->statusUrl($bucket, RequestQuery::TYPE_INCIDENT); ?>"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_DASHBOARD_N_INCIDENT', $i); ?></a>
-                                            <a href="<?php echo $this->statusUrl($bucket, RequestQuery::TYPE_SERVICE); ?>"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_DASHBOARD_N_SERVICE', $s); ?></a>
+                                            <a href="<?php echo $this->statusUrl($bucket, RequestQuery::TYPE_INCIDENT); ?>"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_DASHBOARD_N_INCIDENT', number_format($i)); ?></a>
+                                            <a href="<?php echo $this->statusUrl($bucket, RequestQuery::TYPE_SERVICE); ?>"><?php echo Text::sprintf('COM_SERVICEDESKPLUS_DASHBOARD_N_SERVICE', number_format($s)); ?></a>
                                         </div>
                                     <?php endif; ?>
                                 </div>

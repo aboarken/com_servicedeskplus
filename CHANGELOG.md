@@ -3,6 +3,19 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.22.1] - 2026-11-18
+
+### Fixed
+- **Requests by Status:** the Open bar could not be seen when there were far more closed requests (e.g. 65 open and 26,922 closed: under one pixel). *Active* (Open, On Hold) and *Completed* (Resolved, Closed) are now drawn side by side on their own scales, labelled as such.
+
+### Changed
+- **Open Requests by Age** is now a donut with the total in the middle and a legend with counts and shares.
+- **Open Requests by Priority** is now one bar split by priority, with a legend of counts and shares. Each priority keeps its place (Low, Normal, Medium, High, Urgent, Critical, then other names) and its colour; the colours were checked for colour-blind readers.
+- Large numbers on the Dashboard have thousands separators (26,922).
+
+### Removed
+- *Show figures* under the charts. Screen readers still get the figures of each chart as a table.
+
 ## [1.22.0] - 2026-11-18
 
 ### Added

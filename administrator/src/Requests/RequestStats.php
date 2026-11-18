@@ -112,9 +112,13 @@ final class RequestStats
         };
     }
 
+    /** Usual SDP priority names, in their natural order (lower case). */
+    public const PRIORITY_ORDER = ['low', 'normal', 'medium', 'high', 'urgent', 'critical'];
+
     /**
-     * Most frequent priorities first; past MAX_PRIORITIES they are added up as "other". Requests
-     * without a priority come after the named ones (name "", shown as "No priority").
+     * The six most frequent priorities, shown in their natural order (Low, Normal, Medium, High,
+     * Urgent, Critical, then other names alphabetically), so a priority keeps its place and colour
+     * when counts change; then requests without a priority (name ""), then the rest as "other".
      *
      * @param  array<string, int>  $counts
      *
@@ -122,19 +126,24 @@ final class RequestStats
      */
     private static function topPriorities(array $counts): array
     {
-        // Named priorities by count; "no priority" after them, then "other".
         $none = (int) ($counts[''] ?? 0);
         unset($counts['']);
         arsort($counts);
-        $out   = [];
-        $other = 0;
 
-        foreach ($counts as $name => $count) {
-            if (\count($out) < self::MAX_PRIORITIES) {
-                $out[] = ['name' => (string) $name, 'count' => $count, 'other' => false];
-            } else {
-                $other += $count;
-            }
+        $kept  = \array_slice($counts, 0, self::MAX_PRIORITIES, true);
+        $other = array_sum($counts) - array_sum($kept);
+
+        uksort($kept, static function ($a, $b): int {
+            $ra = array_search(mb_strtolower(trim((string) $a)), self::PRIORITY_ORDER, true);
+            $rb = array_search(mb_strtolower(trim((string) $b)), self::PRIORITY_ORDER, true);
+
+            return [$ra === false ? 99 : $ra, mb_strtolower((string) $a)] <=> [$rb === false ? 99 : $rb, mb_strtolower((string) $b)];
+        });
+
+        $out = [];
+
+        foreach ($kept as $name => $count) {
+            $out[] = ['name' => (string) $name, 'count' => $count, 'other' => false];
         }
 
         if ($none > 0) {

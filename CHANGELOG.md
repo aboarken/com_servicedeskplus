@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.22.2] - 2026-11-18
+
+### Changed
+- **Dashboard → Employee Information:** the user's details are now a panel titled *Employee Information* (title in the blue of the cards), like the other Dashboard panels: Department, Job Title, Employee ID and Name, each label above its value, values in the same blue as the cards. A field that is empty in ServiceDesk Plus is left out instead of showing "—".
+
 ## [1.22.1] - 2026-11-18
 
 ### Fixed

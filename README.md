@@ -193,7 +193,8 @@ com_servicedeskplus/
 │   └── config.xml
 ├── media/
 │   ├── css/
-│   └── js/
+│   ├── js/
+│   └── joomla.asset.json
 ├── site/
 │   ├── language/
 │   ├── layouts/
@@ -210,6 +211,7 @@ com_servicedeskplus/
 ├── CHANGELOG.md
 ├── LICENSE
 ├── README.md
+├── SECURITY.md
 ├── script.php
 └── servicedeskplus.xml
 ```

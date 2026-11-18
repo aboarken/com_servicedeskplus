@@ -44,6 +44,8 @@ return new class () implements ServiceProviderInterface {
                 ];
 
                 private const OBSOLETE_ADMIN = [
+                    // 1.21.0: the cache moved from the session to the database
+                    'src/Cache/StoredUserCache.php',
                     // 1.11.0: views renamed to integrationsettings and usermappings
                     'src/View/Settings',
                     'src/View/Usermaps',
@@ -111,6 +113,13 @@ return new class () implements ServiceProviderInterface {
 
                     if (!\extension_loaded('openssl') || !\in_array('aes-256-gcm', openssl_get_cipher_methods(), true)) {
                         $app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_INSTALL_NO_OPENSSL'), 'error');
+
+                        return false;
+                    }
+
+                    // Every call to ServiceDesk Plus is made with cURL.
+                    if (!\extension_loaded('curl')) {
+                        $app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_INSTALL_NO_CURL'), 'error');
 
                         return false;
                     }

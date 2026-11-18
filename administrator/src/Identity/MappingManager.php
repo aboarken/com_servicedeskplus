@@ -45,7 +45,7 @@ final class MappingManager
      *
      * @throws MappingException|SdpException
      */
-    public function assign(int $joomlaUserId, string $joomlaEmail, string $sdpUserId, int $actorId): array
+    public function assign(int $joomlaUserId, string $joomlaEmail, string $sdpUserId, int $actorId, string $source = UserMapping::SOURCE_ADMIN): array
     {
         if ($joomlaUserId <= 0) {
             throw new MappingException('COM_SERVICEDESKPLUS_MAPPING_ERR_USER');
@@ -74,7 +74,7 @@ final class MappingManager
                 $sdpUserId,
                 EmailNormalizer::normalize($joomlaEmail),
                 UserMapping::STATUS_ACTIVE,
-                UserMapping::SOURCE_ADMIN,
+                $source === UserMapping::SOURCE_AUTO ? UserMapping::SOURCE_AUTO : UserMapping::SOURCE_ADMIN,
                 $now,
                 $now,
                 $actorId
@@ -99,7 +99,7 @@ final class MappingManager
     }
 
     /**
-     * Re-confirm a suspended mapping: keeps the SDP user, accepts the user's current Joomla email.
+     * Approve a mapping waiting for approval, or re-confirm a suspended one: keeps the SDP user, accepts the user's current Joomla email.
      *
      * @return array<string, mixed>
      *
@@ -125,7 +125,10 @@ final class MappingManager
             throw new MappingException('COM_SERVICEDESKPLUS_MAPPING_ERR_CONFIRM_EMAIL');
         }
 
-        return $this->assign($joomlaUserId, $joomlaEmail, $mapping->sdpUserId, $actorId);
+        // The e-mails match, so it stays an e-mail match ("auto"): it is checked against
+        // ServiceDesk Plus again once a day and suspended if the SDP user is gone or its e-mail
+        // changed. A mapping set by hand (New / Edit) is "admin" and is not re-checked.
+        return $this->assign($joomlaUserId, $joomlaEmail, $mapping->sdpUserId, $actorId, UserMapping::SOURCE_AUTO);
     }
 
     public function suspend(int $joomlaUserId, int $actorId): void

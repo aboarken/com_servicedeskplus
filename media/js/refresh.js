@@ -125,7 +125,7 @@
 
         const node = document.importNode(fresh, true);
         root.replaceWith(node);
-        document.dispatchEvent(new CustomEvent('sdp:refreshed', { detail: { root: node } }));
+        document.dispatchEvent(new CustomEvent('sdp:refreshed'));
       })
       .catch(fail)
       .finally(() => root.removeAttribute('aria-busy'));

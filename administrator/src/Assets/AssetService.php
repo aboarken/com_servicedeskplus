@@ -29,7 +29,7 @@ final class AssetService
     /** A user rarely has more; the list is not paginated. */
     public const MAX_ASSETS = 200;
 
-    /** Bump when LoanAsset changes shape, so old session cache entries are ignored. */
+    /** Bump when LoanAsset changes shape, so older cache entries are ignored. */
     private const CACHE_VERSION = 'v4';
 
     /**

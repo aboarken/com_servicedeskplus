@@ -101,8 +101,6 @@ final class SdpClient
         return new ListPage(
             array_values(array_filter($items, 'is_array')),
             self::toBool($meta['has_more_rows'] ?? false),
-            (int) ($meta['start_index'] ?? $listInfo->startIndex),
-            (int) ($meta['row_count'] ?? \count($items)),
             isset($meta['total_count']) && is_numeric($meta['total_count']) ? (int) $meta['total_count'] : null
         );
     }

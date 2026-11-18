@@ -126,6 +126,10 @@ final class DisplayController extends BaseController
             'since' => HTMLHelper::_('date', gmdate('Y-m-d H:i:s', $since), Text::_('DATE_FORMAT_LC2')),
         ]);
 
+        // Without JavaScript nothing would replace the older results: reload the page for current
+        // ones at once (the reloaded page is never served from older results, so this runs once).
+        $document->addCustomTag('<noscript><meta http-equiv="refresh" content="0;url=' . htmlspecialchars($page->toString(['path', 'query']), ENT_QUOTES, 'UTF-8') . '"></noscript>');
+
         Text::script('COM_SERVICEDESKPLUS_REFRESH_UPDATING');
         Text::script('COM_SERVICEDESKPLUS_REFRESH_FAILED');
         Text::script('COM_SERVICEDESKPLUS_REFRESH_READY');

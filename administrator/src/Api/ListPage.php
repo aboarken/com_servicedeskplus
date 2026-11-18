@@ -21,8 +21,6 @@ final class ListPage
     public function __construct(
         public readonly array $items,
         public readonly bool $hasMoreRows,
-        public readonly int $startIndex,
-        public readonly int $rowCount,
         public readonly ?int $totalCount = null
     ) {
     }

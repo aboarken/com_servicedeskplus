@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.23.0] - 2026-11-18
+
+### Security
+- **Every new match by e-mail waits for an administrator.** Joomla lets users change their own e-mail without verifying it, so someone who had never opened the portal could set a colleague's address and be matched to that colleague's ServiceDesk Plus account. Now the ServiceDesk Plus user found by e-mail is stored as **Waiting for approval**, and the user sees *"Your account was found in ServiceDesk Plus and is waiting for an administrator to approve it"* until an administrator confirms it in **User Mappings** (select, **Confirm**; several at once).
+  - *User Mappings* shows how many users wait, with a link to them, and has the status filter *Waiting for approval*.
+  - **Match again** also ends in *Waiting for approval*, so it can no longer skip the check.
+  - While a user waits, no ServiceDesk Plus call is made for them; if their e-mail changes meanwhile, the mapping is suspended.
+  - Users already matched are not affected, and mappings an administrator makes (*New*, *Confirm*) are active at once.
+
 ## [1.22.2] - 2026-11-18
 
 ### Changed

@@ -22,8 +22,11 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Audit\AuditLogInterface;
  *  - Emails are compared after trim + lowercase, and must be equal (not "contains").
  *  - Zero matches means "not matched". Several SDP users with the email means "ambiguous": an
  *    admin chooses.
- *  - A Joomla e-mail that differs from the one stored with any mapping row (active, unmatched or
- *    ambiguous) suspends it: a changed e-mail is never matched automatically.
+ *  - A Joomla e-mail that differs from the one stored with any mapping row (active, pending,
+ *    unmatched or ambiguous) suspends it: a changed e-mail is never matched automatically.
+ *  - A new match by e-mail is stored as "pending": the user sees nothing of that SDP user until an
+ *    administrator confirms it in User Mappings. Mappings made or confirmed by an administrator,
+ *    and those already active, are not held.
  *  - One SDP user can only be mapped to one Joomla user. If the chosen SDP user is already mapped
  *    to another Joomla user, the result is "ambiguous" and an admin must decide.
  *  - If the Joomla email no longer equals the email stored with an active mapping, the mapping is
@@ -81,6 +84,18 @@ final class IdentityResolver
         if ($mapping !== null) {
             if ($mapping->status === UserMapping::STATUS_SUSPENDED) {
                 return Identity::notMatched($userId, UserMapping::STATUS_SUSPENDED);
+            }
+
+            // Found by e-mail, waiting for an administrator: no SDP call until it is confirmed.
+            // Another e-mail since then suspends it, as for every other mapping.
+            if ($mapping->status === UserMapping::STATUS_PENDING) {
+                if ($mapping->email !== $email) {
+                    $this->suspend($mapping, $now, 'joomla_email_changed');
+
+                    return Identity::notMatched($userId, UserMapping::STATUS_SUSPENDED);
+                }
+
+                return Identity::notMatched($userId, UserMapping::STATUS_PENDING);
             }
 
             if ($mapping->isActive()) {
@@ -153,10 +168,13 @@ final class IdentityResolver
             return $this->storeNotMatched($userId, $email, UserMapping::STATUS_AMBIGUOUS, $now, 'sdp_user_already_mapped');
         }
 
-        $this->repository->save(new UserMapping($userId, $sdpUserId, $email, UserMapping::STATUS_ACTIVE, UserMapping::SOURCE_AUTO, $now, $now));
-        $this->audit->record($userId, 'identity.matched', AuditLogInterface::RESULT_OK, null, null, $detail);
+        // Joomla lets users change their own e-mail without verifying it, so an address alone does
+        // not prove who someone is: the SDP user found is kept, and an administrator confirms it
+        // (User Mappings → Confirm) before the user sees anything of that SDP user.
+        $this->repository->save(new UserMapping($userId, $sdpUserId, $email, UserMapping::STATUS_PENDING, UserMapping::SOURCE_AUTO, null, $now));
+        $this->audit->record($userId, 'identity.pending', AuditLogInterface::RESULT_OK, null, null, $detail);
 
-        return Identity::matched($userId, $sdpUserId);
+        return Identity::notMatched($userId, UserMapping::STATUS_PENDING);
     }
 
     private function reverify(UserMapping $mapping, string $email, \DateTimeImmutable $now): Identity

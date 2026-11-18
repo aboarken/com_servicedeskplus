@@ -18,6 +18,7 @@ $this->getDocument()->getWebAssetManager()->useScript('multiselect');
 
 $badge = [
     'active'    => 'bg-success',
+    'pending'   => 'bg-info text-dark',
     'suspended' => 'bg-danger',
     'unmatched' => 'bg-secondary',
     'ambiguous' => 'bg-warning text-dark',
@@ -25,6 +26,14 @@ $badge = [
 ?>
 <form action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=usermappings'); ?>" method="post" name="adminForm" id="adminForm">
     <?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
+
+    <?php if ($this->pending > 0) : ?>
+        <div class="alert alert-info"><?php echo Text::plural(
+            'COM_SERVICEDESKPLUS_MAPPINGS_PENDING_NOTICE',
+            $this->pending,
+            Route::_('index.php?option=com_servicedeskplus&view=usermappings&filter[status]=pending')
+        ); ?></div>
+    <?php endif; ?>
 
     <?php if ($this->items === []) : ?>
         <div class="alert alert-info"><?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?></div>

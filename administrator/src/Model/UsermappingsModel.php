@@ -96,4 +96,18 @@ final class UsermappingsModel extends ListModel
 
         return $query;
     }
+
+    /** Mappings found by e-mail that wait for an administrator to confirm them. */
+    public function countPending(): int
+    {
+        $db     = $this->getDatabase();
+        $status = UserMapping::STATUS_PENDING;
+        $query  = $db->createQuery()
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__sdp_user_map'))
+            ->where($db->quoteName('status') . ' = :status')
+            ->bind(':status', $status);
+
+        return (int) $db->setQuery($query)->loadResult();
+    }
 }

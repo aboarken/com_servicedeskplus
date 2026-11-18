@@ -143,7 +143,7 @@ Pages read ServiceDesk Plus when their cached results have expired (see *Cache*)
 
 The component uses email addresses to associate Joomla users with their corresponding ServiceDesk Plus requesters.
 
-For successful integration, the Joomla user's email address must match the email address registered in ServiceDesk Plus.
+For successful integration, the Joomla user's email address must match the email address registered in ServiceDesk Plus. The first time a user opens the portal, the ServiceDesk Plus user with that address is found and stored as **Waiting for approval**; *User Mappings* shows how many users wait, with a link to them. Check each e-mail, then select the users and click **Confirm**. Users matched before 1.23.0 keep their mapping.
 
 ### API Connectivity
 
@@ -170,7 +170,7 @@ Administrators can manage access permissions for the component and its available
 API credentials should be stored securely and should never be exposed to frontend users or committed to the source repository.
 
 - The API key is stored encrypted and never shown again. It must be entered again whenever the ServiceDesk Plus address, *Connect via*, the certificate pin or CA file changes, or the certificate check is turned off, so the stored key cannot be sent to another server.
-- Users are matched to ServiceDesk Plus by their Joomla e-mail. A user whose Joomla e-mail changes is never matched again automatically: the mapping is suspended until an administrator checks it under *User Mappings* (before *Match again*, make sure the Joomla e-mail really belongs to that person). If several ServiceDesk Plus users share an e-mail, an administrator chooses.
+- Users are found in ServiceDesk Plus by their Joomla e-mail, but **every new match waits for an administrator**: Joomla lets users change their own e-mail without verifying it, so an address alone does not prove who someone is. The user sees "…waiting for an administrator to approve it" until an administrator confirms the mapping under *User Mappings* (filter *Waiting for approval*, select, **Confirm**; several at once). *Match again* also ends in *Waiting for approval*. A user whose Joomla e-mail changes is suspended until an administrator checks it. If several ServiceDesk Plus users share an e-mail, an administrator chooses. Mappings an administrator makes with *New* are active at once.
 - Matching trusts the e-mail of each Joomla account. If your site allows self-registration, keep *Users → Options → New User Account Activation* on **Self** or **Administrator**, so nobody can register with another person's address.
 - Every page and action checks login, the feature's permission and the user's own ServiceDesk Plus records; actions need a POST with Joomla's form token.
 

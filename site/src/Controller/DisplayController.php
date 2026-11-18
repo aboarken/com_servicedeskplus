@@ -17,6 +17,7 @@ use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Exception\RouteNotFoundException;
 use Joomla\CMS\Uri\Uri;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Identity\UserMapping;
 
 /**
  * Every site page passes through here:
@@ -83,7 +84,7 @@ final class DisplayController extends BaseController
 
         if (!$identity->isMatched()) {
             $this->input->set('view', 'unmatched');
-            $this->input->set('layout', 'default');
+            $this->input->set('layout', $identity->status === UserMapping::STATUS_PENDING ? 'pending' : 'default');
         }
 
         // Never cached: every page is per user.

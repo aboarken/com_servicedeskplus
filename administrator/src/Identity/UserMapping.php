@@ -19,8 +19,10 @@ final class UserMapping
     public const STATUS_UNMATCHED = 'unmatched';
     public const STATUS_AMBIGUOUS = 'ambiguous';
     public const STATUS_SUSPENDED = 'suspended';
+    /** Found by e-mail, waiting for an administrator to confirm it (User Mappings → Confirm). */
+    public const STATUS_PENDING   = 'pending';
 
-    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_UNMATCHED, self::STATUS_AMBIGUOUS, self::STATUS_SUSPENDED];
+    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_PENDING, self::STATUS_UNMATCHED, self::STATUS_AMBIGUOUS, self::STATUS_SUSPENDED];
 
     public const SOURCE_AUTO  = 'auto';
     public const SOURCE_ADMIN = 'admin';

@@ -40,6 +40,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SecretProvider;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Security\SubmissionGuard;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Service\SdpClientFactory;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Settings\SettingsRepository;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Users\UserProfileService;
 
 return new class () implements ServiceProviderInterface {
     private const TOKENS_SESSION_KEY = 'com_servicedeskplus.submissions';
@@ -145,6 +146,15 @@ return new class () implements ServiceProviderInterface {
         $container->share(
             ConversationReader::class,
             static fn (Container $c): ConversationReader => new ConversationReader(
+                $serviceClient($c),
+                $c->get(UserCacheInterface::class),
+                $c->get(JoomlaLogger::class)
+            )
+        );
+
+        $container->share(
+            UserProfileService::class,
+            static fn (Container $c): UserProfileService => new UserProfileService(
                 $serviceClient($c),
                 $c->get(UserCacheInterface::class),
                 $c->get(JoomlaLogger::class)

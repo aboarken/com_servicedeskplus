@@ -12,10 +12,10 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\Model;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\BaseModel;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\Announcement;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\PendingApproval;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\LoanAsset;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestStats;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Users\UserProfile;
 
 /**
  * Dashboard figures, each from the service behind its own page (so each follows that page's
@@ -80,15 +80,11 @@ final class DashboardModel extends BaseModel
     }
 
     /**
-     * Newest first.
-     *
-     * @return list<Announcement>
-     *
-     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
+     * The user's own name, employee ID, department and job title; null when not available.
      */
-    public function getAnnouncements(): array
+    public function getProfile(): ?UserProfile
     {
-        return $this->sdp()->getAnnouncementService()->listForUser($this->identity());
+        return $this->sdp()->getUserProfileService()->forUser($this->identity());
     }
 
     public function can(string $action): bool

@@ -14,7 +14,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Support\SdpFields;
 
 /**
  * Counts of one user's requests for the Dashboard: open and on-hold service requests and
- * incidents with the newest of those requests (read row by row), and resolved and closed requests
+ * incidents, by age and by priority (read row by row), and resolved and closed requests
  * (counted by ServiceDesk Plus, without reading them, so the Dashboard stays fast for users with a
  * long history).
  */
@@ -26,17 +26,19 @@ final class RequestStats
     /**
      * @param  array<string, int>      $service    bucket => count, plus "total"
      * @param  array<string, int>      $incident   bucket => count, plus "total"
-     * @param  list<RequestSummary>    $recent     Newest open / on-hold requests
      * @param  bool                    $truncated  More requests exist than were counted
      * @param  array<string, array{incident: ?int, service: ?int, total: ?int}>  $counted
      *         resolved / closed => counts by SDP; null where SDP gave no count
+     * @param  array<string, int>      $age        AGE_BUCKETS => open and on-hold requests
+     * @param  list<array{name: string, count: int, other: bool}>  $priority  most frequent first
      */
     public function __construct(
         public readonly array $service,
         public readonly array $incident,
-        public readonly array $recent,
         public readonly bool $truncated,
-        public readonly array $counted = []
+        public readonly array $counted = [],
+        public readonly array $age = [],
+        public readonly array $priority = []
     ) {
     }
 
@@ -47,19 +49,24 @@ final class RequestStats
      */
     public function withCounted(array $counted): self
     {
-        return new self($this->service, $this->incident, $this->recent, $this->truncated, $counted);
+        return new self($this->service, $this->incident, $this->truncated, $counted, $this->age, $this->priority);
     }
 
     /**
+     * Open and on-hold requests counted by bucket and type, by age (from created_time) and by
+     * priority, for the Dashboard figures and charts.
+     *
      * @param  list<array<string, mixed>>  $requests  SDP request list rows (any order); rows in
      *                                               other buckets are ignored
      */
-    public static function fromSdp(array $requests, bool $truncated, int $recentCount = 5): self
+    public static function fromSdp(array $requests, bool $truncated, ?int $now = null): self
     {
+        $now      ??= time();
         $empty    = self::empty();
         $service  = $empty;
         $incident = $empty;
-        $active   = [];
+        $age      = array_fill_keys(self::AGE_BUCKETS, 0);
+        $priority = [];
 
         foreach ($requests as $r) {
             $bucket = self::bucket(SdpFields::name($r, 'status'));
@@ -76,13 +83,69 @@ final class RequestStats
                 $incident['total']++;
             }
 
-            $active[] = RequestSummary::fromSdp($r);
+            $created = SdpFields::timestamp($r, 'created_time');
+
+            if ($created !== null) {
+                $age[self::ageBucket($now - $created)]++;
+            }
+
+            $name            = mb_substr(SdpFields::name($r, 'priority'), 0, 60);
+            $priority[$name] = ($priority[$name] ?? 0) + 1;
         }
 
-        // Newest first.
-        usort($active, static fn (RequestSummary $a, RequestSummary $b): int => ($b->createdAt ?? 0) <=> ($a->createdAt ?? 0));
+        return new self($service, $incident, $truncated, [], $age, self::topPriorities($priority));
+    }
 
-        return new self($service, $incident, \array_slice($active, 0, $recentCount), $truncated);
+    /** Age buckets of open requests, youngest first. */
+    public const AGE_BUCKETS = ['week', 'month', 'quarter', 'older'];
+
+    /** Most priorities shown; the rest are added up under "other". */
+    private const MAX_PRIORITIES = 6;
+
+    public static function ageBucket(int $seconds): string
+    {
+        return match (true) {
+            $seconds < 7 * 86400  => 'week',
+            $seconds < 30 * 86400 => 'month',
+            $seconds < 90 * 86400 => 'quarter',
+            default               => 'older',
+        };
+    }
+
+    /**
+     * Most frequent priorities first; past MAX_PRIORITIES they are added up as "other". Requests
+     * without a priority come after the named ones (name "", shown as "No priority").
+     *
+     * @param  array<string, int>  $counts
+     *
+     * @return list<array{name: string, count: int, other: bool}>
+     */
+    private static function topPriorities(array $counts): array
+    {
+        // Named priorities by count; "no priority" after them, then "other".
+        $none = (int) ($counts[''] ?? 0);
+        unset($counts['']);
+        arsort($counts);
+        $out   = [];
+        $other = 0;
+
+        foreach ($counts as $name => $count) {
+            if (\count($out) < self::MAX_PRIORITIES) {
+                $out[] = ['name' => (string) $name, 'count' => $count, 'other' => false];
+            } else {
+                $other += $count;
+            }
+        }
+
+        if ($none > 0) {
+            $out[] = ['name' => '', 'count' => $none, 'other' => false];
+        }
+
+        if ($other > 0) {
+            $out[] = ['name' => '', 'count' => $other, 'other' => true];
+        }
+
+        return $out;
     }
 
     public static function bucket(string $status): string
@@ -139,9 +202,10 @@ final class RequestStats
         return [
             'service'   => $this->service,
             'incident'  => $this->incident,
-            'recent'    => array_map(static fn (RequestSummary $s) => $s->toArray(), $this->recent),
             'truncated' => $this->truncated,
             'counted'   => $this->counted,
+            'age'       => $this->age,
+            'priority'  => $this->priority,
         ];
     }
 
@@ -151,7 +215,6 @@ final class RequestStats
         return new self(
             array_map('intval', (array) ($a['service'] ?? [])) + self::empty(),
             array_map('intval', (array) ($a['incident'] ?? [])) + self::empty(),
-            array_map(static fn (array $s) => RequestSummary::fromArray($s), (array) ($a['recent'] ?? [])),
             (bool) ($a['truncated'] ?? false),
             array_map(
                 static fn ($c): array => [
@@ -160,7 +223,12 @@ final class RequestStats
                     'total'    => isset($c['total']) ? (int) $c['total'] : null,
                 ],
                 array_filter((array) ($a['counted'] ?? []), 'is_array')
-            )
+            ),
+            array_map('intval', (array) ($a['age'] ?? [])) + array_fill_keys(self::AGE_BUCKETS, 0),
+            array_values(array_map(
+                static fn (array $p): array => ['name' => (string) ($p['name'] ?? ''), 'count' => (int) ($p['count'] ?? 0), 'other' => (bool) ($p['other'] ?? false)],
+                array_filter((array) ($a['priority'] ?? []), 'is_array')
+            ))
         );
     }
 }

@@ -10,18 +10,20 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\View\Dashboard;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
-use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\Announcement;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals\ApprovalModule;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestStats;
+use SdpPortal\Component\ServiceDeskPlus\Administrator\Users\UserProfile;
 use SdpPortal\Component\ServiceDeskPlus\Site\Model\DashboardModel;
 use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 /**
- * Dashboard: summary cards, the latest announcements and recent open / on-hold requests, then
+ * Dashboard: the user's details, summary cards, charts of their requests (by status, age and
+ * priority), then
  * three columns side by side: open and on-hold requests by type, approvals by type and decisions,
  * and loans. Each part follows the permission of its own page and fails on its own.
  */
@@ -63,14 +65,11 @@ final class HtmlView extends BaseHtmlView
 
     public string $loansError = '';
 
-    public bool $showAnnouncements = false;
+    /** The user's own ServiceDesk Plus record (department, job title, employee ID, name). */
+    public ?UserProfile $profile = null;
 
-    /** @var list<Announcement> Newest announcements */
-    public array $announcements = [];
-
-    public int $announcementsTotal = 0;
-
-    public string $announcementsError = '';
+    /** Joomla name of the user, shown when ServiceDesk Plus has no name. */
+    public string $userName = '';
 
     public function display($tpl = null): void
     {
@@ -81,7 +80,6 @@ final class HtmlView extends BaseHtmlView
         $this->canCreate         = $model->can('sdp.request.create');
         $this->showApprovals     = $model->can('sdp.approval.view');
         $this->showLoans         = $model->can('sdp.asset.view');
-        $this->showAnnouncements = $model->can('sdp.announcement.view');
 
         // Each part fails on its own: one unavailable list does not hide the others.
         if ($this->showRequests) {
@@ -126,15 +124,9 @@ final class HtmlView extends BaseHtmlView
             }
         }
 
-        if ($this->showAnnouncements) {
-            try {
-                $all                      = $model->getAnnouncements();
-                $this->announcementsTotal = \count($all);
-                $this->announcements      = \array_slice($all, 0, 5);
-            } catch (SdpException $e) {
-                $this->announcementsError = Text::_($e->getLanguageKey());
-            }
-        }
+        // Header: never blocks the page; shown when ServiceDesk Plus gives the record.
+        $this->profile  = $model->getProfile();
+        $this->userName = (string) Factory::getApplication()->getIdentity()->name;
 
         $document = $this->getDocument();
         $this->prepareMenuPage('dashboard', 'COM_SERVICEDESKPLUS_DASHBOARD_TITLE');

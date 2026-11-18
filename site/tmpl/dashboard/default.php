@@ -61,26 +61,31 @@ $tiles = [
         <h1 class="h2 mb-3"><?php echo $e($this->pageHeading); ?></h1>
     <?php endif; ?>
 
-    <?php // The user's own ServiceDesk Plus record: department, job title, employee ID, name ?>
+    <?php // The user's own ServiceDesk Plus record, as a panel: a title, then each label above its value. Empty fields are left out. ?>
     <?php if ($this->profile !== null) :
         $p      = $this->profile;
-        $fields = [
+        $fields = array_filter([
             'COM_SERVICEDESKPLUS_PROFILE_DEPARTMENT'  => $p->department,
             'COM_SERVICEDESKPLUS_PROFILE_JOB_TITLE'   => $p->jobTitle,
             'COM_SERVICEDESKPLUS_PROFILE_EMPLOYEE_ID' => $p->employeeId,
             'COM_SERVICEDESKPLUS_PROFILE_NAME'        => $p->name !== '' ? $p->name : $this->userName,
-        ];
+        ], static fn (string $value): bool => trim($value) !== '');
         ?>
-        <section class="sdp-profile" aria-label="<?php echo Text::_('COM_SERVICEDESKPLUS_PROFILE_TITLE'); ?>">
-            <dl class="sdp-profile-list">
-                <?php foreach ($fields as $labelKey => $value) : ?>
-                    <div class="sdp-profile-item">
-                        <dt><?php echo Text::_($labelKey); ?></dt>
-                        <dd><?php echo $value !== '' ? $e($value) : '—'; ?></dd>
-                    </div>
-                <?php endforeach; ?>
-            </dl>
-        </section>
+        <?php if ($fields !== []) : ?>
+            <section class="sdp-panel sdp-profile" aria-labelledby="sdp-profile-title">
+                <div class="sdp-panel-head">
+                    <h2 class="sdp-panel-title" id="sdp-profile-title"><?php echo Text::_('COM_SERVICEDESKPLUS_PROFILE_TITLE'); ?></h2>
+                </div>
+                <dl class="sdp-profile-list">
+                    <?php foreach ($fields as $labelKey => $value) : ?>
+                        <div class="sdp-profile-item">
+                            <dt><?php echo Text::_($labelKey); ?></dt>
+                            <dd><?php echo $e($value); ?></dd>
+                        </div>
+                    <?php endforeach; ?>
+                </dl>
+            </section>
+        <?php endif; ?>
     <?php endif; ?>
 
     <?php // Summary cards ?>

@@ -732,24 +732,25 @@
   --sdp-text: #111827;
 }
 
+/* Employee Information: a panel with each label above its value, values in the portal's blue */
 .com-servicedeskplus .sdp-profile {
   margin: 0 0 1.25rem;
-  padding: 1rem 1.25rem;
-  background: var(--sdp-card-bg);
-  border: 1px solid var(--sdp-card-border);
-  border-radius: 0.75rem;
-  box-shadow: var(--sdp-card-shadow);
 }
 
 .com-servicedeskplus .sdp-profile-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 0.75rem 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem 1.5rem;
   margin: 0;
+  padding: 1.125rem;
+}
+
+.com-servicedeskplus .sdp-profile-item {
+  min-width: 0;
 }
 
 .com-servicedeskplus .sdp-profile-item dt {
-  margin: 0 0 0.125rem;
+  margin: 0 0 0.25rem;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--sdp-text-muted);
@@ -759,9 +760,10 @@
 
 .com-servicedeskplus .sdp-profile-item dd {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.0625rem;
   font-weight: 600;
-  color: var(--sdp-text);
+  line-height: 1.35;
+  color: var(--sdp-primary);
   overflow-wrap: anywhere;
 }
 

@@ -1,0 +1,1 @@
+-- No schema changes in 1.22.2.

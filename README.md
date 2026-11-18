@@ -15,7 +15,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 ## Features
 
 ### Dashboard
-- **Your details:** department, job title, employee ID and name, from the user's own ServiceDesk Plus record (the Joomla name when ServiceDesk Plus has none).
+- **Employee Information:** a panel with the user's department, job title, employee ID and name (each label above its value), from their own ServiceDesk Plus record; empty fields are left out, and the Joomla name is used when ServiceDesk Plus has none.
 - **Summary cards:** open requests, on-hold requests, waiting for my approval, loans to return within 30 days.
 - **Charts** of the user's requests, made from the requests already read for the figures (no extra ServiceDesk Plus calls), each with a legend or labels and a tooltip on hover (screen readers get the figures as a table):
   - *Requests by Status:* stacked bars of incidents and service requests; *Active* (Open, On Hold) and *Completed* (Resolved, Closed) on separate scales, so a few open requests stay visible next to thousands of closed ones; each bar opens My Requests with that status.

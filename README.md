@@ -17,10 +17,10 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 ### Dashboard
 - **Your details:** department, job title, employee ID and name, from the user's own ServiceDesk Plus record (the Joomla name when ServiceDesk Plus has none).
 - **Summary cards:** open requests, on-hold requests, waiting for my approval, loans to return within 30 days.
-- **Charts** of the user's requests, made from the requests already read for the figures (no extra ServiceDesk Plus calls), each with a legend or labels, a tooltip on hover and a *Show figures* table:
-  - *Requests by Status:* Open, On Hold, Resolved and Closed, each split into incidents and service requests; each bar opens My Requests with that status.
-  - *Open Requests by Age:* open and on-hold requests created under 1 week, 1–4 weeks, 1–3 months and over 3 months ago.
-  - *Open Requests by Priority:* open and on-hold requests by priority, most frequent first.
+- **Charts** of the user's requests, made from the requests already read for the figures (no extra ServiceDesk Plus calls), each with a legend or labels and a tooltip on hover (screen readers get the figures as a table):
+  - *Requests by Status:* stacked bars of incidents and service requests; *Active* (Open, On Hold) and *Completed* (Resolved, Closed) on separate scales, so a few open requests stay visible next to thousands of closed ones; each bar opens My Requests with that status.
+  - *Open Requests by Age:* a donut of open and on-hold requests created under 1 week, 1–4 weeks, 1–3 months and over 3 months ago, with the total in the middle.
+  - *Open Requests by Priority:* one bar split by priority, with counts and shares; a priority always keeps its place (Low, Normal, Medium, High, Urgent, Critical, others alphabetically) and its colour.
 - **My Requests block:** Open, On Hold, Resolved and Closed tiles, each with its incident and service request count. Resolved and closed requests are counted by ServiceDesk Plus without reading them.
 - **My Requests, My Approvals, My Loans** side by side in three columns (stacked on small screens):
   - *My Requests:* open and on-hold service requests and incidents with totals. Only open and on-hold requests are read from ServiceDesk Plus (up to 500 of each), so the Dashboard stays fast for users with many closed requests.

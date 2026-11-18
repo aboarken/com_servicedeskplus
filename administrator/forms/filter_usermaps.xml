@@ -18,6 +18,7 @@
         >
             <option value="">COM_SERVICEDESKPLUS_MAPPINGS_SELECT_STATUS</option>
             <option value="active">COM_SERVICEDESKPLUS_STATUS_ACTIVE</option>
+            <option value="pending">COM_SERVICEDESKPLUS_STATUS_PENDING</option>
             <option value="suspended">COM_SERVICEDESKPLUS_STATUS_SUSPENDED</option>
             <option value="unmatched">COM_SERVICEDESKPLUS_STATUS_UNMATCHED</option>
             <option value="ambiguous">COM_SERVICEDESKPLUS_STATUS_AMBIGUOUS</option>

@@ -1,0 +1,1 @@
+-- No schema changes in 1.23.0 (the new mapping status "pending" fits the existing status column).

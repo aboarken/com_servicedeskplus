@@ -732,7 +732,8 @@
   --sdp-text: #111827;
 }
 
-/* Employee Information: a panel with each label above its value, values in the portal's blue */
+/* Employee Information: a panel with each label above its value, values in a clear blue
+   (#1d64c4: same family as the chart blue, 5.7:1 contrast on white) */
 .com-servicedeskplus .sdp-profile {
   margin: 0 0 1.25rem;
 }
@@ -763,7 +764,7 @@
   font-size: 1.0625rem;
   font-weight: 600;
   line-height: 1.35;
-  color: var(--sdp-primary);
+  color: #1d64c4;
   overflow-wrap: anywhere;
 }
 

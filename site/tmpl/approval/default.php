@@ -138,8 +138,16 @@ $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Tex
                                     . ($item->module !== ApprovalModule::REQUEST ? '&module=' . rawurlencode($item->module) : '')
                                     . '&file=' . rawurlencode($file['id']));
                                 ?>
+                                <?php $kind = \SdpPortal\Component\ServiceDeskPlus\Site\Controller\ApprovalController::previewKind($file['name']); ?>
                                 <li>
-                                    <a href="<?php echo $href; ?>" download rel="nofollow">&#128206; <?php echo $this->escape($file['name']); ?></a>
+                                    <a href="<?php echo $href; ?>" download rel="nofollow"
+                                        <?php if ($kind !== '') : ?>
+                                            data-sdp-preview="<?php echo $kind; ?>"
+                                            data-sdp-preview-name="<?php echo $this->escape($file['name']); ?>"
+                                            data-sdp-preview-open="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_PREVIEW_OPEN')); ?>"
+                                            data-sdp-preview-download="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_PREVIEW_DOWNLOAD')); ?>"
+                                            data-sdp-preview-close="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_PREVIEW_CLOSE')); ?>"
+                                        <?php endif; ?>>&#128206; <?php echo $this->escape($file['name']); ?></a>
                                     <?php if ($file['size'] > 0) : ?>
                                         <span class="sdp-muted">(<?php echo HTMLHelper::_('number.bytes', $file['size'], 'auto', 1); ?>)</span>
                                     <?php endif; ?>

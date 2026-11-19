@@ -1181,3 +1181,89 @@
 /* Long texts under their labels, one below the other (remarks and terms of a purchase order) */
 .com-servicedeskplus .sdp-fields--stacked { grid-template-columns: minmax(0, 1fr); }
 .com-servicedeskplus .sdp-fields--stacked dd { font-weight: 400; }
+
+/* Attachment popup (images and PDF): media/js/preview.js. The dialog is added to <body>. */
+dialog.sdp-preview {
+  width: min(960px, 96vw);
+  height: min(86vh, 900px);
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 0;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 30%);
+}
+
+dialog.sdp-preview[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.sdp-preview::backdrop {
+  background: rgb(17 24 39 / 55%);
+}
+
+dialog.sdp-preview .sdp-preview-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+dialog.sdp-preview .sdp-preview-title {
+  min-width: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+dialog.sdp-preview .sdp-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+dialog.sdp-preview .sdp-back {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.4rem 0.875rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #17426f;
+  text-decoration: none;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+dialog.sdp-preview .sdp-back:hover,
+dialog.sdp-preview .sdp-back:focus-visible {
+  background: #f3f4f6;
+}
+
+dialog.sdp-preview .sdp-preview-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: auto;
+  background: #f3f4f6;
+}
+
+dialog.sdp-preview .sdp-preview-body img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+dialog.sdp-preview .sdp-preview-body iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}

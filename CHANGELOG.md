@@ -3,7 +3,10 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
-## [1.28.2] - 2026-11-19
+## [1.29.0] - 2026-11-19
+
+### Added
+- **Attachments open in a popup:** on the approval page, images (PNG, JPG, GIF, WebP) and PDF files open in a popup over the page, with *Open in new tab*, *Download* and *Close*. Other files are downloaded as before. A file is only shown in the browser when its type is one of these and its content really is of that type; everything else (HTML, SVG, office files, ...) is always sent as a download. The approver check is the same as for downloads.
 
 ### Changed
 - **Changes and releases are approved like purchase orders:** after the decision is recorded under the API technician, no approval entry is removed (and none after a failed attempt), so ServiceDesk Plus cannot restart the approval. Only requests still have the approver's own pending entry removed, and only while the level is still waiting.

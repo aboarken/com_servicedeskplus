@@ -6,6 +6,7 @@ Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic
 ## [1.24.1] - 2026-11-19
 
 ### Fixed
+- **My Approvals opened on *Requests* instead of *All types*.** An empty type was read as "request"; it now means all types.
 - **Approval attachments did not show.** The files are now taken from the request, change or release itself, as ServiceDesk Plus sends them with the record; the separate attachments list is only read when the record has none listed. The *Attachments* section is always shown (except for purchase orders), with "No attachments." when there are none, or a note when ServiceDesk Plus could not be read.
 
 ## [1.24.0] - 2026-11-19

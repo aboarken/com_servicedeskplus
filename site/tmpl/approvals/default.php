@@ -42,6 +42,7 @@ $resultLabel = [
 $isPending = $this->show === 'pending';
 ?>
 <div class="com-servicedeskplus sdp-approvals" data-sdp-root="approvals">
+    <?php echo (new \Joomla\CMS\Layout\FileLayout('messages', null, ['component' => 'com_servicedeskplus', 'client' => 0]))->render(); ?>
     <?php if ($this->showPageHeading) : ?>
         <div class="sdp-head">
             <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>

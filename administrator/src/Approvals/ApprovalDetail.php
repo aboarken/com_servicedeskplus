@@ -25,7 +25,9 @@ final class ApprovalDetail
         public readonly bool $pending,
         public readonly string $module = ApprovalModule::REQUEST,
         /** @var list<array{id: string, name: string, size: int}>|null  null = could not be read */
-        public readonly ?array $attachments = []
+        public readonly ?array $attachments = [],
+        /** Vendor, items and amounts of a purchase order; null for the other modules */
+        public readonly ?PurchaseOrderInfo $purchaseOrder = null
     ) {
     }
 }

@@ -124,7 +124,7 @@ final class ApprovalModule
             self::REQUEST        => ['title' => ['subject'], 'description' => ['description'], 'requester' => ['requester']],
             self::CHANGE         => ['title' => ['title', 'subject'], 'description' => ['description'], 'requester' => ['change_requester', 'requester', 'change_owner']],
             self::RELEASE        => ['title' => ['title', 'subject'], 'description' => ['description'], 'requester' => ['release_requester', 'requested_by', 'requester']],
-            self::PURCHASE_ORDER => ['title' => ['name', 'title', 'custom_po_id'], 'description' => ['comments', 'description'], 'requester' => ['requested_by', 'owner']],
+            self::PURCHASE_ORDER => ['title' => ['name', 'title', 'custom_po_id'], 'description' => ['remarks', 'description'], 'requester' => ['requested_by', 'owner']],
         };
     }
 

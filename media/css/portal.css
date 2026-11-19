@@ -58,18 +58,28 @@
   color: var(--sdp-text-muted);
 }
 
+/* "Back to ..." link: a button like the page numbers of the lists */
 .com-servicedeskplus .sdp-back {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
   margin: 0 0 1rem;
+  padding: 0.4rem 0.875rem;
   font-size: 0.875rem;
   font-weight: 500;
+  color: var(--sdp-primary);
   text-decoration: none;
+  background: var(--sdp-card-bg);
+  border: 1px solid var(--sdp-card-border);
+  border-radius: 0.5rem;
+  box-shadow: var(--sdp-card-shadow);
 }
 
-.com-servicedeskplus .sdp-back:hover {
-  text-decoration: underline;
+.com-servicedeskplus .sdp-back:hover,
+.com-servicedeskplus .sdp-back:focus-visible {
+  color: var(--sdp-primary);
+  text-decoration: none;
+  background: var(--sdp-card-hover);
 }
 
 /* Buttons */
@@ -1047,7 +1057,27 @@
   background: #fffbeb;
 }
 
-.com-servicedeskplus[aria-busy="true"] .sdp-refresh-note::before {
+/* Result messages (e.g. of an approval decision), above the page title */
+.com-servicedeskplus .sdp-message {
+  font-weight: 500;
+}
+
+.com-servicedeskplus .sdp-message--success {
+  color: #166534;
+  background: #ecfdf3;
+}
+
+.com-servicedeskplus .sdp-message--warning {
+  color: #92400e;
+  background: #fffbeb;
+}
+
+.com-servicedeskplus .sdp-message--error {
+  color: #991b1b;
+  background: #fef2f2;
+}
+
+.com-servicedeskplus[aria-busy="true"] .sdp-refresh-note:not(.sdp-message)::before {
   display: inline-block;
   width: 0.75rem;
   height: 0.75rem;
@@ -1116,3 +1146,10 @@
 .com-servicedeskplus .sdp-muted { color: var(--sdp-text-muted); }
 .com-servicedeskplus .sdp-attachments { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
 .com-servicedeskplus .sdp-attachments a { color: var(--sdp-primary); font-weight: 600; overflow-wrap: anywhere; }
+
+/* Purchase order items on the approval page */
+.com-servicedeskplus .sdp-table th.sdp-num,
+.com-servicedeskplus .sdp-table td.sdp-num { text-align: right; white-space: nowrap; }
+.com-servicedeskplus .sdp-po-items tfoot th { font-weight: 500; color: var(--sdp-text-muted); }
+.com-servicedeskplus .sdp-po-items .sdp-po-total th,
+.com-servicedeskplus .sdp-po-items .sdp-po-total td { font-weight: 700; color: var(--sdp-text); }

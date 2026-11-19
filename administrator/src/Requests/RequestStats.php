@@ -165,8 +165,8 @@ final class RequestStats
         return $out;
     }
 
-    /** Most categories shown by name; the rest are added up. */
-    public const MAX_CATEGORIES = 5;
+    /** Categories shown by name (all of them in practice); any beyond are added up. */
+    public const MAX_CATEGORIES = 40;
 
     /**
      * @param  array<string, int>  $counts  category name ('' = none) => requests

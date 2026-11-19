@@ -3,6 +3,12 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.26.1] - 2026-11-19
+
+### Fixed
+- **Purchase order approvals stopped with "ServiceDesk Plus sent an answer that could not be read"** after the API technician was added as approver. ServiceDesk Plus answers that step for purchase orders in another shape; the portal now finds the new entry by reading the approval level again, and records the decision.
+- **A retry reuses the API technician's entry left "To Be Sent"** by an earlier attempt, instead of adding another one.
+
 ## [1.26.0] - 2026-11-19
 
 ### Changed

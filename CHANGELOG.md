@@ -3,6 +3,12 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.29.1] - 2026-11-19
+
+### Fixed
+- **Rejecting a purchase order from the portal showed an error although it was recorded.** ServiceDesk Plus shows the rejected entry as *Denied*; the portal expected *Rejected*. Both are accepted now, and the user gets the confirmation.
+- **A decided purchase order stayed in My Approvals.** The approver's own entry is no longer removed there and still reads *pending*; the list (and the approval page) now also require the approval level itself to be waiting.
+
 ## [1.29.0] - 2026-11-19
 
 ### Added

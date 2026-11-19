@@ -31,9 +31,9 @@ final class RequestStats
      *         resolved / closed => counts by SDP; null where SDP gave no count
      * @param  array<string, int>      $age        AGE_BUCKETS => open and on-hold requests
      * @param  list<array{name: string, count: int, other: bool}>  $priority  in natural order (see topPriorities())
-     * @param  array{named: list<array{name: string, count: int}>, other: int, unassigned: int}|array{}  $technician
-     *         open and on-hold requests per technician: the most frequent first, the rest added
-     *         up, and those not assigned yet (see topTechnicians())
+     * @param  array{named: list<array{name: string, count: int}>, other: int, none: int}|array{}  $category
+     *         open and on-hold requests per category: the most frequent first, the rest added up,
+     *         and those without a category (see topCategories())
      */
     public function __construct(
         public readonly array $service,
@@ -42,7 +42,7 @@ final class RequestStats
         public readonly array $counted = [],
         public readonly array $age = [],
         public readonly array $priority = [],
-        public readonly array $technician = []
+        public readonly array $category = []
     ) {
     }
 
@@ -53,7 +53,7 @@ final class RequestStats
      */
     public function withCounted(array $counted): self
     {
-        return new self($this->service, $this->incident, $this->truncated, $counted, $this->age, $this->priority, $this->technician);
+        return new self($this->service, $this->incident, $this->truncated, $counted, $this->age, $this->priority, $this->category);
     }
 
     /**
@@ -71,7 +71,7 @@ final class RequestStats
         $incident = $empty;
         $age      = array_fill_keys(self::AGE_BUCKETS, 0);
         $priority = [];
-        $techs    = [];
+        $cats     = [];
 
         foreach ($requests as $r) {
             $bucket = self::bucket(SdpFields::name($r, 'status'));
@@ -97,11 +97,11 @@ final class RequestStats
             $name            = mb_substr(SdpFields::name($r, 'priority'), 0, 60);
             $priority[$name] = ($priority[$name] ?? 0) + 1;
 
-            $tech         = mb_substr(trim(SdpFields::name($r, 'technician')), 0, 80);
-            $techs[$tech] = ($techs[$tech] ?? 0) + 1;
+            $cat        = mb_substr(trim(SdpFields::name($r, 'category')), 0, 80);
+            $cats[$cat] = ($cats[$cat] ?? 0) + 1;
         }
 
-        return new self($service, $incident, $truncated, [], $age, self::topPriorities($priority), self::topTechnicians($techs));
+        return new self($service, $incident, $truncated, [], $age, self::topPriorities($priority), self::topCategories($cats));
     }
 
     /** Age buckets of open requests, youngest first. */
@@ -165,17 +165,17 @@ final class RequestStats
         return $out;
     }
 
-    /** Most technicians shown by name; the rest are added up. */
-    public const MAX_TECHNICIANS = 5;
+    /** Most categories shown by name; the rest are added up. */
+    public const MAX_CATEGORIES = 5;
 
     /**
-     * @param  array<string, int>  $counts  technician name ('' = not assigned) => requests
+     * @param  array<string, int>  $counts  category name ('' = none) => requests
      *
-     * @return array{named: list<array{name: string, count: int}>, other: int, unassigned: int}
+     * @return array{named: list<array{name: string, count: int}>, other: int, none: int}
      */
-    private static function topTechnicians(array $counts): array
+    private static function topCategories(array $counts): array
     {
-        $unassigned = (int) ($counts[''] ?? 0);
+        $none = (int) ($counts[''] ?? 0);
         unset($counts['']);
 
         // Most requests first; equal counts by name, so the order does not change between loads.
@@ -183,11 +183,11 @@ final class RequestStats
 
         $named = [];
 
-        foreach (\array_slice($counts, 0, self::MAX_TECHNICIANS, true) as $name => $count) {
+        foreach (\array_slice($counts, 0, self::MAX_CATEGORIES, true) as $name => $count) {
             $named[] = ['name' => (string) $name, 'count' => $count];
         }
 
-        return ['named' => $named, 'other' => array_sum($counts) - array_sum(array_column($named, 'count')), 'unassigned' => $unassigned];
+        return ['named' => $named, 'other' => array_sum($counts) - array_sum(array_column($named, 'count')), 'none' => $none];
     }
 
     public static function bucket(string $status): string
@@ -248,7 +248,7 @@ final class RequestStats
             'counted'   => $this->counted,
             'age'       => $this->age,
             'priority'  => $this->priority,
-            'technician' => $this->technician,
+            'category'  => $this->category,
         ];
     }
 
@@ -272,15 +272,15 @@ final class RequestStats
                 static fn (array $p): array => ['name' => (string) ($p['name'] ?? ''), 'count' => (int) ($p['count'] ?? 0), 'other' => (bool) ($p['other'] ?? false)],
                 array_filter((array) ($a['priority'] ?? []), 'is_array')
             )),
-            self::technicianFromArray($a['technician'] ?? null)
+            self::categoryFromArray($a['category'] ?? null)
         );
     }
 
     /**
-     * @return array{named: list<array{name: string, count: int}>, other: int, unassigned: int}|array{}
-     *         empty for results cached before 1.25.0 (the chart then waits for the next refresh)
+     * @return array{named: list<array{name: string, count: int}>, other: int, none: int}|array{}
+     *         empty when the saved results have no categories
      */
-    private static function technicianFromArray(mixed $t): array
+    private static function categoryFromArray(mixed $t): array
     {
         if (!\is_array($t) || !\is_array($t['named'] ?? null)) {
             return [];
@@ -292,7 +292,7 @@ final class RequestStats
                 array_filter($t['named'], 'is_array')
             )),
             'other'      => (int) ($t['other'] ?? 0),
-            'unassigned' => (int) ($t['unassigned'] ?? 0),
+            'none'       => (int) ($t['none'] ?? 0),
         ];
     }
 }

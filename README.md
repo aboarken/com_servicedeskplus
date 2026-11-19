@@ -17,8 +17,8 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 ### Dashboard
 - **Employee Information:** a panel with the user's department, job title, employee ID and name (each label above its value), from their own ServiceDesk Plus record; empty fields are left out, and the Joomla name is used when ServiceDesk Plus has none.
 - **Summary cards:** open requests, on-hold requests, waiting for my approval, loans to return within 30 days.
-- **Charts** of the user's requests, made from the requests already read for the figures (no extra ServiceDesk Plus calls), each with a legend or labels and a tooltip on hover (screen readers get the figures as a table):
-  - *Who Is Handling My Requests:* the user's open and on-hold requests per technician (the five with the most, then *Other technicians*), and how many are *Not assigned yet*.
+- **Charts** of the user's requests, two per row (one per row on small screens), made from the requests already read for the figures (no extra ServiceDesk Plus calls), each with a legend or labels and a tooltip on hover (screen readers get the figures as a table):
+  - *Open Requests by Category:* vertical bars of the user's open and on-hold requests per category (the five with the most, then *Other categories* and *No category*), with the count above each bar.
   - *Open Requests by Age:* a donut of open and on-hold requests created under 1 week, 1–4 weeks, 1–3 months and over 3 months ago, from light gold (newest) to deep red (oldest), with the total in the middle.
   - *Open Requests by Priority:* one bar split by priority, with counts and shares; a priority always keeps its place (Low, Normal, Medium, High, Urgent, Critical, others alphabetically) and its colour.
 - **My Requests block:** Open, On Hold, Resolved and Closed tiles, each with its incident and service request count. Resolved and closed requests are counted by ServiceDesk Plus without reading them.

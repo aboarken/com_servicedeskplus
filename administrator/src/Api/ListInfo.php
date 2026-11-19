@@ -28,7 +28,9 @@ final class ListInfo
         public readonly string $sortOrder = 'desc',
         public readonly ?array $searchCriteria = null,
         public readonly ?array $searchFields = null,
-        public readonly bool $getTotalCount = false
+        public readonly bool $getTotalCount = false,
+        /** @var list<string>|null  SDP fields_required: only these fields in each row */
+        public readonly ?array $fieldsRequired = null
     ) {
         if ($rowCount < 1 || $rowCount > self::MAX_ROW_COUNT) {
             throw new \InvalidArgumentException('row_count must be between 1 and 100');
@@ -49,12 +51,12 @@ final class ListInfo
 
     public function withStartIndex(int $startIndex): self
     {
-        return new self($this->rowCount, $startIndex, $this->sortField, $this->sortOrder, $this->searchCriteria, $this->searchFields, $this->getTotalCount);
+        return new self($this->rowCount, $startIndex, $this->sortField, $this->sortOrder, $this->searchCriteria, $this->searchFields, $this->getTotalCount, $this->fieldsRequired);
     }
 
     public function withRowCount(int $rowCount): self
     {
-        return new self($rowCount, $this->startIndex, $this->sortField, $this->sortOrder, $this->searchCriteria, $this->searchFields, $this->getTotalCount);
+        return new self($rowCount, $this->startIndex, $this->sortField, $this->sortOrder, $this->searchCriteria, $this->searchFields, $this->getTotalCount, $this->fieldsRequired);
     }
 
     /**
@@ -82,6 +84,10 @@ final class ListInfo
 
         if ($this->searchFields !== null) {
             $out['search_fields'] = $this->searchFields;
+        }
+
+        if ($this->fieldsRequired !== null) {
+            $out['fields_required'] = $this->fieldsRequired;
         }
 
         return $out;

@@ -3,6 +3,16 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.26.0] - 2026-11-19
+
+### Changed
+- **Dashboard: "Open Requests by Category"** replaces *Who Is Handling My Requests*: vertical bars of the user's open and on-hold requests per category (the five with the most, then *Other categories* and *No category*), with the count above each bar and the name below (full name on hover). On narrow screens the chart scrolls sideways inside its card.
+- **Dashboard charts two per row** instead of three; a chart alone in the last row takes the full width; one per row on small screens.
+- The Dashboard asks ServiceDesk Plus for the fields it uses (`fields_required`), including the category, which is not always among the default list fields. A server that refuses this is asked again without it (logged; categories may then show as *No category*).
+
+### Removed
+- The *Who Is Handling My Requests* chart and its strings and styles.
+
 ## [1.25.0] - 2026-11-19
 
 ### Changed

@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.24.2] - 2026-11-19
+
+### Changed
+- **Clearer message when ServiceDesk Plus does not allow a decision.** When neither the approver's decision nor the API technician fallback is accepted, the user now sees "ServiceDesk Plus does not allow this decision from the portal" instead of "for example because the record is closed"; only a closed or cancelled record still says it is closed. The audit log and `administrator/logs/com_servicedeskplus.php` name the module whose *Edit* permission the API technician's ServiceDesk Plus role needs (for example Purchase Orders with only *View*).
+
 ## [1.24.1] - 2026-11-19
 
 ### Fixed

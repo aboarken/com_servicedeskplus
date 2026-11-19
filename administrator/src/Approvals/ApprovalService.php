@@ -604,6 +604,16 @@ final class ApprovalService
         $this->audit->record($userId, $action, $result, $entityId, $approvalId, $detail, 0, $this->decisionModule, $this->decisionSubject);
     }
 
+    /** Whether the record is closed or cancelled; false when it cannot be read. */
+    private function recordIsClosed(string $module, string $entityId): bool
+    {
+        try {
+            return self::isClosed($this->client()->getModuleEntity($module, $entityId));
+        } catch (SdpException | \InvalidArgumentException) {
+            return false;
+        }
+    }
+
     /** Title of a request, change, release or purchase order; '' when it cannot be read. */
     private function recordTitle(string $module, string $entityId): string
     {
@@ -676,14 +686,25 @@ final class ApprovalService
                 $added             = true;
             }
         } catch (SdpException $e) {
-            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:' . $e->getKind() . ':' . $e->getSdpMessage());
+            if ($e->getKind() !== SdpException::PERMISSION) {
+                $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:' . $e->getKind() . ':' . $e->getSdpMessage());
 
-            // Typically the record is closed: SDP lets nobody change its approvers.
-            if ($e->getKind() === SdpException::PERMISSION) {
-                throw new NotRecordable('The API technician could not be added to the approval level', 0, $e);
+                throw $e;
             }
 
-            throw $e;
+            // A closed record lets nobody change its approvers; otherwise the API technician's
+            // role lacks the permission (e.g. only "View" for this module in ServiceDesk Plus).
+            $closed = $this->recordIsClosed($module, $requestId);
+            $detail = $closed
+                ? 'account_add:record_closed:' . $e->getSdpMessage()
+                : \sprintf('account_add:permission: API technician needs Edit (approvals) for %s in its ServiceDesk Plus role: %s', ApprovalModule::collection($module), $e->getSdpMessage());
+            $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, mb_substr($detail, 0, 255));
+
+            if (!$closed) {
+                $this->logger->warning(\sprintf('Approval not recorded: the API technician may not change approvals of %s %s. Give its ServiceDesk Plus role Edit permission for %s.', ApprovalModule::entityKey($module), $requestId, ApprovalModule::collection($module)));
+            }
+
+            throw new NotRecordable('The API technician could not be added to the approval level', $closed ? NotRecordable::REASON_CLOSED : NotRecordable::REASON_PERMISSION, $e);
         } catch (\InvalidArgumentException) {
             $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:no_id');
 

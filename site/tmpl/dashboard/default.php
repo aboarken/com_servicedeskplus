@@ -14,7 +14,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestQuery;
 
 /*
  * Layout: the user's details (department, job title, employee ID, name), summary cards, charts
- * (requests by status, open requests by age and by priority), then My Requests, My Approvals and
+ * (who is handling the open requests, open requests by age and by priority), then My Requests, My Approvals and
  * My Loans side by side. Styles are in media/com_servicedeskplus/css/portal.css (.sdp-*), so the
  * Dashboard looks the same on any site template. Colours ("tones"): blue (#17426f) open, amber on
  * hold or due soon, green resolved / approved / nothing overdue, slate closed, purple waiting
@@ -108,28 +108,28 @@ $tiles = [
         $num = static fn (?int $n): string => $n === null ? '—' : number_format($n);
         $pct = static fn (int $value, int $total): float => $total > 0 ? round(100 * $value / $total, 2) : 0.0;
 
-        // Requests by status, per bucket: incidents + service requests (resolved and closed may come
-        // without the type split: one neutral segment). Active (open, on hold) and completed
-        // (resolved, closed) are drawn on separate scales: completed counts are usually far larger.
-        $columns = [];
-        $unsplit = false;
+        // Who is handling the open and on-hold requests: one bar per technician (most requests
+        // first), the rest added up, and those not assigned yet. One series: one colour, with the
+        // names and counts written beside each bar.
+        $techRows = [];
 
-        foreach ($tiles as $bucket => [$labelKey]) {
-            $counted = $r->counted[$bucket] ?? null;
-            $i       = $counted !== null ? $counted['incident'] : (int) ($r->incident[$bucket] ?? 0);
-            $s       = $counted !== null ? $counted['service'] : (int) ($r->service[$bucket] ?? 0);
-            $total   = $counted !== null ? $counted['total'] : $i + $s;
-            $split   = $i !== null && $s !== null;
-            $unsplit = $unsplit || ($total !== null && !$split);
-            $columns[$bucket] = ['label' => Text::_($labelKey), 'i' => $i, 's' => $s, 'total' => $total, 'split' => $split];
+        foreach ($r->technician['named'] ?? [] as $t) {
+            $techRows[] = ['label' => $t['name'], 'count' => $t['count'], 'tone' => 'named'];
         }
 
-        $groups = [
-            'COM_SERVICEDESKPLUS_CHART_GROUP_ACTIVE'    => ['open', 'on_hold'],
-            'COM_SERVICEDESKPLUS_CHART_GROUP_COMPLETED' => ['resolved', 'closed'],
-        ];
+        if (($r->technician['other'] ?? 0) > 0) {
+            $techRows[] = ['label' => Text::_('COM_SERVICEDESKPLUS_CHART_TECH_OTHERS'), 'count' => (int) $r->technician['other'], 'tone' => 'other'];
+        }
 
-        // Open requests by age: a donut; ordinal buckets in one blue ramp, lighter = newer.
+        if (($r->technician['unassigned'] ?? 0) > 0) {
+            $techRows[] = ['label' => Text::_('COM_SERVICEDESKPLUS_CHART_TECH_UNASSIGNED'), 'count' => (int) $r->technician['unassigned'], 'tone' => 'unassigned'];
+        }
+
+        $techMax   = max(1, ...array_column($techRows, 'count') ?: [1]);
+        $techTotal = array_sum(array_column($techRows, 'count'));
+
+        // Open requests by age: a donut; ordinal buckets in one warm ramp, light gold = newer,
+        // deep red = oldest (the colour darkens with age).
         $ageLabels = [
             'week'    => 'COM_SERVICEDESKPLUS_CHART_AGE_WEEK',
             'month'   => 'COM_SERVICEDESKPLUS_CHART_AGE_MONTH',
@@ -158,69 +158,24 @@ $tiles = [
         $priorityTotal = array_sum(array_column($priorities, 'count'));
         ?>
         <div class="sdp-panels sdp-charts">
-            <section class="sdp-panel sdp-chart" aria-labelledby="sdp-chart-status">
-                <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-status">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_STATUS_TITLE'), $this->url('requests&status=all'), $viewAll)); ?>
+            <section class="sdp-panel sdp-chart" aria-labelledby="sdp-chart-tech">
+                <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-tech">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_TECH_TITLE'))); ?>
                 <div class="sdp-panel-body">
-                    <ul class="sdp-legend">
-                        <li><span class="sdp-swatch sdp-series-1" aria-hidden="true"></span><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_INCIDENTS'); ?></li>
-                        <li><span class="sdp-swatch sdp-series-2" aria-hidden="true"></span><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SERVICE'); ?></li>
-                        <?php if ($unsplit) : ?>
-                            <li><span class="sdp-swatch sdp-series-none" aria-hidden="true"></span><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_NOT_SPLIT'); ?></li>
-                        <?php endif; ?>
-                    </ul>
-                    <div class="sdp-column-groups" aria-hidden="true">
-                        <?php foreach ($groups as $groupKey => $buckets) :
-                            $groupMax = max(1, ...array_map(static fn (string $b): int => (int) $columns[$b]['total'], $buckets));
-                            ?>
-                            <div class="sdp-column-group">
-                                <div class="sdp-columns">
-                                    <?php foreach ($buckets as $bucket) :
-                                        $c     = $columns[$bucket];
-                                        $total = (int) $c['total'];
-                                        $tip   = $c['split']
-                                            ? Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_STATUS', $c['label'], $num($c['i']), $num($c['s']))
-                                            : Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_TOTAL', $c['label'], $num($total));
-                                        ?>
-                                        <a class="sdp-column" href="<?php echo $this->statusUrl($bucket); ?>" data-sdp-tip="<?php echo $e($tip); ?>" tabindex="-1">
-                                            <span class="sdp-column-value"><?php echo $num($c['total']); ?></span>
-                                            <span class="sdp-column-track">
-                                                <span class="sdp-column-stack" style="height: <?php echo $pct($total, $groupMax); ?>%">
-                                                    <?php if ($c['split']) : ?>
-                                                        <?php if ((int) $c['s'] > 0) : ?><span class="sdp-seg sdp-series-2" style="flex-grow: <?php echo (int) $c['s']; ?>"></span><?php endif; ?>
-                                                        <?php if ((int) $c['i'] > 0) : ?><span class="sdp-seg sdp-series-1" style="flex-grow: <?php echo (int) $c['i']; ?>"></span><?php endif; ?>
-                                                    <?php elseif ($total > 0) : ?>
-                                                        <span class="sdp-seg sdp-series-none" style="flex-grow: 1"></span>
-                                                    <?php endif; ?>
-                                                </span>
-                                            </span>
-                                            <span class="sdp-column-label"><?php echo $e($c['label']); ?></span>
-                                        </a>
-                                    <?php endforeach; ?>
-                                </div>
-                                <p class="sdp-column-group-label"><?php echo Text::_($groupKey); ?></p>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <p class="sdp-chart-note sdp-chart-note--foot"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SCALES_NOTE'); ?></p>
-                    <table class="visually-hidden">
-                        <caption><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_STATUS_TITLE'); ?></caption>
-                        <thead><tr>
-                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></th>
-                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_INCIDENTS'); ?></th>
-                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_SERVICE'); ?></th>
-                            <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_TOTAL'); ?></th>
-                        </tr></thead>
-                        <tbody>
-                        <?php foreach ($columns as $bucket => $c) : ?>
-                            <tr>
-                                <th scope="row"><a href="<?php echo $this->statusUrl($bucket); ?>"><?php echo $e($c['label']); ?></a></th>
-                                <td><?php echo $num($c['i']); ?></td>
-                                <td><?php echo $num($c['s']); ?></td>
-                                <td><?php echo $num($c['total']); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    <p class="sdp-chart-note"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_ACTIVE_NOTE'); ?></p>
+                    <?php if ($techTotal === 0) : ?>
+                        <p class="sdp-empty"><?php echo Text::_($r->technician === [] ? 'COM_SERVICEDESKPLUS_CHART_TECH_PENDING' : 'COM_SERVICEDESKPLUS_CHART_EMPTY'); ?></p>
+                    <?php else : ?>
+                        <ul class="sdp-hbars">
+                            <?php foreach ($techRows as $t) : ?>
+                                <li class="sdp-hbar sdp-hbar--<?php echo $t['tone']; ?>"
+                                    data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', $t['label'], $num($t['count']), round($pct($t['count'], $techTotal)))); ?>">
+                                    <span class="sdp-hbar-label"><?php echo $e($t['label']); ?></span>
+                                    <span class="sdp-hbar-track" aria-hidden="true"><span class="sdp-hbar-fill" style="width: <?php echo max(2, $pct($t['count'], $techMax)); ?>%"></span></span>
+                                    <span class="sdp-hbar-value"><?php echo $num($t['count']); ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
                 </div>
             </section>
 

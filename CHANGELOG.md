@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.25.0] - 2026-11-19
+
+### Changed
+- **Dashboard: "Who Is Handling My Requests" replaces "Requests by Status"**, which repeated the My Requests tiles. It shows the user's open and on-hold requests per technician (the five with the most, then *Other technicians*) and how many are *Not assigned yet*, with names and counts beside each bar. Made from the requests already read: no extra ServiceDesk Plus calls. Results saved before the update show "Shown after the next update of the Dashboard." until the page refreshes.
+- **Dashboard: new colours for "Open Requests by Age"**: a warm ramp from light gold (under 1 week) to deep red (over 3 months), darker with age, so older requests stand out.
+
+### Removed
+- The *Requests by Status* chart, its strings and styles.
+
 ## [1.24.2] - 2026-11-19
 
 ### Changed

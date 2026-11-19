@@ -1,4 +1,4 @@
-# Joomla ServiceDesk Plus
+# Joomla ServiceDesk Plus (com_servicedeskplus)
 
 **Bring ManageEngine ServiceDesk Plus directly into your Joomla website.**
 

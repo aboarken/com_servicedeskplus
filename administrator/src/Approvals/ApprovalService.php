@@ -392,24 +392,35 @@ final class ApprovalService
             SdpFields::name($approval, 'status'),
             $this->isPending($approval, $level),
             $module,
-            $this->attachmentsOf($module, $requestId)
+            $this->attachmentsOf($module, $requestId, $request)
         );
     }
 
     /**
      * Files attached to the record being approved; null when ServiceDesk Plus could not list them
-     * (the page is shown all the same).
+     * (the page is shown all the same). The record itself carries its "attachments" when
+     * ServiceDesk Plus includes them; otherwise they are read from /attachments.
+     *
+     * @param  array<string, mixed>|null  $entity  The record as read from ServiceDesk Plus
      *
      * @return list<array{id: string, name: string, size: int}>|null
      */
-    private function attachmentsOf(string $module, string $entityId): ?array
+    private function attachmentsOf(string $module, string $entityId, ?array $entity = null): ?array
     {
-        try {
-            $rows = $this->client()->getAttachments($module, $entityId);
-        } catch (SdpException $e) {
-            $this->logger->warning(\sprintf('Attachments of %s %s not read (%s)', $module, $entityId, $e->getKind()));
+        if (!\in_array($module, SdpClient::ATTACHMENT_MODULES, true)) {
+            return [];
+        }
 
-            return null;
+        $rows = \is_array($entity['attachments'] ?? null) ? array_values(array_filter($entity['attachments'], 'is_array')) : null;
+
+        if ($rows === null || $rows === []) {
+            try {
+                $rows = $this->client()->getAttachments($module, $entityId);
+            } catch (SdpException $e) {
+                $this->logger->warning(\sprintf('Attachments of %s %s not read (%s)', $module, $entityId, $e->getKind()));
+
+                return $rows === [] ? [] : null;
+            }
         }
 
         $out = [];
@@ -447,9 +458,19 @@ final class ApprovalService
 
         [, , $requestId, $levelId, $approvalId] = $this->locateOwn($identity, $requestId, $levelId, $approvalId, $module);
 
+        try {
+            $entity = $this->client()->getModuleEntity($module, $requestId);
+        } catch (SdpException $e) {
+            if ($e->getKind() === SdpException::NOT_FOUND) {
+                throw new ApprovalNotFound();
+            }
+
+            throw $e;
+        }
+
         $file = null;
 
-        foreach ($this->attachmentsOf($module, $requestId) ?? throw new SdpException(SdpException::NETWORK, 'Attachments could not be read') as $candidate) {
+        foreach ($this->attachmentsOf($module, $requestId, $entity) ?? throw new SdpException(SdpException::NETWORK, 'Attachments could not be read') as $candidate) {
             if ($candidate['id'] === $attachmentId) {
                 $file = $candidate;
                 break;

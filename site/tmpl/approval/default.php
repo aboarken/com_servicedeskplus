@@ -56,12 +56,14 @@ $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Tex
             <div class="sdp-panel-body sdp-text sdp-prose"><?php echo nl2br($this->escape($item->description !== '' ? $item->description : '—')); ?></div>
         </section>
 
-        <?php if ($item->attachments === null || $item->attachments !== []) : ?>
+        <?php if ($item->module !== ApprovalModule::PURCHASE_ORDER) : ?>
             <section class="sdp-panel">
                 <div class="sdp-panel-head"><h2 class="sdp-panel-title"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_ATTACHMENTS'); ?></h2></div>
                 <div class="sdp-panel-body">
                     <?php if ($item->attachments === null) : ?>
                         <p class="sdp-muted"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_ATTACHMENTS_UNAVAILABLE'); ?></p>
+                    <?php elseif ($item->attachments === []) : ?>
+                        <p class="sdp-muted"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_ATTACHMENTS_NONE'); ?></p>
                     <?php else : ?>
                         <ul class="sdp-attachments">
                             <?php foreach ($item->attachments as $file) : ?>

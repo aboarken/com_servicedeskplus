@@ -111,18 +111,26 @@ $tiles = [
         $num = static fn (?int $n): string => $n === null ? '—' : number_format($n);
         $pct = static fn (int $value, int $total): float => $total > 0 ? round(100 * $value / $total, 2) : 0.0;
 
-        // Open and on-hold requests by category: vertical bars, the most frequent first, then the
-        // rest added up and those without a category. Each named category has its own colour from
-        // the validated palette, chosen from its name (so it keeps it when counts change; a clash
-        // takes the next free colour); each bar has its count above and its name below.
+        // Open and on-hold requests by category: vertical bars, every category, the most frequent
+        // first, then those without a category. Each category has a colour from the validated
+        // palette: up to six categories, chosen from the name (kept when counts change; a clash
+        // takes the next free colour); more than six, in turn along the row. Each bar has its
+        // count above and its name below; more than seven bars take the full width of the row.
         $catRows = [];
         $catUsed = [];
 
-        foreach ($r->category['named'] ?? [] as $c) {
-            $slot = crc32(mb_strtolower($c['name'])) % 6;
+        $catNamed = $r->category['named'] ?? [];
 
-            while (isset($catUsed[$slot]) && count($catUsed) < 6) {
-                $slot = ($slot + 1) % 6;
+        foreach ($catNamed as $i => $c) {
+            // More categories than colours: colours in turn along the row, so neighbours differ.
+            if (count($catNamed) > 6) {
+                $slot = $i % 6;
+            } else {
+                $slot = crc32(mb_strtolower($c['name'])) % 6;
+
+                while (isset($catUsed[$slot])) {
+                    $slot = ($slot + 1) % 6;
+                }
             }
 
             $catUsed[$slot] = true;
@@ -169,7 +177,7 @@ $tiles = [
 
         $priorityTotal = array_sum(array_column($priorities, 'count'));
         ?>
-            <section class="sdp-panel sdp-chart" aria-labelledby="sdp-chart-category">
+            <section class="sdp-panel sdp-chart<?php echo count($catRows) > 7 ? ' sdp-chart--wide' : ''; ?>" aria-labelledby="sdp-chart-category">
                 <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-category">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_CATEGORY_TITLE'))); ?>
                 <div class="sdp-panel-body">
                     <p class="sdp-chart-note"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_ACTIVE_NOTE'); ?></p>

@@ -72,7 +72,7 @@ final class RequestService
     {
         $sdpUserId = $identity->sdpUserId();
         // "requests:" prefix: cleared with the lists when the user creates a request.
-        $cacheKey = 'requests:stats:v5';
+        $cacheKey = 'requests:stats:v6';
         $cached   = $this->cache->get($identity, $cacheKey);
 
         if ($cached !== null) {

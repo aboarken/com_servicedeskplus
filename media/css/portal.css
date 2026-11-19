@@ -820,8 +820,15 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.com-servicedeskplus .sdp-charts > .sdp-panel:last-child:nth-child(odd) {
+/* (a wide category chart fills its own row, so the count of the cards after it shifts by one) */
+.com-servicedeskplus .sdp-charts > .sdp-panel:last-child:nth-child(odd),
+.com-servicedeskplus .sdp-charts > .sdp-chart--wide,
+.com-servicedeskplus .sdp-charts > .sdp-chart--wide ~ .sdp-panel:last-child:nth-child(even) {
   grid-column: 1 / -1;
+}
+
+.com-servicedeskplus .sdp-charts > .sdp-chart--wide ~ .sdp-panel:last-child:nth-child(odd) {
+  grid-column: auto;
 }
 
 @media (max-width: 767.98px) {
@@ -834,7 +841,7 @@
    width and the chart scrolls sideways inside its card. */
 .com-servicedeskplus .sdp-vbars {
   display: grid;
-  grid-template-columns: repeat(var(--sdp-vbars, 6), minmax(3.25rem, 1fr));
+  grid-template-columns: repeat(var(--sdp-vbars, 6), minmax(3rem, 1fr));
   gap: 0.5rem;
   margin: 0;
   padding: 0 0 0.25rem;

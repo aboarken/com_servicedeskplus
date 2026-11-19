@@ -3,6 +3,12 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.27.0] - 2026-11-19
+
+### Changed
+- **Open Requests by Category shows every category**, each as its own bar (no more *Other categories*, up to 40 categories), then *No category*. With more than seven bars the chart takes the full width of its row, so all bars fit inside the card; the other cards follow two per row.
+- Colours: with up to six categories each keeps its own colour; with more, the colours alternate along the row so neighbouring bars always differ.
+
 ## [1.26.2] - 2026-11-19
 
 ### Fixed

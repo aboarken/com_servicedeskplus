@@ -103,6 +103,9 @@ $tiles = [
         endif; ?>
     </div>
 
+    <?php // The charts, then My Requests, My Approvals and My Loans: one grid, two cards per row
+          // (one on small screens); a card alone in the last row takes the full width. ?>
+    <div class="sdp-panels sdp-charts">
     <?php // Charts from the requests read for the figures above (no extra ServiceDesk Plus calls) ?>
     <?php if ($this->showRequests && $r !== null && $this->requestsError === '') :
         $num = static fn (?int $n): string => $n === null ? '—' : number_format($n);
@@ -166,7 +169,6 @@ $tiles = [
 
         $priorityTotal = array_sum(array_column($priorities, 'count'));
         ?>
-        <div class="sdp-panels sdp-charts">
             <section class="sdp-panel sdp-chart" aria-labelledby="sdp-chart-category">
                 <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-category">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_CATEGORY_TITLE'))); ?>
                 <div class="sdp-panel-body">
@@ -266,12 +268,8 @@ $tiles = [
                     <?php endif; ?>
                 </div>
             </section>
-        </div>
     <?php endif; ?>
 
-    <?php if ($this->showRequests || $this->showApprovals || $this->showLoans) : ?>
-    <?php // My Requests, My Approvals and My Loans side by side (stacked on small screens) ?>
-    <div class="sdp-panels">
         <?php if ($this->showRequests) : ?>
             <section class="sdp-panel">
                 <?php echo $panelHead(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_REQUESTS'), $this->url('requests&status=all'), $viewAll); ?>
@@ -349,5 +347,4 @@ $tiles = [
             </section>
         <?php endif; ?>
     </div>
-    <?php endif; ?>
 </div>

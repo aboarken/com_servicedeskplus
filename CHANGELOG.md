@@ -11,6 +11,7 @@ Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic
 
 ### Changed
 - **Open Requests by Category in colour:** each category's bar has its own colour from the Dashboard's validated palette (the priority chart's colours). A category keeps its colour as counts change; *Other categories* and *No category* stay grey.
+- **Dashboard cards two per row:** the three charts and the My Requests, My Approvals and My Loans cards form one grid of two cards per row (three rows when all six are shown; one per row on small screens). A card alone in the last row takes the full width.
 
 ## [1.26.0] - 2026-11-19
 

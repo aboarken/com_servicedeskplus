@@ -39,6 +39,8 @@ final class Settings
         'approval_account_email' => '',
         // Modules whose approvals My Approvals checks.
         'approval_modules'       => 'request,change,release,purchase_order',
+        // New users found by e-mail: 1 = approved at once, 0 = wait for an administrator.
+        'auto_approve_matches'   => '1',
     ];
 
     /** @param array<string, string> $values */
@@ -132,6 +134,15 @@ final class Settings
     public function rateCreatePerHour(): int
     {
         return max(1, (int) $this->get('rate_create_per_hour'));
+    }
+
+    /**
+     * Whether a new user found by e-mail is matched at once (true) or waits for an administrator
+     * in User Mappings (false). A changed e-mail always waits.
+     */
+    public function autoApproveMatches(): bool
+    {
+        return $this->get('auto_approve_matches') !== '0';
     }
 
     /**

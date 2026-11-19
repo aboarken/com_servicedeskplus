@@ -48,6 +48,9 @@ final class ApprovalService
     public const COMMENT_MAX     = 200;
     public const SDP_COMMENT_MAX = 250;
 
+    /** Largest attachment the portal passes on (bytes). */
+    public const ATTACHMENT_MAX_BYTES = 30 * 1024 * 1024;
+
     public const OUTCOME_CONFIRMED   = 'confirmed';
     public const OUTCOME_UNCONFIRMED = 'unconfirmed';
 
@@ -388,8 +391,83 @@ final class ApprovalService
             HtmlText::toPlain(SdpFields::string($approval, 'comments')),
             SdpFields::name($approval, 'status'),
             $this->isPending($approval, $level),
-            $module
+            $module,
+            $this->attachmentsOf($module, $requestId)
         );
+    }
+
+    /**
+     * Files attached to the record being approved; null when ServiceDesk Plus could not list them
+     * (the page is shown all the same).
+     *
+     * @return list<array{id: string, name: string, size: int}>|null
+     */
+    private function attachmentsOf(string $module, string $entityId): ?array
+    {
+        try {
+            $rows = $this->client()->getAttachments($module, $entityId);
+        } catch (SdpException $e) {
+            $this->logger->warning(\sprintf('Attachments of %s %s not read (%s)', $module, $entityId, $e->getKind()));
+
+            return null;
+        }
+
+        $out = [];
+
+        foreach ($rows as $row) {
+            $id = SdpFields::string($row, 'id');
+
+            if (!preg_match('/^[0-9]{1,20}$/', $id)) {
+                continue;
+            }
+
+            $size  = $row['size'] ?? null;
+            $out[] = [
+                'id'   => $id,
+                'name' => mb_substr(SdpFields::string($row, 'name'), 0, 255) ?: 'attachment',
+                'size' => (int) (\is_array($size) ? ($size['value'] ?? 0) : $size),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * One attachment of a record the user is an approver of: the approver is checked against
+     * ServiceDesk Plus first (as for the page), and only an attachment listed on that record is
+     * read.
+     *
+     * @return array{name: string, content: string}
+     *
+     * @throws ApprovalNotFound|SdpException
+     */
+    public function attachmentForUser(Identity $identity, string $requestId, string $levelId, string $approvalId, string $module, string $attachmentId): array
+    {
+        $module = ApprovalModule::normalize($module) ?? throw new ApprovalNotFound();
+
+        [, , $requestId, $levelId, $approvalId] = $this->locateOwn($identity, $requestId, $levelId, $approvalId, $module);
+
+        $file = null;
+
+        foreach ($this->attachmentsOf($module, $requestId) ?? throw new SdpException(SdpException::NETWORK, 'Attachments could not be read') as $candidate) {
+            if ($candidate['id'] === $attachmentId) {
+                $file = $candidate;
+                break;
+            }
+        }
+
+        if ($file === null) {
+            throw new ApprovalNotFound();
+        }
+
+        if ($file['size'] > self::ATTACHMENT_MAX_BYTES) {
+            throw new SdpException(SdpException::BAD_RESPONSE, 'Attachment too large');
+        }
+
+        $content = $this->client()->downloadAttachment($module, $requestId, $attachmentId, self::ATTACHMENT_MAX_BYTES);
+        $this->audit->record($identity->joomlaUserId, 'approval.attachment', AuditLogInterface::RESULT_OK, $requestId, $approvalId, mb_substr($file['name'], 0, 200), 0, $module);
+
+        return ['name' => $file['name'], 'content' => $content];
     }
 
     /**

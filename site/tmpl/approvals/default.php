@@ -49,7 +49,7 @@ $isPending = $this->show === 'pending';
     <?php endif; ?>
 
     <?php // Filters are applied on change, the search on Enter (media/js/filters.js). ?>
-    <form class="sdp-toolbar" method="get" data-sdp-filters role="search" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=approvals'); ?>">
+    <form class="sdp-toolbar" method="get" data-sdp-filters autocomplete="off" role="search" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=approvals'); ?>">
         <div class="sdp-field--search">
             <label class="sdp-label" for="sdp-search"><?php echo Text::_('COM_SERVICEDESKPLUS_SEARCH'); ?></label>
             <input class="sdp-input" type="search" id="sdp-search" name="search" maxlength="100" enterkeyhint="search"
@@ -67,7 +67,7 @@ $isPending = $this->show === 'pending';
         <div>
             <label class="sdp-label" for="sdp-type"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE'); ?></label>
             <select class="sdp-input" id="sdp-type" name="type">
-                <option value=""><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_ALL_TYPES'); ?></option>
+                <option value="" <?php echo $this->type === '' ? 'selected' : ''; ?>><?php echo Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_ALL_TYPES'); ?></option>
                 <?php foreach ($this->modules as $module) : ?>
                     <option value="<?php echo $module; ?>" <?php echo $module === $this->type ? 'selected' : ''; ?>><?php echo Text::_(ApprovalModule::labelKey($module)); ?></option>
                 <?php endforeach; ?>

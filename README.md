@@ -49,7 +49,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 
 ### Approvals
 - View pending approvals for **requests, changes, releases and purchase orders** in one list (ServiceDesk Plus has no approvals for problems), and the decisions made through the portal. The list works like My Requests: search, *Show* (waiting for my approval, approved by me, rejected by me, all my decisions), type, sort and pages.
-- Review approval details.
+- Review approval details, including the **attachments** of the request, change or release (download only; the portal checks in ServiceDesk Plus that the user is an approver of that record first). Purchase orders have no attachments in the API.
 - Approve or reject from Joomla, for example while away from the company network.
 
 ServiceDesk Plus only accepts an approval decision from the assigned approver, while the portal talks to ServiceDesk Plus with a single API technician key. To let approvers decide from Joomla anyway, enter the API technician's e-mail under **Integration Settings → Approvals → API technician e-mail**. When ServiceDesk Plus refuses a decision, the portal adds the API technician as approver on the same level, records the decision under that account with the real approver's name in the comment and in a private request note, and removes the approver's pending entry. In ServiceDesk Plus the decision therefore appears under the API technician. Approval levels that need all approvers still wait for the others. The API technician's role needs permission to edit and manage approvals in each module used (requests, changes, releases, purchase orders). Turn off both "Auto-approve…" options under ServiceDesk Plus **Admin → Advanced Portal Settings → Approval**: otherwise ServiceDesk Plus can approve the API technician's added entry by itself, even when the user rejected. Closed records cannot be decided from the portal, and purchase requests have no API.
@@ -143,7 +143,12 @@ Pages read ServiceDesk Plus when their cached results have expired (see *Cache*)
 
 The component uses email addresses to associate Joomla users with their corresponding ServiceDesk Plus requesters.
 
-For successful integration, the Joomla user's email address must match the email address registered in ServiceDesk Plus. The first time a user opens the portal, the ServiceDesk Plus user with that address is found and stored as **Waiting for approval**; *User Mappings* shows how many users wait, with a link to them. Check each e-mail, then select the users and click **Confirm**. Users matched before 1.23.0 keep their mapping.
+For successful integration, the Joomla user's email address must match the email address registered in ServiceDesk Plus. The first time a user opens the portal, the ServiceDesk Plus user with that address is found and the user is matched at once. *Integration Settings → Users → New users* chooses:
+
+- **Approve automatically** (default): first-visit matches work at once.
+- **Wait for administrator approval:** the match is stored as **Waiting for approval**; *User Mappings* shows how many users wait, with a link to them. Check each e-mail, then select the users and click **Confirm**. Choose this where users can change their Joomla e-mail freely: someone could enter a colleague's address before their first visit.
+
+Either way, a user whose Joomla e-mail changes later is suspended until an administrator approves it. Users still waiting when you switch to *Approve automatically* are matched on their next visit, after a fresh check that ServiceDesk Plus still has their address.
 
 ### API Connectivity
 
@@ -172,7 +177,7 @@ To report a security problem, see [SECURITY.md](SECURITY.md).
 API credentials should be stored securely and should never be exposed to frontend users or committed to the source repository.
 
 - The API key is stored encrypted and never shown again. It must be entered again whenever the ServiceDesk Plus address, *Connect via*, the certificate pin or CA file changes, or the certificate check is turned off, so the stored key cannot be sent to another server.
-- Users are found in ServiceDesk Plus by their Joomla e-mail, but **every new match waits for an administrator**: Joomla lets users change their own e-mail without verifying it, so an address alone does not prove who someone is. The user sees "…waiting for an administrator to approve it" until an administrator confirms the mapping under *User Mappings* (filter *Waiting for approval*, select, **Confirm**; several at once). *Match again* also ends in *Waiting for approval*. A user whose Joomla e-mail changes is suspended until an administrator checks it. If several ServiceDesk Plus users share an e-mail, an administrator chooses. Mappings an administrator makes with *New* are active at once.
+- Users are found in ServiceDesk Plus by their Joomla e-mail. By default a first-visit match works at once; with *Integration Settings → Users → New users: Wait for administrator approval* **every new match waits for an administrator** (Joomla lets users change their own e-mail without verifying it, so an address alone does not prove who someone is): the user sees "…waiting for an administrator to approve it" until an administrator confirms the mapping under *User Mappings* (filter *Waiting for approval*, select, **Confirm**; several at once). **A user whose Joomla e-mail changes is always suspended** until an administrator checks it. If several ServiceDesk Plus users share an e-mail, an administrator chooses. Mappings an administrator makes with *New* are active at once.
 - Matching trusts the e-mail of each Joomla account. If your site allows self-registration, keep *Users → Options → New User Account Activation* on **Self** or **Administrator**, so nobody can register with another person's address.
 - Every page and action checks login, the feature's permission and the user's own ServiceDesk Plus records; actions need a POST with Joomla's form token.
 

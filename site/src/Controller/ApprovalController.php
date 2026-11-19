@@ -45,6 +45,112 @@ final class ApprovalController extends BaseController
         throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
     }
 
+    /** Types sent with their own Content-Type; everything else is application/octet-stream. */
+    private const DOWNLOAD_TYPES = [
+        'pdf'  => 'application/pdf',
+        'png'  => 'image/png',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif'  => 'image/gif',
+        'webp' => 'image/webp',
+        'txt'  => 'text/plain; charset=utf-8',
+        'csv'  => 'text/csv; charset=utf-8',
+        'doc'  => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls'  => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt'  => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'zip'  => 'application/zip',
+    ];
+
+    /**
+     * Download one attachment of a record waiting for (or decided by) the user's approval.
+     * GET, read only: login, sdp.approval.view, a matched identity, and ApprovalService checks
+     * in ServiceDesk Plus that the user is an approver of that record and that the file belongs
+     * to it. The file is always sent as a download (never shown inside the site), with nosniff
+     * and a sandbox policy, so a file cannot run as a page of this site.
+     */
+    public function attachment(): void
+    {
+        if (!$this->requireLogin()) {
+            return;
+        }
+
+        if (!$this->app->getIdentity()->authorise('sdp.approval.view', 'com_servicedeskplus')) {
+            throw new NotAllowed(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
+
+        $requestId    = $this->input->getString('request_id', '');
+        $levelId      = $this->input->getString('level_id', '');
+        $approvalId   = $this->input->getString('id', '');
+        $attachmentId = $this->input->getString('file', '');
+        $module       = ApprovalModule::normalize($this->input->getCmd('module', '')) ?? ApprovalModule::REQUEST;
+
+        foreach ([$requestId, $levelId, $approvalId, $attachmentId] as $id) {
+            if (!preg_match('/^[0-9]{1,20}$/', $id)) {
+                throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+            }
+        }
+
+        $detailUrl = 'index.php?option=com_servicedeskplus&view=approval&id=' . $approvalId
+            . '&request_id=' . $requestId . '&level_id=' . $levelId
+            . ($module !== ApprovalModule::REQUEST ? '&module=' . $module : '');
+
+        try {
+            $identity = $this->currentIdentity();
+        } catch (SdpException) {
+            $identity = null;
+        }
+
+        if ($identity === null || !$identity->isMatched()) {
+            $this->setRedirect(Route::_($detailUrl, false));
+
+            return;
+        }
+
+        try {
+            $file = $this->sdpComponent()->getApprovalService()
+                ->attachmentForUser($identity, $requestId, $levelId, $approvalId, $module, $attachmentId);
+        } catch (ApprovalNotFound) {
+            throw new RouteNotFoundException(Text::_('COM_SERVICEDESKPLUS_APPROVAL_ATTACHMENT_NOT_FOUND'), 404);
+        } catch (SdpException $e) {
+            $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_APPROVAL_ATTACHMENT_FAILED'), 'error');
+            $this->setRedirect(Route::_($detailUrl, false));
+
+            return;
+        }
+
+        $this->sendFile($file['name'], $file['content']);
+    }
+
+    private function sendFile(string $name, string $content): void
+    {
+        // A plain file name: no path, no control or quote characters.
+        $name      = trim(preg_replace('/[\x00-\x1F\x7F"\\\\\/:*?<>|]+/u', '_', basename(str_replace('\\', '/', $name))) ?? '', " ._");
+        $name      = $name !== '' ? $name : 'attachment';
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        $ascii     = preg_replace('/[^A-Za-z0-9._ -]+/', '_', $name) ?: 'attachment';
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $this->app->clearHeaders();
+        $this->app->setHeader('Content-Type', self::DOWNLOAD_TYPES[$extension] ?? 'application/octet-stream', true);
+        $this->app->setHeader('Content-Disposition', 'attachment; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($name), true);
+        $this->app->setHeader('Content-Length', (string) \strlen($content), true);
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
+        $this->app->setHeader('Content-Security-Policy', "default-src 'none'; sandbox", true);
+        $this->app->setHeader('Cache-Control', 'private, no-store', true);
+        $this->app->setHeader('X-Robots-Tag', 'noindex, nofollow', true);
+        $this->app->sendHeaders();
+
+        echo $content;
+
+        $this->app->close();
+    }
+
     public function decide(): void
     {
         if (!$this->requireLogin()) {

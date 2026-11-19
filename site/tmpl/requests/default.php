@@ -44,7 +44,7 @@ $types       = [
     </div>
 
     <?php // Filters are applied on change, the search on Enter (media/js/filters.js). ?>
-    <form class="sdp-toolbar" method="get" data-sdp-filters role="search" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>">
+    <form class="sdp-toolbar" method="get" data-sdp-filters autocomplete="off" role="search" action="<?php echo Route::_('index.php?option=com_servicedeskplus&view=requests'); ?>">
         <div class="sdp-field--search">
             <label class="sdp-label" for="sdp-search"><?php echo Text::_('COM_SERVICEDESKPLUS_SEARCH'); ?></label>
             <input class="sdp-input" type="search" id="sdp-search" name="search" maxlength="100" enterkeyhint="search"

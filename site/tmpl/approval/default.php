@@ -56,6 +56,34 @@ $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Tex
             <div class="sdp-panel-body sdp-text sdp-prose"><?php echo nl2br($this->escape($item->description !== '' ? $item->description : '—')); ?></div>
         </section>
 
+        <?php if ($item->attachments === null || $item->attachments !== []) : ?>
+            <section class="sdp-panel">
+                <div class="sdp-panel-head"><h2 class="sdp-panel-title"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_ATTACHMENTS'); ?></h2></div>
+                <div class="sdp-panel-body">
+                    <?php if ($item->attachments === null) : ?>
+                        <p class="sdp-muted"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_ATTACHMENTS_UNAVAILABLE'); ?></p>
+                    <?php else : ?>
+                        <ul class="sdp-attachments">
+                            <?php foreach ($item->attachments as $file) : ?>
+                                <?php
+                                $href = Route::_('index.php?option=com_servicedeskplus&task=approval.attachment&id=' . rawurlencode($item->approvalId)
+                                    . '&request_id=' . rawurlencode($item->requestId) . '&level_id=' . rawurlencode($item->levelId)
+                                    . ($item->module !== ApprovalModule::REQUEST ? '&module=' . rawurlencode($item->module) : '')
+                                    . '&file=' . rawurlencode($file['id']));
+                                ?>
+                                <li>
+                                    <a href="<?php echo $href; ?>" download rel="nofollow">&#128206; <?php echo $this->escape($file['name']); ?></a>
+                                    <?php if ($file['size'] > 0) : ?>
+                                        <span class="sdp-muted">(<?php echo HTMLHelper::_('number.bytes', $file['size'], 'auto', 1); ?>)</span>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
         <?php if ($item->module === ApprovalModule::REQUEST) : ?>
             <?php echo (new FileLayout('conversation', null, $layoutOptions))->render(['entries' => $this->conversation]); ?>
         <?php endif; ?>

@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.24.0] - 2026-11-19
+
+### Added
+- **New users are approved automatically again (default).** *Integration Settings → Users → New users*: **Approve automatically** (a first-visit e-mail match works at once, as before 1.23.0) or **Wait for administrator approval** (the 1.23.0 behaviour). A Joomla e-mail that changes later still suspends the mapping until an administrator approves it, with both choices. Users waiting for approval are matched on their next visit once automatic approval is on, after a fresh check that ServiceDesk Plus still has exactly one user with their address.
+- **Attachments on the approval page.** The approval page lists the files attached to the request, change or release, with their size, for download. Every download checks in ServiceDesk Plus that the user is an approver of that record and that the file is listed on it; files are always sent as downloads (never opened as a page of the site), up to 30 MB, and recorded in the audit log. Purchase orders have no attachments in the API.
+
+### Fixed
+- **My Approvals (and the other lists) always open on their default filters, such as *All types*.** Browsers could put back the choice made before when a list was reloaded or opened again with Back.
+
 ## [1.23.1] - 2026-11-18
 
 Security and clean-up release after an audit of the whole component: security, structure against the Joomla Manual, and unused code.

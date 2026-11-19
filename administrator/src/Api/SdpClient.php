@@ -310,6 +310,88 @@ final class SdpClient
         return $this->entity($this->get(self::modulePath($module, $entityId)), ApprovalModule::entityKey($module));
     }
 
+    /** Modules whose records have attachments in the v3 API (purchase orders have none). */
+    public const ATTACHMENT_MODULES = [ApprovalModule::REQUEST, ApprovalModule::CHANGE, ApprovalModule::RELEASE];
+
+    /**
+     * Files attached to a request, change or release: GET /api/v3/{module}/{id}/attachments.
+     * Each row has id, name, content_type and size {value, display_value}.
+     *
+     * @return list<array<string, mixed>>  Empty for modules without attachments
+     */
+    public function getAttachments(string $module, string $entityId): array
+    {
+        if (!\in_array($module, self::ATTACHMENT_MODULES, true)) {
+            return [];
+        }
+
+        return $this->collection($this->get(self::modulePath($module, $entityId) . '/attachments'), 'attachments');
+    }
+
+    /**
+     * Content of one attachment: GET /api/v3/{module}/{id}/attachments/{attachment_id}/download
+     * (releases: /_download; the other spelling is tried when ServiceDesk Plus does not know one).
+     *
+     * @return string  The file's bytes
+     *
+     * @throws SdpException  also when the file is larger than $maxBytes
+     */
+    public function downloadAttachment(string $module, string $entityId, string $attachmentId, int $maxBytes): string
+    {
+        if (!\in_array($module, self::ATTACHMENT_MODULES, true)) {
+            throw new SdpException(SdpException::NOT_FOUND, 'No attachments for this module');
+        }
+
+        $base  = self::modulePath($module, $entityId) . '/attachments/' . self::id($attachmentId) . '/';
+        $names = $module === ApprovalModule::RELEASE ? ['_download', 'download'] : ['download', '_download'];
+
+        try {
+            $body = $this->getRaw($base . $names[0]);
+        } catch (SdpException $e) {
+            if ($e->getKind() !== SdpException::NOT_FOUND) {
+                throw $e;
+            }
+
+            $body = $this->getRaw($base . $names[1]);
+        }
+
+        if (\strlen($body) > $maxBytes) {
+            throw new SdpException(SdpException::BAD_RESPONSE, 'Attachment larger than allowed');
+        }
+
+        return $body;
+    }
+
+    /**
+     * GET that returns the body as it is (a file), not decoded JSON. An HTTP error, or a JSON body
+     * with a failed response_status, is an SdpException like for every other call.
+     */
+    private function getRaw(string $path): string
+    {
+        [$url, $headers] = $this->request('GET', $path, null, $this->serviceKey);
+        $headers['Accept'] = self::ACCEPT . ', */*';
+
+        $started  = hrtime(true);
+        $response = $this->transmit('GET', $path, $url, $headers, null, $this->secrets);
+        $elapsed  = (int) ((hrtime(true) - $started) / 1_000_000);
+
+        // Errors come as JSON (or an HTTP error): finish() reads, logs and throws them.
+        if ($response->status >= 400 || $this->readStatus($this->decode($response->body))[0]) {
+            $this->finish('GET', $path, $response, $elapsed, $this->secrets);
+        }
+
+        if ($response->status < 200 || $response->status >= 300) {
+            throw new SdpException(SdpException::BAD_RESPONSE, 'Unexpected response to a download', $response->status);
+        }
+
+        $ms = $response->timing['total'] ?? $elapsed;
+        PageStats::add($path, $ms, true);
+        $this->lastTiming = $response->timing;
+        $this->logger->info(\sprintf('SDP GET %s -> HTTP %d, %d bytes, %d ms%s', $path, $response->status, \strlen($response->body), $ms, self::timing($response->timing)));
+
+        return $response->body;
+    }
+
     /**
      * Approve or reject one approval with the service (technician) key.
      *
@@ -840,18 +922,28 @@ final class SdpClient
     {
         [$url, $headers, $body] = $this->request($method, $path, $input, $authtoken, $raw, $query);
 
-        $secrets = array_values(array_unique([...$this->secrets, $authtoken]));
-        $started = hrtime(true);
+        $secrets  = array_values(array_unique([...$this->secrets, $authtoken]));
+        $started  = hrtime(true);
+        $response = $this->transmit($method, $path, $url, $headers, $body, $secrets);
 
+        return $this->finish($method, $path, $response, (int) ((hrtime(true) - $started) / 1_000_000), $secrets);
+    }
+
+    /**
+     * Send one call. A read that fails to connect is tried once more; writes never are.
+     *
+     * @param  array<string, string>  $headers
+     * @param  list<string>           $secrets
+     */
+    private function transmit(string $method, string $path, string $url, array $headers, ?string $body, array $secrets): TransportResponse
+    {
         // A read that fails to connect (e.g. a dropped TLS handshake) is tried once more.
         // Writes are never repeated: the first attempt may have reached SDP.
         $attempts = $method === 'GET' ? 1 + self::GET_RETRIES : 1;
 
         for ($attempt = 1; ; $attempt++) {
             try {
-                $response = $this->transport->send($method, $url, $headers, $body);
-
-                break;
+                return $this->transport->send($method, $url, $headers, $body);
             } catch (TransportException $e) {
                 $retry = $attempt < $attempts;
 
@@ -870,8 +962,6 @@ final class SdpClient
                 usleep(self::RETRY_DELAY_US);
             }
         }
-
-        return $this->finish($method, $path, $response, (int) ((hrtime(true) - $started) / 1_000_000), $secrets);
     }
 
     /**

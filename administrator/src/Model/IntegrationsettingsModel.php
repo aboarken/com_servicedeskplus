@@ -119,6 +119,7 @@ final class IntegrationsettingsModel extends FormModel
             'rate_create_per_hour' => (string) max(1, min(1000, (int) ($filtered['rate_create_per_hour'] ?? 10))),
             'rate_decide_per_hour' => (string) max(1, min(1000, (int) ($filtered['rate_decide_per_hour'] ?? 30))),
             'request_statuses'     => implode(',', Settings::parseList((string) ($filtered['request_statuses'] ?? ''))),
+            'auto_approve_matches' => ((string) ($filtered['auto_approve_matches'] ?? '1')) === '0' ? '0' : '1',
         ];
 
         $approvalEmail = trim((string) ($filtered['approval_account_email'] ?? ''));

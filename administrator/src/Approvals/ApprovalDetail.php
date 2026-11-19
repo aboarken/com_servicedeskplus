@@ -23,7 +23,9 @@ final class ApprovalDetail
         public readonly string $comments,
         public readonly string $status,
         public readonly bool $pending,
-        public readonly string $module = ApprovalModule::REQUEST
+        public readonly string $module = ApprovalModule::REQUEST,
+        /** @var list<array{id: string, name: string, size: int}>|null  null = could not be read */
+        public readonly ?array $attachments = []
     ) {
     }
 }

@@ -1116,3 +1116,8 @@
 @keyframes sdp-spin {
   to { transform: rotate(360deg); }
 }
+
+/* Attachments of an approval */
+.com-servicedeskplus .sdp-muted { color: var(--sdp-text-muted); }
+.com-servicedeskplus .sdp-attachments { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.com-servicedeskplus .sdp-attachments a { color: var(--sdp-primary); font-weight: 600; overflow-wrap: anywhere; }

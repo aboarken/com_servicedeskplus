@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.30.1] - 2026-11-19
+
+### Changed
+- **Previous loans show the asset type, model and serial number**, one row per asset (a loan of several assets has a row for each; its number and dates on the first). They are read from the assets themselves when the loan does not carry them (several at once, at most 100 assets per user, kept in the cache); an asset that no longer exists keeps its name. Search also finds the type, model and serial number.
+
 ## [1.30.0] - 2026-11-19
 
 ### Added

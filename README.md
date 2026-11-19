@@ -66,7 +66,7 @@ ServiceDesk Plus only accepts an approval decision from the assigned approver, w
 - View assets associated with the user.
 - Access assigned equipment information.
 - View equipment and loan records in read-only mode.
-- *My Loans* works like My Requests: search, *Show* (all, to return within 30 days, overdue, previous loans), sort and pages. *Previous loans* lists the user's returned loans from ServiceDesk Plus's loan history (`/api/v3/asset_loans`): assets, loan start, due date, return date (*Late* when after the due date) and comments.
+- *My Loans* works like My Requests: search, *Show* (all, to return within 30 days, overdue, previous loans), sort and pages. *Previous loans* lists the user's returned loans from ServiceDesk Plus's loan history (`/api/v3/asset_loans`): one row per asset with its name, type, model and serial number, then loan start, due date, return date (*Late* when after the due date) and comments.
 - A loan's page shows type, product, serial number, state, purchase date, warranty expiry date, department, the user it is loaned to, loan start and due date.
 
 ### Site templates

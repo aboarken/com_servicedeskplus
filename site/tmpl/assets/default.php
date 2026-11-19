@@ -78,7 +78,10 @@ $sorts = [
                         <thead>
                             <tr>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_NUMBER'); ?></th>
-                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_ASSETS'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ASSET_NAME'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ASSET_TYPE'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ASSET_MODEL'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_ASSET_SERIAL'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_START'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_DUE'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_RETURNED'); ?></th>
@@ -89,9 +92,17 @@ $sorts = [
                         <?php foreach ($this->pastLoans as $loan) :
                             $late = $loan->returned !== null && $loan->due !== null && $loan->returned > $loan->due + 86400;
                             ?>
-                            <tr>
-                                <td class="sdp-id"><?php echo $text($loan->number); ?></td>
-                                <td><?php echo $text($loan->assetNames()); ?></td>
+                            <?php // One row per asset; the loan's own columns only on its first row. ?>
+                            <?php foreach ($loan->assets ?: [['name' => '', 'type' => '', 'model' => '', 'serial' => '']] as $i => $asset) : ?>
+                            <tr<?php echo $i > 0 ? ' class="sdp-row-cont"' : ''; ?>>
+                                <td class="sdp-id"><?php echo $i === 0 ? $text($loan->number) : ''; ?></td>
+                                <td><?php echo $text($asset['name']); ?></td>
+                                <td><?php echo $text($asset['type']); ?></td>
+                                <td><?php echo $text($asset['model']); ?></td>
+                                <td><?php echo $text($asset['serial']); ?></td>
+                                <?php if ($i > 0) : ?>
+                                    <td colspan="4"></td>
+                                <?php else : ?>
                                 <td class="sdp-nowrap"><?php echo $date($loan->start); ?></td>
                                 <td class="sdp-nowrap"><?php echo $date($loan->due); ?></td>
                                 <td class="sdp-nowrap">
@@ -101,7 +112,9 @@ $sorts = [
                                     <?php endif; ?>
                                 </td>
                                 <td><?php echo $text($loan->comments); ?></td>
+                                <?php endif; ?>
                             </tr>
+                            <?php endforeach; ?>
                         <?php endforeach; ?>
                         </tbody>
                     </table>

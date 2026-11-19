@@ -3,6 +3,14 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.28.1] - 2026-11-19
+
+### Changed
+- **Purchase order approval page: the Description section is divided into Remarks and Terms**, each under its own label ("—" when not filled in). Terms moved there from the Purchase Order section.
+
+### Fixed
+- **Open Requests by Priority: a scrollbar appeared under the chart** when the pointer was on the last bar: its hover label reached past the edge. Hover labels of the bars now stay inside the chart, and the chart only scrolls sideways on narrow screens.
+
 ## [1.28.0] - 2026-11-19
 
 ### Added

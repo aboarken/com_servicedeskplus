@@ -26,4 +26,16 @@ final class AssetsModel extends BaseModel
     {
         return $this->sdp()->getAssetService()->listForUser($this->identity());
     }
+
+    /**
+     * The user's returned loans, newest first.
+     *
+     * @return list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\PastLoan>
+     *
+     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
+     */
+    public function getPastLoans(): array
+    {
+        return $this->sdp()->getAssetService()->pastLoansForUser($this->identity());
+    }
 }

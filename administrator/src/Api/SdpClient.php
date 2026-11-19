@@ -600,6 +600,17 @@ final class SdpClient
     }
 
     /**
+     * GET /api/v3/asset_loans: loans with loaned_to, start_time, end_time, extended_to,
+     * returned_on, status ("On Loan", "Closed") and the loaned assets.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAllAssetLoans(ListInfo $listInfo, int $maxItems): array
+    {
+        return $this->listAll('/api/v3/asset_loans', 'asset_loans', $listInfo, $maxItems);
+    }
+
+    /**
      * GET /api/v3/assets/{asset_id}. See listAllAssets().
      *
      * @return array<string, mixed>

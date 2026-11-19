@@ -95,6 +95,55 @@ final class AssetService
         return $assets;
     }
 
+    /** Most past loans read per user (newest first). */
+    public const MAX_PAST_LOANS = 300;
+
+    /**
+     * The user's returned loans, newest first. Only loans whose loaned_to is the user's SDP user
+     * are kept (checked here as well, whatever ServiceDesk Plus returns for the search).
+     *
+     * @return list<PastLoan>
+     *
+     * @throws SdpException
+     */
+    public function pastLoansForUser(Identity $identity): array
+    {
+        $sdpUserId = $identity->sdpUserId();
+        $cacheKey  = 'assets:' . self::CACHE_VERSION . ':past';
+        $cached    = $this->cache->get($identity, $cacheKey);
+
+        if ($cached !== null) {
+            return array_map(static fn (array $a) => PastLoan::fromArray($a), $cached);
+        }
+
+        $items = ($this->clientFactory)()->listAllAssetLoans(
+            new ListInfo(
+                sortField: 'start_time',
+                sortOrder: 'desc',
+                searchCriteria: [['field' => 'loaned_to.id', 'condition' => 'is', 'value' => $sdpUserId]]
+            ),
+            self::MAX_PAST_LOANS
+        );
+
+        $loans = [];
+
+        foreach ($items as $item) {
+            $to = \is_array($item['loaned_to'] ?? null) ? (string) ($item['loaned_to']['id'] ?? '') : '';
+
+            if ($sdpUserId === '' || $to !== $sdpUserId || !PastLoan::isOver($item)) {
+                continue;
+            }
+
+            $loans[] = PastLoan::fromSdp($item);
+        }
+
+        usort($loans, static fn (PastLoan $a, PastLoan $b): int => [$b->returned ?? $b->due ?? 0, $b->start ?? 0] <=> [$a->returned ?? $a->due ?? 0, $a->start ?? 0]);
+
+        $this->cache->set($identity, $cacheKey, array_map(static fn (PastLoan $l) => $l->toArray(), $loans));
+
+        return $loans;
+    }
+
     /**
      * @throws AssetNotFound|SdpException
      */

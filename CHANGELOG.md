@@ -3,6 +3,16 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.26.1] - 2026-11-19
+
+### Fixed
+- **Purchase order approvals stopped with "ServiceDesk Plus sent an answer that could not be read"** after the API technician was added as approver. ServiceDesk Plus answers that step for purchase orders in another shape; the portal now finds the new entry by reading the approval level again, and records the decision.
+- **A retry reuses the API technician's entry left "To Be Sent"** by an earlier attempt, instead of adding another one.
+
+### Changed
+- **Open Requests by Category in colour:** each category's bar has its own colour from the Dashboard's validated palette (the priority chart's colours). A category keeps its colour as counts change; *Other categories* and *No category* stay grey.
+- **Dashboard cards two per row:** the three charts and the My Requests, My Approvals and My Loans cards form one grid of two cards per row (three rows when all six are shown; one per row on small screens). A card alone in the last row takes the full width.
+
 ## [1.26.0] - 2026-11-19
 
 ### Changed

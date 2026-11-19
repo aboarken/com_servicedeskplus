@@ -604,6 +604,30 @@ final class ApprovalService
         $this->audit->record($userId, $action, $result, $entityId, $approvalId, $detail, 0, $this->decisionModule, $this->decisionSubject);
     }
 
+    /**
+     * The API technician's entry on the level that has not been decided yet ("To Be Sent" or
+     * pending), newest first; null when there is none.
+     */
+    private function openAccountEntry(SdpClient $client, string $entityId, string $levelId, string $accountId, string $module): ?string
+    {
+        $found = null;
+
+        foreach ($client->getApprovals($entityId, $levelId, $module) as $candidate) {
+            $id    = SdpFields::string($candidate, 'id');
+            $state = mb_strtolower(SdpFields::name($candidate, 'status'));
+
+            if (SdpFields::id($candidate, 'approver') === $accountId
+                && preg_match('/^[0-9]{1,20}$/', $id)
+                && ($this->isPendingStatus($candidate) || $state === 'to be sent')
+                && ($found === null || (int) $id > (int) $found)
+            ) {
+                $found = $id;
+            }
+        }
+
+        return $found;
+    }
+
     /** Whether the record is closed or cancelled; false when it cannot be read. */
     private function recordIsClosed(string $module, string $entityId): bool
     {
@@ -674,16 +698,26 @@ final class ApprovalService
         $added             = false;
 
         try {
-            foreach ($client->getApprovals($requestId, $levelId, $module) as $candidate) {
-                if (SdpFields::id($candidate, 'approver') === $accountId && $this->isPendingStatus($candidate)) {
-                    $accountApprovalId = SdpFields::string($candidate, 'id');
-                    break;
-                }
-            }
+            $accountApprovalId = $this->openAccountEntry($client, $requestId, $levelId, $accountId, $module);
 
             if ($accountApprovalId === null) {
-                $accountApprovalId = SdpClient::id(SdpFields::string($client->addApproval($requestId, $levelId, $accountId, $module), 'id'));
-                $added             = true;
+                try {
+                    $answer = $client->addApproval($requestId, $levelId, $accountId, $module);
+                } catch (SdpException $e) {
+                    // Accepted, but with an answer of another shape (seen for purchase orders).
+                    if ($e->getKind() !== SdpException::BAD_RESPONSE) {
+                        throw $e;
+                    }
+
+                    $answer = [];
+                }
+
+                $added = true;
+
+                // The id of the new entry from the answer, else from the level read again.
+                $accountApprovalId = preg_match('/^[0-9]{1,20}$/', SdpFields::string($answer, 'id'))
+                    ? SdpFields::string($answer, 'id')
+                    : $this->openAccountEntry($client, $requestId, $levelId, $accountId, $module);
             }
         } catch (SdpException $e) {
             if ($e->getKind() !== SdpException::PERMISSION) {
@@ -705,10 +739,12 @@ final class ApprovalService
             }
 
             throw new NotRecordable('The API technician could not be added to the approval level', $closed ? NotRecordable::REASON_CLOSED : NotRecordable::REASON_PERMISSION, $e);
-        } catch (\InvalidArgumentException) {
+        }
+
+        if ($accountApprovalId === null) {
             $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_add:no_id');
 
-            throw new SdpException(SdpException::BAD_RESPONSE, 'Added approval has no id');
+            throw new SdpException(SdpException::BAD_RESPONSE, 'Added approval not found');
         }
 
         try {

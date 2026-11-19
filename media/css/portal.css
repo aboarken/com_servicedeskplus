@@ -706,8 +706,8 @@
 
 /*
  * Dashboard: the user's details and the request charts.
- * Colours: each category one of the six validated categorical colours below, with its name
- * under the bar; age of open requests in one
+ * Colours: each category one of the six validated categorical colours below, named in the
+ * legend; age of open requests in one
  * warm ramp whose lightness falls with age; priorities low blue, normal yellow, medium aqua, high orange, urgent violet, critical magenta:
  * no two neighbours below CVD ΔE 9.1 or normal-vision ΔE 22.9);
  * every chart also has a legend or labels with the figures (and a table for screen readers), so
@@ -820,15 +820,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-/* (a wide category chart fills its own row, so the count of the cards after it shifts by one) */
-.com-servicedeskplus .sdp-charts > .sdp-panel:last-child:nth-child(odd),
-.com-servicedeskplus .sdp-charts > .sdp-chart--wide,
-.com-servicedeskplus .sdp-charts > .sdp-chart--wide ~ .sdp-panel:last-child:nth-child(even) {
+.com-servicedeskplus .sdp-charts > .sdp-panel:last-child:nth-child(odd) {
   grid-column: 1 / -1;
-}
-
-.com-servicedeskplus .sdp-charts > .sdp-chart--wide ~ .sdp-panel:last-child:nth-child(odd) {
-  grid-column: auto;
 }
 
 @media (max-width: 767.98px) {
@@ -837,8 +830,8 @@
   }
 }
 
-/* Vertical bars (open requests by category). On narrow screens the bars keep a readable
-   width and the chart scrolls sideways inside its card. */
+/* Vertical bars (open requests by priority), each in its priority's colour. On narrow screens
+   the bars keep a readable width and the chart scrolls sideways inside its card. */
 .com-servicedeskplus .sdp-vbars {
   display: grid;
   grid-template-columns: repeat(var(--sdp-vbars, 6), minmax(3rem, 1fr));
@@ -879,12 +872,6 @@
   border-radius: 4px 4px 0 0;
 }
 
-.com-servicedeskplus .sdp-vbar--c1 .sdp-vbar-fill { background: var(--sdp-cat-1); }
-.com-servicedeskplus .sdp-vbar--c2 .sdp-vbar-fill { background: var(--sdp-cat-2); }
-.com-servicedeskplus .sdp-vbar--c3 .sdp-vbar-fill { background: var(--sdp-cat-3); }
-.com-servicedeskplus .sdp-vbar--c4 .sdp-vbar-fill { background: var(--sdp-cat-4); }
-.com-servicedeskplus .sdp-vbar--c5 .sdp-vbar-fill { background: var(--sdp-cat-5); }
-.com-servicedeskplus .sdp-vbar--c6 .sdp-vbar-fill { background: var(--sdp-cat-6); }
 .com-servicedeskplus .sdp-vbar--other .sdp-vbar-fill { background: var(--sdp-cat-other); }
 .com-servicedeskplus .sdp-vbar--none .sdp-vbar-fill { background: var(--sdp-series-none); }
 
@@ -910,6 +897,25 @@
 
 .com-servicedeskplus .sdp-vbar:hover .sdp-vbar-fill {
   filter: brightness(0.92);
+}
+
+/* Open requests by category: donut slices in the categorical colours; a long legend scrolls */
+.com-servicedeskplus .sdp-cat-stroke-c1 { stroke: var(--sdp-cat-1); }
+.com-servicedeskplus .sdp-cat-stroke-c2 { stroke: var(--sdp-cat-2); }
+.com-servicedeskplus .sdp-cat-stroke-c3 { stroke: var(--sdp-cat-3); }
+.com-servicedeskplus .sdp-cat-stroke-c4 { stroke: var(--sdp-cat-4); }
+.com-servicedeskplus .sdp-cat-stroke-c5 { stroke: var(--sdp-cat-5); }
+.com-servicedeskplus .sdp-cat-stroke-c6 { stroke: var(--sdp-cat-6); }
+.com-servicedeskplus .sdp-cat-stroke-other { stroke: var(--sdp-cat-other); }
+.com-servicedeskplus .sdp-cat-stroke-none { stroke: var(--sdp-series-none); }
+
+.com-servicedeskplus .sdp-share-legend--long {
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.com-servicedeskplus .sdp-share-label--muted {
+  font-style: italic;
 }
 
 .com-servicedeskplus .sdp-cat-1 { background: var(--sdp-cat-1); }
@@ -970,33 +976,6 @@
   fill: var(--sdp-text-muted);
 }
 
-/* Segmented bar (open requests by priority) */
-.com-servicedeskplus .sdp-segbar {
-  display: flex;
-  gap: 2px;
-  height: 18px;
-  margin: 0.25rem 0 1rem;
-  overflow: visible;
-}
-
-.com-servicedeskplus .sdp-segbar-part {
-  position: relative;
-  flex-basis: 0;
-  min-width: 3px;
-}
-
-.com-servicedeskplus .sdp-segbar-part:first-child {
-  border-radius: 4px 0 0 4px;
-}
-
-.com-servicedeskplus .sdp-segbar-part:last-child {
-  border-radius: 0 4px 4px 0;
-}
-
-.com-servicedeskplus .sdp-segbar-part:only-child {
-  border-radius: 4px;
-}
-
 /* Legend with counts and shares (donut and segmented bar) */
 .com-servicedeskplus .sdp-share-legend {
   display: grid;
@@ -1051,10 +1030,6 @@
   background: #111827;
   border-radius: 0.375rem;
   transform: translateX(-50%);
-}
-
-.com-servicedeskplus .sdp-segbar-part:hover {
-  filter: brightness(0.92);
 }
 
 /* Page shown with older data while it is refreshed (refresh.js) */

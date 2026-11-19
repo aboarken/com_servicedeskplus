@@ -6,8 +6,12 @@ Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic
 ## [1.27.0] - 2026-11-19
 
 ### Changed
-- **Open Requests by Category shows every category**, each as its own bar (no more *Other categories*, up to 40 categories), then *No category*. With more than seven bars the chart takes the full width of its row, so all bars fit inside the card; the other cards follow two per row.
-- Colours: with up to six categories each keeps its own colour; with more, the colours alternate along the row so neighbouring bars always differ.
+- **Open Requests by Category is a pie (donut) chart of every category** (up to 40, most requests first, then *No category*), with the total in the middle and a legend of names, counts and shares; a very long legend scrolls inside the card. Colours: with up to six categories each keeps its own colour; with more, the colours alternate around the ring so neighbouring slices differ.
+- **Open Requests by Priority is a bar graph:** one bar per priority in its usual colour, with the count above and the name below (the share in the tooltip).
+- The cards stay two per row (three rows of two).
+
+### Removed
+- The segmented priority bar and its styles.
 
 ## [1.26.2] - 2026-11-19
 

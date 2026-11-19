@@ -111,11 +111,11 @@ $tiles = [
         $num = static fn (?int $n): string => $n === null ? '—' : number_format($n);
         $pct = static fn (int $value, int $total): float => $total > 0 ? round(100 * $value / $total, 2) : 0.0;
 
-        // Open and on-hold requests by category: vertical bars, every category, the most frequent
-        // first, then those without a category. Each category has a colour from the validated
-        // palette: up to six categories, chosen from the name (kept when counts change; a clash
-        // takes the next free colour); more than six, in turn along the row. Each bar has its
-        // count above and its name below; more than seven bars take the full width of the row.
+        // Open and on-hold requests by category: a donut of every category, the most frequent
+        // first, then those without a category, with a legend of names, counts and shares. Each
+        // category has a colour from the validated palette: up to six categories, chosen from the
+        // name (kept when counts change; a clash takes the next free colour); more than six, in
+        // turn around the ring, so neighbouring slices differ.
         $catRows = [];
         $catUsed = [];
 
@@ -145,7 +145,6 @@ $tiles = [
             $catRows[] = ['label' => Text::_('COM_SERVICEDESKPLUS_CHART_CATEGORY_NONE'), 'count' => (int) $r->category['none'], 'tone' => 'none'];
         }
 
-        $catMax   = max(1, ...(array_column($catRows, 'count') ?: [1]));
         $catTotal = array_sum(array_column($catRows, 'count'));
 
         // Open requests by age: a donut; ordinal buckets in one warm ramp, light gold = newer,
@@ -160,7 +159,7 @@ $tiles = [
         $radius   = 42;
         $circ     = 2 * M_PI * $radius;
 
-        // Open requests by priority: one segmented bar. A known priority always has the same
+        // Open requests by priority: vertical bars, one per priority. A known priority always has the same
         // colour (validated order: no two neighbours too alike); other names take the free colours.
         $fixedSlots = ['low' => 1, 'normal' => 2, 'medium' => 3, 'high' => 4, 'urgent' => 5, 'critical' => 6];
         $freeSlots  = array_values(array_diff([1, 2, 3, 4, 5, 6], array_values(array_intersect_key($fixedSlots, array_flip(array_map(static fn (array $pr): string => mb_strtolower(trim($pr['name'])), $r->priority))))));
@@ -177,26 +176,48 @@ $tiles = [
 
         $priorityTotal = array_sum(array_column($priorities, 'count'));
         ?>
-            <section class="sdp-panel sdp-chart<?php echo count($catRows) > 7 ? ' sdp-chart--wide' : ''; ?>" aria-labelledby="sdp-chart-category">
+            <section class="sdp-panel sdp-chart" aria-labelledby="sdp-chart-category">
                 <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-category">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_CATEGORY_TITLE'))); ?>
                 <div class="sdp-panel-body">
                     <p class="sdp-chart-note"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_ACTIVE_NOTE'); ?></p>
                     <?php if ($catTotal === 0) : ?>
                         <p class="sdp-empty"><?php echo Text::_($r->category === [] ? 'COM_SERVICEDESKPLUS_CHART_CATEGORY_PENDING' : 'COM_SERVICEDESKPLUS_CHART_EMPTY'); ?></p>
                     <?php else : ?>
-                        <ul class="sdp-vbars" style="--sdp-vbars: <?php echo count($catRows); ?>">
-                            <?php foreach ($catRows as $c) : ?>
-                                <li class="sdp-vbar sdp-vbar--<?php echo $c['tone']; ?>"
-                                    data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', $c['label'], $num($c['count']), round($pct($c['count'], $catTotal)))); ?>">
-                                    <span class="sdp-vbar-track" aria-hidden="true">
-                                        <span class="sdp-vbar-value"><?php echo $num($c['count']); ?></span>
-                                        <span class="sdp-vbar-fill" style="height: <?php echo max(2, $pct($c['count'], $catMax)); ?>%"></span>
-                                    </span>
-                                    <span class="sdp-vbar-label" title="<?php echo $e($c['label']); ?>"><?php echo $e($c['label']); ?></span>
-                                    <span class="visually-hidden">: <?php echo $num($c['count']); ?></span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <div class="sdp-donut-wrap">
+                            <svg class="sdp-donut" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+                                <circle class="sdp-donut-track" cx="60" cy="60" r="42"></circle>
+                                <?php
+                                $catCirc   = 2 * M_PI * 42;
+                                $catOffset = 0.0;
+                                $catShown  = count(array_filter(array_column($catRows, 'count')));
+
+                                foreach ($catRows as $c) :
+                                    if ($c['count'] === 0) {
+                                        continue;
+                                    }
+
+                                    $length = $catCirc * $c['count'] / $catTotal;
+                                    // 2px surface gap between slices (none when one slice is the whole ring).
+                                    $dash   = $catShown > 1 ? max(0.5, $length - 2) : $length;
+                                    ?>
+                                    <circle class="sdp-donut-slice sdp-cat-stroke-<?php echo $c['tone']; ?>" cx="60" cy="60" r="42"
+                                        stroke-dasharray="<?php echo round($dash, 3) . ' ' . round($catCirc - $dash, 3); ?>"
+                                        stroke-dashoffset="<?php echo round(-$catOffset, 3); ?>"><title><?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', $c['label'], $num($c['count']), round($pct($c['count'], $catTotal)))); ?></title></circle>
+                                    <?php $catOffset += $length; endforeach; ?>
+                                <text class="sdp-donut-total" x="60" y="58" text-anchor="middle"><?php echo $num($catTotal); ?></text>
+                                <text class="sdp-donut-caption" x="60" y="74" text-anchor="middle"><?php echo $e(Text::_('COM_SERVICEDESKPLUS_CHART_DONUT_CAPTION')); ?></text>
+                            </svg>
+                            <ul class="sdp-share-legend sdp-share-legend--long">
+                                <?php foreach ($catRows as $c) : ?>
+                                    <li>
+                                        <span class="sdp-swatch sdp-cat-<?php echo $c['tone'] === 'none' ? 'none' : ($c['tone'] === 'other' ? 'other' : substr($c['tone'], 1)); ?>" aria-hidden="true"></span>
+                                        <span class="sdp-share-label<?php echo in_array($c['tone'], ['none', 'other'], true) ? ' sdp-share-label--muted' : ''; ?>" title="<?php echo $e($c['label']); ?>"><?php echo $e($c['label']); ?></span>
+                                        <span class="sdp-share-value"><?php echo $num($c['count']); ?></span>
+                                        <span class="sdp-share-pct"><?php echo round($pct($c['count'], $catTotal)); ?>%</span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
                     <?php endif; ?>
                 </div>
             </section>
@@ -257,19 +278,17 @@ $tiles = [
                     <?php if ($priorityTotal === 0) : ?>
                         <p class="sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_EMPTY'); ?></p>
                     <?php else : ?>
-                        <div class="sdp-segbar" aria-hidden="true">
+                        <?php $prioMax = max(1, ...(array_column($priorities, 'count') ?: [1])); ?>
+                        <ul class="sdp-vbars" style="--sdp-vbars: <?php echo count($priorities); ?>">
                             <?php foreach ($priorities as $pr) : ?>
-                                <span class="sdp-segbar-part sdp-cat-<?php echo $pr['tone']; ?>" style="flex-grow: <?php echo (int) $pr['count']; ?>"
-                                    data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', $pr['label'], $num($pr['count']), round($pct($pr['count'], $priorityTotal)))); ?>"></span>
-                            <?php endforeach; ?>
-                        </div>
-                        <ul class="sdp-share-legend">
-                            <?php foreach ($priorities as $pr) : ?>
-                                <li>
-                                    <span class="sdp-swatch sdp-cat-<?php echo $pr['tone']; ?>" aria-hidden="true"></span>
-                                    <span class="sdp-share-label"><?php echo $e($pr['label']); ?></span>
-                                    <span class="sdp-share-value"><?php echo $num($pr['count']); ?></span>
-                                    <span class="sdp-share-pct"><?php echo round($pct($pr['count'], $priorityTotal)); ?>%</span>
+                                <li class="sdp-vbar sdp-vbar--<?php echo $pr['other'] ? 'other' : ($pr['name'] === '' ? 'none' : 'named'); ?>"
+                                    data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', $pr['label'], $num($pr['count']), round($pct($pr['count'], $priorityTotal)))); ?>">
+                                    <span class="sdp-vbar-track" aria-hidden="true">
+                                        <span class="sdp-vbar-value"><?php echo $num($pr['count']); ?></span>
+                                        <span class="sdp-vbar-fill sdp-cat-<?php echo $pr['tone']; ?>" style="height: <?php echo max(2, $pct($pr['count'], $prioMax)); ?>%"></span>
+                                    </span>
+                                    <span class="sdp-vbar-label" title="<?php echo $e($pr['label']); ?>"><?php echo $e($pr['label']); ?></span>
+                                    <span class="visually-hidden">: <?php echo $num($pr['count']); ?> (<?php echo round($pct($pr['count'], $priorityTotal)); ?>%)</span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

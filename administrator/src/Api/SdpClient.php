@@ -453,7 +453,7 @@ final class SdpClient
      *  2. requests only, Cloud: PUT .../approvals/{approval_id}/_send_notification with
      *     {"notification": {"subject", "description"}}.
      */
-    public function sendApprovalNotification(string $entityId, string $levelId, string $approvalId, string $subject, string $descriptionHtml, string $module = ApprovalModule::REQUEST): void
+    public function sendApprovalNotification(string $entityId, string $levelId, string $approvalId, string $subject, string $descriptionHtml, string $module = ApprovalModule::REQUEST): array
     {
         $level    = self::modulePath($module, $entityId) . '/approval_levels/' . self::id($levelId) . '/approvals';
         $approval = $level . '/' . self::id($approvalId);
@@ -470,7 +470,7 @@ final class SdpClient
             $attempts[] = [$approval . '/send_notification', $cloudIn, []];
         }
 
-        $this->firstFound('PUT', $attempts);
+        return $this->firstFound('PUT', $attempts);
     }
 
     /**

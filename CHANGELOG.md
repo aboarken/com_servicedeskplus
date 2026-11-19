@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.28.2] - 2026-11-19
+
+### Changed
+- **Changes and releases are approved like purchase orders:** after the decision is recorded under the API technician, no approval entry is removed (and none after a failed attempt), so ServiceDesk Plus cannot restart the approval. Only requests still have the approver's own pending entry removed, and only while the level is still waiting.
+
 ## [1.28.1] - 2026-11-19
 
 ### Changed

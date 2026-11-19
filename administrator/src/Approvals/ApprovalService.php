@@ -636,12 +636,14 @@ final class ApprovalService
     }
 
     /**
-     * Whether single approval entries of this module may be removed. Not on purchase orders:
-     * ServiceDesk Plus restarts a purchase order's approval when one of its entries is removed.
+     * Whether single approval entries of this module may be removed: only on requests.
+     * ServiceDesk Plus restarts a purchase order's approval when one of its entries is removed
+     * (seen: status back to Open, entries back to "To Be Sent"); changes and releases are handled
+     * the same way, so a recorded decision is never put at risk there.
      */
     private static function entriesRemovable(string $module): bool
     {
-        return $module !== ApprovalModule::PURCHASE_ORDER;
+        return $module === ApprovalModule::REQUEST;
     }
 
     /** Remove the API technician's entry added for a decision that was not recorded (where allowed). */
@@ -927,9 +929,10 @@ final class ApprovalService
 
         // The decision is recorded. When the level is complete with it, nothing else is touched.
         // Otherwise the approver's own pending entries on this level (the one decided on, and any
-        // duplicate entry for the same person) are removed so only the decision remains, except
-        // on purchase orders: there, removing an entry makes ServiceDesk Plus restart the whole
-        // approval (status back to Open, entries back to "To Be Sent"), undoing the decision.
+        // duplicate entry for the same person) are removed so only the decision remains, on
+        // requests only: on a purchase order, removing an entry makes ServiceDesk Plus restart the
+        // whole approval (status back to Open, entries back to "To Be Sent"), undoing the decision;
+        // changes and releases are treated the same way.
         $originalRemoved = true;
         $levelPending    = $this->levelStillPending($requestId, $levelId, $module);
         $ownIds          = $levelPending && self::entriesRemovable($module)

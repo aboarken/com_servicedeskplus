@@ -3,6 +3,16 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.28.0] - 2026-11-19
+
+### Added
+- **Purchase order details on the approval page:** PO number, vendor, requested by, owner, created and required dates, cost center, GL code, ship-to address and terms (those that are filled in), the items with quantity, unit price and amount, and the sub total, discount, taxes, shipping, adjustment and total with the currency.
+- **Purchase order attachments** on the approval page, taken from the purchase order itself, with the same download checks as for requests.
+- **Result messages above the page title** on My Approvals and the approval page (for example "Your decision was recorded"), in the style of the *Updating…* note: green for success, amber for warnings, red for errors. They no longer depend on where the site template shows messages, and stay in place when the page refreshes itself.
+
+### Fixed
+- The description of a purchase order approval showed ServiceDesk Plus's internal status text; it now shows the purchase order's remarks.
+
 ## [1.27.1] - 2026-11-19
 
 ### Fixed

@@ -399,7 +399,8 @@ final class ApprovalService
             SdpFields::name($approval, 'status'),
             $this->isPending($approval, $level),
             $module,
-            $this->attachmentsOf($module, $requestId, $request)
+            $this->attachmentsOf($module, $requestId, $request),
+            $module === ApprovalModule::PURCHASE_ORDER ? PurchaseOrderInfo::fromSdp($request) : null
         );
     }
 
@@ -414,13 +415,12 @@ final class ApprovalService
      */
     private function attachmentsOf(string $module, string $entityId, ?array $entity = null): ?array
     {
-        if (!\in_array($module, SdpClient::ATTACHMENT_MODULES, true)) {
-            return [];
-        }
-
         $rows = \is_array($entity['attachments'] ?? null) ? array_values(array_filter($entity['attachments'], 'is_array')) : null;
 
-        if ($rows === null || $rows === []) {
+        // Purchase orders carry their attachments; the API has no separate list for them.
+        if (!\in_array($module, SdpClient::ATTACHMENT_MODULES, true)) {
+            $rows ??= [];
+        } elseif ($rows === null || $rows === []) {
             try {
                 $rows = $this->client()->getAttachments($module, $entityId);
             } catch (SdpException $e) {

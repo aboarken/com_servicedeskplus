@@ -310,7 +310,7 @@ final class SdpClient
         return $this->entity($this->get(self::modulePath($module, $entityId)), ApprovalModule::entityKey($module));
     }
 
-    /** Modules whose records have attachments in the v3 API (purchase orders have none). */
+    /** Modules with a list of attachments in the v3 API (a purchase order carries its own). */
     public const ATTACHMENT_MODULES = [ApprovalModule::REQUEST, ApprovalModule::CHANGE, ApprovalModule::RELEASE];
 
     /**
@@ -338,10 +338,6 @@ final class SdpClient
      */
     public function downloadAttachment(string $module, string $entityId, string $attachmentId, int $maxBytes): string
     {
-        if (!\in_array($module, self::ATTACHMENT_MODULES, true)) {
-            throw new SdpException(SdpException::NOT_FOUND, 'No attachments for this module');
-        }
-
         $base  = self::modulePath($module, $entityId) . '/attachments/' . self::id($attachmentId) . '/';
         $names = $module === ApprovalModule::RELEASE ? ['_download', 'download'] : ['download', '_download'];
 

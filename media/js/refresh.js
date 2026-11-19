@@ -124,6 +124,8 @@
         }
 
         const node = document.importNode(fresh, true);
+        // Result messages shown on this page (e.g. "Your decision was recorded") stay on top.
+        node.prepend(...root.querySelectorAll(':scope > .sdp-message'));
         root.replaceWith(node);
         document.dispatchEvent(new CustomEvent('sdp:refreshed'));
       })

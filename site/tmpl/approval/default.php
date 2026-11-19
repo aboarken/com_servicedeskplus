@@ -24,6 +24,7 @@ $item  = $this->item;
 $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Text::_($labelKey) . '</dt><dd>' . $html . '</dd></div>';
 ?>
 <div class="com-servicedeskplus sdp-approval" data-sdp-root="approval">
+    <?php echo (new FileLayout('messages', null, $layoutOptions))->render(); ?>
     <a class="sdp-back" href="<?php echo Route::_('index.php?option=com_servicedeskplus&view=approvals'); ?>">&larr; <?php echo Text::_('COM_SERVICEDESKPLUS_BACK_TO_APPROVALS'); ?></a>
 
     <?php if ($item === null) : ?>
@@ -56,7 +57,61 @@ $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Tex
             <div class="sdp-panel-body sdp-text sdp-prose"><?php echo nl2br($this->escape($item->description !== '' ? $item->description : '—')); ?></div>
         </section>
 
-        <?php if ($item->module !== ApprovalModule::PURCHASE_ORDER) : ?>
+        <?php if ($item->purchaseOrder !== null) : $po = $item->purchaseOrder; ?>
+            <?php if ($po->fields !== []) : ?>
+                <section class="sdp-panel">
+                    <div class="sdp-panel-head"><h2 class="sdp-panel-title"><?php echo Text::_('COM_SERVICEDESKPLUS_PO_INFO'); ?></h2></div>
+                    <dl class="sdp-fields">
+                        <?php foreach ($po->fields as [$labelKey, $value]) :
+                            echo $field($labelKey, nl2br($this->escape($value)));
+                        endforeach; ?>
+                    </dl>
+                </section>
+            <?php endif; ?>
+
+            <?php if ($po->items !== [] || $po->totals !== []) : ?>
+                <section class="sdp-panel">
+                    <div class="sdp-panel-head"><h2 class="sdp-panel-title"><?php echo Text::_('COM_SERVICEDESKPLUS_PO_ITEMS'); ?></h2></div>
+                    <div class="sdp-table-wrap">
+                        <table class="sdp-table sdp-po-items">
+                            <thead><tr>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_PO_ITEM'); ?></th>
+                                <th scope="col" class="sdp-num"><?php echo Text::_('COM_SERVICEDESKPLUS_PO_QUANTITY'); ?></th>
+                                <th scope="col" class="sdp-num"><?php echo Text::_('COM_SERVICEDESKPLUS_PO_PRICE'); ?></th>
+                                <th scope="col" class="sdp-num"><?php echo Text::_('COM_SERVICEDESKPLUS_PO_AMOUNT'); ?></th>
+                            </tr></thead>
+                            <tbody>
+                            <?php foreach ($po->items as $row) : ?>
+                                <tr>
+                                    <td>
+                                        <?php echo $this->escape($row['name'] !== '' ? $row['name'] : '—'); ?>
+                                        <?php if ($row['description'] !== '') : ?>
+                                            <div class="sdp-muted"><?php echo nl2br($this->escape($row['description'])); ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="sdp-num"><?php echo $this->escape($row['quantity']); ?></td>
+                                    <td class="sdp-num"><?php echo $this->escape($row['price']); ?></td>
+                                    <td class="sdp-num"><?php echo $this->escape($row['total']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                            <?php if ($po->totals !== []) : ?>
+                                <tfoot>
+                                <?php foreach ($po->totals as $i => [$labelKey, $amount]) : ?>
+                                    <tr<?php echo $i === array_key_last($po->totals) ? ' class="sdp-po-total"' : ''; ?>>
+                                        <th scope="row" colspan="3" class="sdp-num"><?php echo Text::_($labelKey); ?></th>
+                                        <td class="sdp-num"><?php echo $this->escape(trim($po->currency . ' ' . $amount)); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tfoot>
+                            <?php endif; ?>
+                        </table>
+                    </div>
+                </section>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if ($item->module !== ApprovalModule::PURCHASE_ORDER || $item->attachments !== []) : ?>
             <section class="sdp-panel">
                 <div class="sdp-panel-head"><h2 class="sdp-panel-title"><?php echo Text::_('COM_SERVICEDESKPLUS_APPROVAL_ATTACHMENTS'); ?></h2></div>
                 <div class="sdp-panel-body">

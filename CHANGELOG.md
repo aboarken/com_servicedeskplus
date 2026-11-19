@@ -10,6 +10,9 @@ Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic
 - **Purchase order attachments** on the approval page, taken from the purchase order itself, with the same download checks as for requests.
 - **Result messages above the page title** on My Approvals and the approval page (for example "Your decision was recorded"), in the style of the *Updating…* note: green for success, amber for warnings, red for errors. They no longer depend on where the site template shows messages, and stay in place when the page refreshes itself.
 
+### Changed
+- **"Back to …" links are buttons** in the style of the page numbers of the lists (request, loan, approval, announcement and new request pages).
+
 ### Fixed
 - The description of a purchase order approval showed ServiceDesk Plus's internal status text; it now shows the purchase order's remarks.
 

@@ -58,18 +58,28 @@
   color: var(--sdp-text-muted);
 }
 
+/* "Back to ..." link: a button like the page numbers of the lists */
 .com-servicedeskplus .sdp-back {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
   margin: 0 0 1rem;
+  padding: 0.4rem 0.875rem;
   font-size: 0.875rem;
   font-weight: 500;
+  color: var(--sdp-primary);
   text-decoration: none;
+  background: var(--sdp-card-bg);
+  border: 1px solid var(--sdp-card-border);
+  border-radius: 0.5rem;
+  box-shadow: var(--sdp-card-shadow);
 }
 
-.com-servicedeskplus .sdp-back:hover {
-  text-decoration: underline;
+.com-servicedeskplus .sdp-back:hover,
+.com-servicedeskplus .sdp-back:focus-visible {
+  color: var(--sdp-primary);
+  text-decoration: none;
+  background: var(--sdp-card-hover);
 }
 
 /* Buttons */

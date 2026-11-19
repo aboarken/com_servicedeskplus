@@ -72,14 +72,46 @@ final class RequestService
     {
         $sdpUserId = $identity->sdpUserId();
         // "requests:" prefix: cleared with the lists when the user creates a request.
-        $cacheKey = 'requests:stats:v4';
+        $cacheKey = 'requests:stats:v5';
         $cached   = $this->cache->get($identity, $cacheKey);
 
         if ($cached !== null) {
             return RequestStats::fromArray($cached);
         }
 
-        $client    = ($this->clientFactory)();
+        $client = ($this->clientFactory)();
+
+        // The category is not always in SDP's default list fields, so the fields used are asked
+        // for by name. A server that refuses fields_required is asked again without it.
+        try {
+            [$rows, $truncated] = $this->readOpenRows($client, $sdpUserId, $maxPerStatus, self::STATS_FIELDS);
+        } catch (SdpException $e) {
+            if (!\in_array($e->getKind(), [SdpException::VALIDATION, SdpException::SERVER, SdpException::BAD_RESPONSE], true)) {
+                throw $e;
+            }
+
+            $this->logger->warning('ServiceDesk Plus refused fields_required for the Dashboard figures; reading the default fields (categories may be missing).');
+            [$rows, $truncated] = $this->readOpenRows($client, $sdpUserId, $maxPerStatus, null);
+        }
+
+        $stats = RequestStats::fromSdp($rows, $truncated)->withCounted($this->countDone($client, $sdpUserId));
+        $this->cache->set($identity, $cacheKey, $stats->toArray());
+
+        return $stats;
+    }
+
+    /** Fields of the open and on-hold rows the Dashboard figures and charts use. */
+    private const STATS_FIELDS = ['id', 'subject', 'status', 'priority', 'created_time', 'is_service_request', 'template', 'service_category', 'category', 'technician', 'requester'];
+
+    /**
+     * The user's open and on-hold requests (at most $maxPerStatus of each status).
+     *
+     * @param  list<string>|null  $fields  fields_required, or null for SDP's default fields
+     *
+     * @return array{0: list<array<string, mixed>>, 1: bool}  rows, and whether more exist
+     */
+    private function readOpenRows(SdpClient $client, string $sdpUserId, int $maxPerStatus, ?array $fields): array
+    {
         $rows      = [];
         $truncated = false;
 
@@ -93,7 +125,8 @@ final class RequestService
                     searchCriteria: [
                         ['field' => 'requester.id', 'condition' => 'is', 'value' => $sdpUserId],
                         ['field' => 'status.name', 'condition' => 'is', 'value' => $status, 'logical_operator' => 'AND'],
-                    ]
+                    ],
+                    fieldsRequired: $fields
                 ));
 
                 foreach ($page->items as $item) {
@@ -113,10 +146,7 @@ final class RequestService
             }
         }
 
-        $stats = RequestStats::fromSdp($rows, $truncated)->withCounted($this->countDone($client, $sdpUserId));
-        $this->cache->set($identity, $cacheKey, $stats->toArray());
-
-        return $stats;
+        return [$rows, $truncated];
     }
 
     /**

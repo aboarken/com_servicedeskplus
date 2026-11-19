@@ -14,7 +14,7 @@ use SdpPortal\Component\ServiceDeskPlus\Administrator\Requests\RequestQuery;
 
 /*
  * Layout: the user's details (department, job title, employee ID, name), summary cards, charts
- * (who is handling the open requests, open requests by age and by priority), then My Requests, My Approvals and
+ * (open requests by category, by age and by priority), then My Requests, My Approvals and
  * My Loans side by side. Styles are in media/com_servicedeskplus/css/portal.css (.sdp-*), so the
  * Dashboard looks the same on any site template. Colours ("tones"): blue (#17426f) open, amber on
  * hold or due soon, green resolved / approved / nothing overdue, slate closed, purple waiting
@@ -108,25 +108,25 @@ $tiles = [
         $num = static fn (?int $n): string => $n === null ? '—' : number_format($n);
         $pct = static fn (int $value, int $total): float => $total > 0 ? round(100 * $value / $total, 2) : 0.0;
 
-        // Who is handling the open and on-hold requests: one bar per technician (most requests
-        // first), the rest added up, and those not assigned yet. One series: one colour, with the
-        // names and counts written beside each bar.
-        $techRows = [];
+        // Open and on-hold requests by category: vertical bars, the most frequent first, then the
+        // rest added up and those without a category. One series: one colour; each bar has its
+        // count above and its name below.
+        $catRows = [];
 
-        foreach ($r->technician['named'] ?? [] as $t) {
-            $techRows[] = ['label' => $t['name'], 'count' => $t['count'], 'tone' => 'named'];
+        foreach ($r->category['named'] ?? [] as $c) {
+            $catRows[] = ['label' => $c['name'], 'count' => $c['count'], 'tone' => 'named'];
         }
 
-        if (($r->technician['other'] ?? 0) > 0) {
-            $techRows[] = ['label' => Text::_('COM_SERVICEDESKPLUS_CHART_TECH_OTHERS'), 'count' => (int) $r->technician['other'], 'tone' => 'other'];
+        if (($r->category['other'] ?? 0) > 0) {
+            $catRows[] = ['label' => Text::_('COM_SERVICEDESKPLUS_CHART_CATEGORY_OTHER'), 'count' => (int) $r->category['other'], 'tone' => 'other'];
         }
 
-        if (($r->technician['unassigned'] ?? 0) > 0) {
-            $techRows[] = ['label' => Text::_('COM_SERVICEDESKPLUS_CHART_TECH_UNASSIGNED'), 'count' => (int) $r->technician['unassigned'], 'tone' => 'unassigned'];
+        if (($r->category['none'] ?? 0) > 0) {
+            $catRows[] = ['label' => Text::_('COM_SERVICEDESKPLUS_CHART_CATEGORY_NONE'), 'count' => (int) $r->category['none'], 'tone' => 'none'];
         }
 
-        $techMax   = max(1, ...array_column($techRows, 'count') ?: [1]);
-        $techTotal = array_sum(array_column($techRows, 'count'));
+        $catMax   = max(1, ...(array_column($catRows, 'count') ?: [1]));
+        $catTotal = array_sum(array_column($catRows, 'count'));
 
         // Open requests by age: a donut; ordinal buckets in one warm ramp, light gold = newer,
         // deep red = oldest (the colour darkens with age).
@@ -158,20 +158,23 @@ $tiles = [
         $priorityTotal = array_sum(array_column($priorities, 'count'));
         ?>
         <div class="sdp-panels sdp-charts">
-            <section class="sdp-panel sdp-chart" aria-labelledby="sdp-chart-tech">
-                <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-tech">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_TECH_TITLE'))); ?>
+            <section class="sdp-panel sdp-chart" aria-labelledby="sdp-chart-category">
+                <?php echo str_replace('<h2 class="sdp-panel-title">', '<h2 class="sdp-panel-title" id="sdp-chart-category">', $panelHead(Text::_('COM_SERVICEDESKPLUS_CHART_CATEGORY_TITLE'))); ?>
                 <div class="sdp-panel-body">
                     <p class="sdp-chart-note"><?php echo Text::_('COM_SERVICEDESKPLUS_CHART_ACTIVE_NOTE'); ?></p>
-                    <?php if ($techTotal === 0) : ?>
-                        <p class="sdp-empty"><?php echo Text::_($r->technician === [] ? 'COM_SERVICEDESKPLUS_CHART_TECH_PENDING' : 'COM_SERVICEDESKPLUS_CHART_EMPTY'); ?></p>
+                    <?php if ($catTotal === 0) : ?>
+                        <p class="sdp-empty"><?php echo Text::_($r->category === [] ? 'COM_SERVICEDESKPLUS_CHART_CATEGORY_PENDING' : 'COM_SERVICEDESKPLUS_CHART_EMPTY'); ?></p>
                     <?php else : ?>
-                        <ul class="sdp-hbars">
-                            <?php foreach ($techRows as $t) : ?>
-                                <li class="sdp-hbar sdp-hbar--<?php echo $t['tone']; ?>"
-                                    data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', $t['label'], $num($t['count']), round($pct($t['count'], $techTotal)))); ?>">
-                                    <span class="sdp-hbar-label"><?php echo $e($t['label']); ?></span>
-                                    <span class="sdp-hbar-track" aria-hidden="true"><span class="sdp-hbar-fill" style="width: <?php echo max(2, $pct($t['count'], $techMax)); ?>%"></span></span>
-                                    <span class="sdp-hbar-value"><?php echo $num($t['count']); ?></span>
+                        <ul class="sdp-vbars" style="--sdp-vbars: <?php echo count($catRows); ?>">
+                            <?php foreach ($catRows as $c) : ?>
+                                <li class="sdp-vbar sdp-vbar--<?php echo $c['tone']; ?>"
+                                    data-sdp-tip="<?php echo $e(Text::sprintf('COM_SERVICEDESKPLUS_CHART_TIP_SHARE', $c['label'], $num($c['count']), round($pct($c['count'], $catTotal)))); ?>">
+                                    <span class="sdp-vbar-track" aria-hidden="true">
+                                        <span class="sdp-vbar-value"><?php echo $num($c['count']); ?></span>
+                                        <span class="sdp-vbar-fill" style="height: <?php echo max(2, $pct($c['count'], $catMax)); ?>%"></span>
+                                    </span>
+                                    <span class="sdp-vbar-label" title="<?php echo $e($c['label']); ?>"><?php echo $e($c['label']); ?></span>
+                                    <span class="visually-hidden">: <?php echo $num($c['count']); ?></span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

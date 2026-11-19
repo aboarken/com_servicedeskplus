@@ -76,9 +76,16 @@ final class ApprovalService
         private readonly string $approvalAccountEmail = '',
         private readonly array $modules = ApprovalModule::ALL,
         private readonly int $concurrency = SdpClient::DEFAULT_CONCURRENCY,
-        private readonly ?DecisionLock $lock = null
+        private readonly ?DecisionLock $lock = null,
+        ?\Closure $sleep = null
     ) {
+        $this->sleep = $sleep ?? static function (int $microseconds): void {
+            usleep($microseconds);
+        };
     }
+
+    /** @var \Closure(int): void */
+    private \Closure $sleep;
 
     /** SDP user id of the approval account, once looked up. */
     private ?string $approvalAccountId = null;
@@ -628,6 +635,48 @@ final class ApprovalService
         return $found;
     }
 
+    /** Pause between status reads while an entry is "To Be Sent" (microseconds), and how many. */
+    private const SENT_POLL_US    = 1_000_000;
+    private const SENT_POLL_TRIES = 8;
+
+    /**
+     * The entry's status (lower case), read again while it is still "To Be Sent", at most
+     * SENT_POLL_TRIES times one second apart; null when it cannot be read.
+     */
+    private function waitWhileToBeSent(string $entityId, string $levelId, string $approvalId, string $module): ?string
+    {
+        $state = $this->approvalStatus($entityId, $levelId, $approvalId, $module);
+
+        for ($try = 0; $state === 'to be sent' && $try < self::SENT_POLL_TRIES; $try++) {
+            ($this->sleep)(self::SENT_POLL_US);
+            $state = $this->approvalStatus($entityId, $levelId, $approvalId, $module);
+        }
+
+        return $state;
+    }
+
+    /**
+     * Why ServiceDesk Plus did not e-mail the given approval, from the answer of
+     * _send_notification (mail_sent_failed_approvals, empty_email_approvals); null when it was
+     * sent or the answer does not say.
+     *
+     * @param  array<string, mixed>|null  $answer
+     */
+    private static function mailProblem(?array $answer, string $approvalId): ?string
+    {
+        $lists = \is_array($answer['approval'] ?? null) ? $answer['approval'] : (\is_array($answer) ? $answer : []);
+        $in    = static fn (string $key): bool => \in_array($approvalId, array_map(
+            static fn ($v): string => \is_array($v) ? (string) ($v['id'] ?? '') : (string) $v,
+            \is_array($lists[$key] ?? null) ? $lists[$key] : []
+        ), true);
+
+        return match (true) {
+            $in('empty_email_approvals')      => 'the API technician has no e-mail address in ServiceDesk Plus',
+            $in('mail_sent_failed_approvals') => 'ServiceDesk Plus could not send the e-mail (check its mail server settings)',
+            default                           => null,
+        };
+    }
+
     /** Whether the record is closed or cancelled; false when it cannot be read. */
     private function recordIsClosed(string $module, string $entityId): bool
     {
@@ -750,9 +799,11 @@ final class ApprovalService
         try {
             // SDP only accepts a decision once the approval e-mail was sent. It goes to the API
             // technician's mailbox; a failure here (e.g. already sent) is left to the decision.
+            $mail = null;
+
             try {
                 $what = str_replace('_', ' ', ApprovalModule::entityKey($module)) . ' ' . $requestId;
-                $client->sendApprovalNotification(
+                $mail = $client->sendApprovalNotification(
                     $requestId,
                     $levelId,
                     $accountApprovalId,
@@ -768,11 +819,20 @@ final class ApprovalService
                 $this->logger->warning(\sprintf('Approval e-mail for approval %s of request %s could not be sent (%s)', $accountApprovalId, $requestId, $e->getKind()));
             }
 
+            $mailProblem = self::mailProblem($mail, $accountApprovalId);
+
+            if ($mailProblem !== null) {
+                $this->logger->warning(\sprintf('ServiceDesk Plus did not send the approval e-mail for the API technician\'s approval %s on %s %s: %s', $accountApprovalId, $module, $requestId, $mailProblem));
+            }
+
             // SDP may already have decided the added entry by itself ("Auto-approve requests if
             // already approved by the same approver in the previous stages", "... when the requester
             // is the approver"). Never let that stand for the opposite of the user's decision.
-            $state  = $this->approvalStatus($requestId, $levelId, $accountApprovalId, $module);
+            // ServiceDesk Plus marks the entry as sent a moment after it answers (seen for purchase
+            // orders); a decision on an entry still "To Be Sent" is answered OK and ignored.
+            $state  = $this->waitWhileToBeSent($requestId, $levelId, $accountApprovalId, $module);
             $wanted = $decision === 'approve' ? 'approved' : 'rejected';
+            $this->logger->info(\sprintf('API technician\'s approval %s on %s %s shows as "%s" after the approval e-mail', $accountApprovalId, $module, $requestId, $state ?? 'unknown'));
 
             if ($state !== null && !\in_array($state, [mb_strtolower($this->pendingStatus), 'to be sent'], true)) {
                 if ($state !== $wanted) {
@@ -801,6 +861,38 @@ final class ApprovalService
                 $this->logger->info(\sprintf('ServiceDesk Plus already set approval %s on %s %s to "%s"', $accountApprovalId, $module, $requestId, $state));
             } else {
                 $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment, $module);
+                $after = $this->approvalStatus($requestId, $levelId, $accountApprovalId, $module);
+
+                // Still undecided once: wait until it shows as sent and decide again.
+                if ($after !== $wanted && \in_array($after, [mb_strtolower($this->pendingStatus), 'to be sent'], true)) {
+                    $this->waitWhileToBeSent($requestId, $levelId, $accountApprovalId, $module);
+                    $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment, $module);
+                }
+
+                // ServiceDesk Plus can answer OK and still leave the entry undecided (seen for
+                // purchase orders whose approval e-mail was not sent: the entry stays "To Be
+                // Sent"). The approver's own entry is only removed once the decision shows.
+                $after = $this->approvalStatus($requestId, $levelId, $accountApprovalId, $module);
+
+                if ($after !== $wanted) {
+                    try {
+                        $client->deleteApproval($requestId, $levelId, $accountApprovalId, $module);
+                    } catch (SdpException $e) {
+                        $this->logger->warning(\sprintf('Approval %s added for the approval account on %s %s could not be removed (%s)', $accountApprovalId, $module, $requestId, $e->getKind()));
+                    }
+
+                    $this->logger->error(\sprintf(
+                        'ServiceDesk Plus accepted the decision on the API technician\'s approval %s on %s %s but shows it as "%s"; nothing was changed%s.',
+                        $accountApprovalId,
+                        $module,
+                        $requestId,
+                        $after ?? 'unknown',
+                        $mailProblem !== null ? ' (approval e-mail not sent: ' . $mailProblem . ')' : ''
+                    ));
+                    $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, mb_substr('account_not_applied:' . ($after ?? 'unknown') . ($mailProblem !== null ? ':' . $mailProblem : ''), 0, 255));
+
+                    throw new NotRecordable('The decision was not applied to the API technician\'s approval', NotRecordable::REASON_NOT_APPLIED);
+                }
             }
         } catch (SdpException $e) {
             if ($added) {

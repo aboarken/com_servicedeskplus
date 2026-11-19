@@ -3,6 +3,13 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.26.2] - 2026-11-19
+
+### Fixed
+- **Purchase order approvals were reported as done while ServiceDesk Plus had not recorded them.** After the approval e-mail to the API technician, ServiceDesk Plus marks the entry as sent a moment later; a decision sent while it still showed *To Be Sent* was answered OK and ignored, and the portal then removed the real approver's pending entry. Now the portal waits (up to about 8 seconds) until the entry shows as sent, decides, and checks that the entry really shows *Approved* or *Rejected* (deciding once more if needed).
+- **The real approver's entry is only removed once the decision shows in ServiceDesk Plus.** If it does not, the API technician's added entry is removed instead, nothing else changes, and the user sees "ServiceDesk Plus did not record this decision, so nothing was changed…".
+- The log says why an approval e-mail was not sent (ServiceDesk Plus's mail failed, or the API technician has no e-mail address), and which status the API technician's entry shows after the e-mail.
+
 ## [1.26.1] - 2026-11-19
 
 ### Fixed

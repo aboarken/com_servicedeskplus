@@ -8,6 +8,10 @@ Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic
 ### Added
 - **Attachments open in a popup:** on the approval page, images (PNG, JPG, GIF, WebP) and PDF files open in a popup over the page, with *Open in new tab*, *Download* and *Close*. Other files are downloaded as before. A file is only shown in the browser when its type is one of these and its content really is of that type; everything else (HTML, SVG, office files, ...) is always sent as a download. The approver check is the same as for downloads.
 
+### Fixed
+- **Rejecting a purchase order from the portal showed an error although it was recorded.** ServiceDesk Plus shows the rejected entry as *Denied*; the portal expected *Rejected*. Both are accepted now, and the user gets the confirmation.
+- **A decided purchase order stayed in My Approvals.** The approver's own entry is no longer removed there and still reads *pending*; the list (and the approval page) now also require the approval level itself to be waiting.
+
 ### Changed
 - **Changes and releases are approved like purchase orders:** after the decision is recorded under the API technician, no approval entry is removed (and none after a failed attempt), so ServiceDesk Plus cannot restart the approval. Only requests still have the approver's own pending entry removed, and only while the level is still waiting.
 

@@ -194,7 +194,7 @@ final class ApprovalService
 
             $level = $this->currentLevel($result);
 
-            if ($level !== null && preg_match('/^[0-9]{1,20}$/', SdpFields::string($level, 'id'))) {
+            if ($level !== null && $this->isOpenLevel($level) && preg_match('/^[0-9]{1,20}$/', SdpFields::string($level, 'id'))) {
                 $levels[(string) $entityId] = $level;
             }
         }
@@ -858,11 +858,12 @@ final class ApprovalService
             // ServiceDesk Plus marks the entry as sent a moment after it answers (seen for purchase
             // orders); a decision on an entry still "To Be Sent" is answered OK and ignored.
             $state  = $this->waitWhileToBeSent($requestId, $levelId, $accountApprovalId, $module);
-            $wanted = $decision === 'approve' ? 'approved' : 'rejected';
+            // What ServiceDesk Plus calls the decided state: "Approved"; "Rejected" or "Denied".
+            $wanted = $decision === 'approve' ? ['approved'] : ['rejected', 'denied'];
             $this->logger->info(\sprintf('API technician\'s approval %s on %s %s shows as "%s" after the approval e-mail', $accountApprovalId, $module, $requestId, $state ?? 'unknown'));
 
             if ($state !== null && !\in_array($state, [mb_strtolower($this->pendingStatus), 'to be sent'], true)) {
-                if ($state !== $wanted) {
+                if (!\in_array($state, $wanted, true)) {
                     $removed = true;
 
                     try {
@@ -891,7 +892,7 @@ final class ApprovalService
                 $after = $this->approvalStatus($requestId, $levelId, $accountApprovalId, $module);
 
                 // Still undecided once: wait until it shows as sent and decide again.
-                if ($after !== $wanted && \in_array($after, [mb_strtolower($this->pendingStatus), 'to be sent'], true)) {
+                if (\in_array($after, [mb_strtolower($this->pendingStatus), 'to be sent'], true)) {
                     $this->waitWhileToBeSent($requestId, $levelId, $accountApprovalId, $module);
                     $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment, $module);
                     $after = $this->approvalStatus($requestId, $levelId, $accountApprovalId, $module);
@@ -900,7 +901,7 @@ final class ApprovalService
                 // ServiceDesk Plus can answer OK and still leave the entry undecided (seen for
                 // purchase orders whose approval e-mail was not sent: the entry stays "To Be
                 // Sent"). Nothing else is changed unless the decision shows.
-                if ($after !== $wanted) {
+                if (!\in_array($after, $wanted, true)) {
                     $this->removeAccountEntry($client, $requestId, $levelId, $accountApprovalId, $module);
 
                     $this->logger->error(\sprintf(
@@ -1271,7 +1272,21 @@ final class ApprovalService
      */
     private function isPending(array $approval, array $level): bool
     {
-        return $this->isPendingStatus($approval) && $this->isCurrentLevel($level);
+        return $this->isPendingStatus($approval) && $this->isOpenLevel($level);
+    }
+
+    /**
+     * The current level, still waiting for a decision. A level decided by another approver of it
+     * ("X or the API technician") can stay "current" while its other entries still read
+     * "pending": those are not waiting for anyone any more.
+     *
+     * @param array<string, mixed> $level
+     */
+    private function isOpenLevel(array $level): bool
+    {
+        $status = mb_strtolower(SdpFields::name($level, 'status'));
+
+        return $this->isCurrentLevel($level) && ($status === '' || $status === mb_strtolower($this->pendingStatus));
     }
 
     private function allowDecision(int $userId): bool

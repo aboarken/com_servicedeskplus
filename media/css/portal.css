@@ -863,6 +863,8 @@
 .com-servicedeskplus .sdp-vbar[data-sdp-tip]:hover::after {
   top: 0;
   bottom: auto;
+  /* The portal's blue (white text on it: contrast 9.9:1) */
+  background: var(--sdp-primary);
 }
 
 .com-servicedeskplus .sdp-vbar:first-child[data-sdp-tip]:hover::after {

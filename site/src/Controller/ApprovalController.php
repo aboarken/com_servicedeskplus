@@ -215,8 +215,8 @@ final class ApprovalController extends BaseController
             $this->app->enqueueMessage(Text::_($e->entryRemoved ? 'COM_SERVICEDESKPLUS_APPROVAL_ERR_AUTO_DECIDED' : 'COM_SERVICEDESKPLUS_APPROVAL_ERR_AUTO_DECIDED_LEFT'), 'error');
 
             return;
-        } catch (NotRecordable) {
-            $this->app->enqueueMessage(Text::_('COM_SERVICEDESKPLUS_APPROVAL_ERR_NOT_RECORDABLE'), 'error');
+        } catch (NotRecordable $e) {
+            $this->app->enqueueMessage(Text::_($e->reason === NotRecordable::REASON_CLOSED ? 'COM_SERVICEDESKPLUS_APPROVAL_ERR_NOT_RECORDABLE' : 'COM_SERVICEDESKPLUS_APPROVAL_ERR_NOT_ALLOWED'), 'error');
 
             return;
         } catch (AlreadyDecided) {

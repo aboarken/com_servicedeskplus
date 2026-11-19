@@ -12,9 +12,16 @@ namespace SdpPortal\Component\ServiceDeskPlus\Administrator\Approvals;
 
 /**
  * ServiceDesk Plus refused the direct decision and did not let the API technician be added to
- * the level either, for example because the request, change, release or purchase order is
- * closed. The approval can only be handled in ServiceDesk Plus itself.
+ * the level either: the record is closed (REASON_CLOSED), or the API technician's role may not
+ * change approvals in that module (REASON_PERMISSION, e.g. only "View" for Purchase Orders).
  */
 final class NotRecordable extends \RuntimeException
 {
+    public const REASON_CLOSED     = 'closed';
+    public const REASON_PERMISSION = 'permission';
+
+    public function __construct(string $message, public readonly string $reason = self::REASON_PERMISSION, ?\Throwable $previous = null)
+    {
+        parent::__construct($message, 0, $previous);
+    }
 }

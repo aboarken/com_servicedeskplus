@@ -55,7 +55,10 @@ final class HtmlView extends BaseHtmlView
 
         $this->readListInput(self::SHOWS, self::SORTS);
         $this->modules   = $model->getModules();
-        $this->type      = ApprovalModule::normalize(Factory::getApplication()->getInput()->getCmd('type', '')) ?? '';
+        // No type chosen = all types. (normalize() reads an empty module as "request", which is
+        // right for old decisions without a module but not for this filter.)
+        $type            = Factory::getApplication()->getInput()->getCmd('type', '');
+        $this->type      = $type === '' ? '' : (ApprovalModule::normalize($type) ?? '');
         $this->type      = \in_array($this->type, $this->modules, true) ? $this->type : '';
 
         if ($this->show === 'pending') {

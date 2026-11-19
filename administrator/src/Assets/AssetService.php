@@ -109,7 +109,7 @@ final class AssetService
     public function pastLoansForUser(Identity $identity): array
     {
         $sdpUserId = $identity->sdpUserId();
-        $cacheKey  = 'assets:' . self::CACHE_VERSION . ':past';
+        $cacheKey  = 'assets:' . self::CACHE_VERSION . ':past2';
         $cached    = $this->cache->get($identity, $cacheKey);
 
         if ($cached !== null) {
@@ -138,10 +138,62 @@ final class AssetService
         }
 
         usort($loans, static fn (PastLoan $a, PastLoan $b): int => [$b->returned ?? $b->due ?? 0, $b->start ?? 0] <=> [$a->returned ?? $a->due ?? 0, $a->start ?? 0]);
+        $loans = $this->withAssetDetails($loans);
 
         $this->cache->set($identity, $cacheKey, array_map(static fn (PastLoan $l) => $l->toArray(), $loans));
 
         return $loans;
+    }
+
+    /** Most assets whose type, model and serial number are read for the past loans (newest first). */
+    public const MAX_PAST_ASSET_DETAILS = 100;
+
+    /**
+     * Type, model and serial number of the assets of past loans, read from the assets when the
+     * loan does not carry them (GET /api/v3/assets/{id}, several at once). Only these three
+     * fields and the name are kept; an asset that cannot be read keeps what the loan said.
+     *
+     * @param  list<PastLoan>  $loans  newest first
+     *
+     * @return list<PastLoan>
+     */
+    private function withAssetDetails(array $loans): array
+    {
+        $ids = [];
+
+        foreach ($loans as $loan) {
+            foreach ($loan->idsWithoutDetails() as $id) {
+                $ids[$id] = true;
+            }
+        }
+
+        $ids = \array_slice(array_keys($ids), 0, self::MAX_PAST_ASSET_DETAILS);
+
+        if ($ids === []) {
+            return $loans;
+        }
+
+        $calls = [];
+
+        foreach ($ids as $id) {
+            $calls[(string) $id] = ['/api/v3/assets/' . SdpClient::id((string) $id), null];
+        }
+
+        $details = [];
+
+        foreach (($this->clientFactory)()->getMany($calls) as $id => $result) {
+            if ($result instanceof SdpException || !\is_array($result['asset'] ?? null)) {
+                continue;
+            }
+
+            $details[(string) $id] = PastLoan::assetRow($result['asset']);
+        }
+
+        if (\count($details) < \count($ids)) {
+            $this->logger->info(\sprintf('Previous loans: details of %d of %d assets could not be read (removed or not visible).', \count($ids) - \count($details), \count($ids)));
+        }
+
+        return array_map(static fn (PastLoan $loan): PastLoan => $loan->withDetails($details), $loans);
     }
 
     /**

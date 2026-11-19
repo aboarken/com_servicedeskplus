@@ -1269,3 +1269,6 @@ dialog.sdp-preview .sdp-preview-body iframe {
   height: 100%;
   border: 0;
 }
+
+/* Previous loans: further assets of the same loan, without a line between them */
+.com-servicedeskplus .sdp-table tr.sdp-row-cont td { border-top: 0; padding-top: 0; }

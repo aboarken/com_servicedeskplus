@@ -10,6 +10,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\View\Assets;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
@@ -19,7 +20,7 @@ use SdpPortal\Component\ServiceDeskPlus\Site\View\ListPageTrait;
 use SdpPortal\Component\ServiceDeskPlus\Site\View\MenuPageTrait;
 
 /**
- * My Loans with search, "Show" (all, to return within 30 days, overdue), sort and pages,
+ * My Loans with search, "Show" (all, to return within 30 days, overdue, previous loans), sort and pages,
  * like My Requests.
  */
 final class HtmlView extends BaseHtmlView
@@ -27,12 +28,15 @@ final class HtmlView extends BaseHtmlView
     use MenuPageTrait;
     use ListPageTrait;
 
-    public const SHOWS = ['all', 'due_soon', 'overdue'];
+    public const SHOWS = ['all', 'due_soon', 'overdue', 'previous'];
 
     public const SORTS = ['due_asc', 'due_desc', 'name_asc'];
 
     /** @var list<LoanAsset> Current page */
     public array $items = [];
+
+    /** @var list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\PastLoan> Current page of "Previous loans" */
+    public array $pastLoans = [];
 
     public string $error = '';
 
@@ -47,20 +51,24 @@ final class HtmlView extends BaseHtmlView
         $this->readListInput(self::SHOWS, self::SORTS);
 
         try {
-            $items = array_values(array_filter($model->getItems(), fn (LoanAsset $a): bool => match ($this->show) {
-                'due_soon' => $a->isDueSoon($this->now),
-                'overdue'  => $a->isOverdue($this->now),
-                default    => true,
-            } && ($this->search === '' || $a->id === $this->search || self::matches($this->search, $a->name, $a->product, $a->serialNumber, $a->type))));
+            if ($this->show === 'previous') {
+                $this->showPrevious($model);
+            } else {
+                $items = array_values(array_filter($model->getItems(), fn (LoanAsset $a): bool => match ($this->show) {
+                    'due_soon' => $a->isDueSoon($this->now),
+                    'overdue'  => $a->isOverdue($this->now),
+                    default    => true,
+                } && ($this->search === '' || $a->id === $this->search || self::matches($this->search, $a->name, $a->product, $a->serialNumber, $a->type))));
 
-            usort($items, fn (LoanAsset $a, LoanAsset $b): int => match ($this->sort) {
-                // Loans without a due date last.
-                'due_desc' => [$b->loanEnd ?? PHP_INT_MIN, $b->name] <=> [$a->loanEnd ?? PHP_INT_MIN, $a->name],
-                'name_asc' => strnatcasecmp($a->name, $b->name),
-                default    => [$a->loanEnd ?? PHP_INT_MAX, $a->name] <=> [$b->loanEnd ?? PHP_INT_MAX, $b->name],
-            });
+                usort($items, fn (LoanAsset $a, LoanAsset $b): int => match ($this->sort) {
+                    // Loans without a due date last.
+                    'due_desc' => [$b->loanEnd ?? PHP_INT_MIN, $b->name] <=> [$a->loanEnd ?? PHP_INT_MIN, $a->name],
+                    'name_asc' => strnatcasecmp($a->name, $b->name),
+                    default    => [$a->loanEnd ?? PHP_INT_MAX, $a->name] <=> [$b->loanEnd ?? PHP_INT_MAX, $b->name],
+                });
 
-            $this->items = $this->pageOf($items);
+                $this->items = $this->pageOf($items);
+            }
         } catch (SdpException $e) {
             $this->error = Text::_($e->getLanguageKey());
         }
@@ -72,6 +80,30 @@ final class HtmlView extends BaseHtmlView
         $document->getWebAssetManager()->useStyle('com_servicedeskplus.portal')->useScript('com_servicedeskplus.filters');
 
         parent::display($tpl);
+    }
+
+    /**
+     * Returned loans: newest return first ("Due date, latest first" and the default), oldest
+     * first ("Due date, earliest first" chosen explicitly), or by asset name.
+     */
+    private function showPrevious(AssetsModel $model): void
+    {
+        $loans = array_values(array_filter(
+            $model->getPastLoans(),
+            fn ($l): bool => $this->search === '' || $l->number === $this->search || self::matches($this->search, $l->assetNames(), $l->comments)
+        ));
+
+        $when = static fn ($l): int => $l->returned ?? $l->due ?? $l->start ?? 0;
+        // The list's default sort is "earliest first"; past loans open with the latest return first.
+        $sortChosen = Factory::getApplication()->getInput()->getCmd('sort', '') !== '';
+
+        usort($loans, fn ($a, $b): int => match ($this->sort) {
+            'name_asc' => strnatcasecmp($a->assetNames(), $b->assetNames()),
+            'due_asc'  => $sortChosen ? $when($a) <=> $when($b) : $when($b) <=> $when($a),
+            default    => $when($b) <=> $when($a),
+        });
+
+        $this->pastLoans = $this->pageOf($loans);
     }
 
     public function pageUrl(int $page): string

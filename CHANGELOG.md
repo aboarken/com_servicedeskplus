@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.30.0] - 2026-11-19
+
+### Added
+- **My Loans → Show → Previous loans:** the user's returned loans, newest return first, with the loan number, the assets, the loan start, the due date (the extended date when the loan was extended), the return date (marked *Late* when returned after the due date) and the comments. Read from ServiceDesk Plus's loan history (`/api/v3/asset_loans`, up to 300 loans, only those lent to the user); search and sort work as for current loans.
+
 ## [1.29.1] - 2026-11-19
 
 ### Changed

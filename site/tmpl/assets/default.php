@@ -23,6 +23,7 @@ $shows = [
     'all'      => 'COM_SERVICEDESKPLUS_LOANS_SHOW_ALL',
     'due_soon' => 'COM_SERVICEDESKPLUS_LOANS_SHOW_DUE_SOON',
     'overdue'  => 'COM_SERVICEDESKPLUS_LOANS_SHOW_OVERDUE',
+    'previous' => 'COM_SERVICEDESKPLUS_LOANS_SHOW_PREVIOUS',
 ];
 $sorts = [
     'due_asc'  => 'COM_SERVICEDESKPLUS_LOANS_SORT_DUE_ASC',
@@ -65,6 +66,48 @@ $sorts = [
 
     <?php if ($this->error !== '') : ?>
         <div class="sdp-alert sdp-tone-red" role="alert"><?php echo $this->escape($this->error); ?></div>
+    <?php elseif ($this->show === 'previous') : ?>
+        <?php // Returned loans: no link, the asset is no longer lent to the user. ?>
+        <section class="sdp-panel">
+            <?php if ($this->pastLoans === []) : ?>
+                <p class="sdp-panel-body sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_LOANS_PREVIOUS_NONE'); ?></p>
+            <?php else : ?>
+                <div class="sdp-table-wrap">
+                    <table class="sdp-table">
+                        <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_PREVIOUS'); ?></caption>
+                        <thead>
+                            <tr>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_NUMBER'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_ASSETS'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_START'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_DUE'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_RETURNED'); ?></th>
+                                <th scope="col"><?php echo Text::_('COM_SERVICEDESKPLUS_LOAN_COMMENTS'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($this->pastLoans as $loan) :
+                            $late = $loan->returned !== null && $loan->due !== null && $loan->returned > $loan->due + 86400;
+                            ?>
+                            <tr>
+                                <td class="sdp-id"><?php echo $text($loan->number); ?></td>
+                                <td><?php echo $text($loan->assetNames()); ?></td>
+                                <td class="sdp-nowrap"><?php echo $date($loan->start); ?></td>
+                                <td class="sdp-nowrap"><?php echo $date($loan->due); ?></td>
+                                <td class="sdp-nowrap">
+                                    <?php echo $date($loan->returned); ?>
+                                    <?php if ($late) : ?>
+                                        <?php echo Ui::badge(Text::_('COM_SERVICEDESKPLUS_LOAN_RETURNED_LATE'), 'amber'); ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo $text($loan->comments); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
     <?php else : ?>
         <section class="sdp-panel">
             <?php if ($this->items === []) : ?>

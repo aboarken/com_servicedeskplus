@@ -848,8 +848,32 @@
   gap: 0.5rem;
   margin: 0;
   padding: 0 0 0.25rem;
-  overflow-x: auto;
   list-style: none;
+}
+
+/* Only narrow screens scroll the bars sideways; elsewhere nothing is cut off or scrolled */
+@media (max-width: 575.98px) {
+  .com-servicedeskplus .sdp-vbars {
+    overflow-x: auto;
+  }
+}
+
+/* The hover label of a bar stays inside the chart: below the top edge, and the first and last
+   bars keep it within the left and right edges (no scrollbar appears) */
+.com-servicedeskplus .sdp-vbar[data-sdp-tip]:hover::after {
+  top: 0;
+  bottom: auto;
+}
+
+.com-servicedeskplus .sdp-vbar:first-child[data-sdp-tip]:hover::after {
+  left: 0;
+  transform: none;
+}
+
+.com-servicedeskplus .sdp-vbar:last-child:not(:first-child)[data-sdp-tip]:hover::after {
+  right: 0;
+  left: auto;
+  transform: none;
 }
 
 .com-servicedeskplus .sdp-vbar {

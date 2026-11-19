@@ -635,6 +635,31 @@ final class ApprovalService
         return $found;
     }
 
+    /**
+     * Whether single approval entries of this module may be removed. Not on purchase orders:
+     * ServiceDesk Plus restarts a purchase order's approval when one of its entries is removed.
+     */
+    private static function entriesRemovable(string $module): bool
+    {
+        return $module !== ApprovalModule::PURCHASE_ORDER;
+    }
+
+    /** Remove the API technician's entry added for a decision that was not recorded (where allowed). */
+    private function removeAccountEntry(SdpClient $client, string $entityId, string $levelId, string $approvalId, string $module): void
+    {
+        if (!self::entriesRemovable($module)) {
+            $this->logger->warning(\sprintf('The API technician\'s approval %s on %s %s is left in place (removing it would restart the approval); a retry reuses it.', $approvalId, $module, $entityId));
+
+            return;
+        }
+
+        try {
+            $client->deleteApproval($entityId, $levelId, $approvalId, $module);
+        } catch (SdpException $e) {
+            $this->logger->warning(\sprintf('Approval %s added for the approval account on %s %s could not be removed (%s)', $approvalId, $module, $entityId, $e->getKind()));
+        }
+    }
+
     /** Pause between status reads while an entry is "To Be Sent" (microseconds), and how many. */
     private const SENT_POLL_US    = 1_000_000;
     private const SENT_POLL_TRIES = 8;
@@ -867,19 +892,14 @@ final class ApprovalService
                 if ($after !== $wanted && \in_array($after, [mb_strtolower($this->pendingStatus), 'to be sent'], true)) {
                     $this->waitWhileToBeSent($requestId, $levelId, $accountApprovalId, $module);
                     $client->decideApproval($requestId, $levelId, $accountApprovalId, $decision, $sdpComment, $module);
+                    $after = $this->approvalStatus($requestId, $levelId, $accountApprovalId, $module);
                 }
 
                 // ServiceDesk Plus can answer OK and still leave the entry undecided (seen for
                 // purchase orders whose approval e-mail was not sent: the entry stays "To Be
-                // Sent"). The approver's own entry is only removed once the decision shows.
-                $after = $this->approvalStatus($requestId, $levelId, $accountApprovalId, $module);
-
+                // Sent"). Nothing else is changed unless the decision shows.
                 if ($after !== $wanted) {
-                    try {
-                        $client->deleteApproval($requestId, $levelId, $accountApprovalId, $module);
-                    } catch (SdpException $e) {
-                        $this->logger->warning(\sprintf('Approval %s added for the approval account on %s %s could not be removed (%s)', $accountApprovalId, $module, $requestId, $e->getKind()));
-                    }
+                    $this->removeAccountEntry($client, $requestId, $levelId, $accountApprovalId, $module);
 
                     $this->logger->error(\sprintf(
                         'ServiceDesk Plus accepted the decision on the API technician\'s approval %s on %s %s but shows it as "%s"; nothing was changed%s.',
@@ -897,11 +917,7 @@ final class ApprovalService
         } catch (SdpException $e) {
             if ($added) {
                 // Do not leave an extra pending approver behind.
-                try {
-                    $client->deleteApproval($requestId, $levelId, $accountApprovalId, $module);
-                } catch (SdpException) {
-                    $this->logger->warning(\sprintf('Approval %s added for the approval account on request %s could not be removed', $accountApprovalId, $requestId));
-                }
+                $this->removeAccountEntry($client, $requestId, $levelId, $accountApprovalId, $module);
             }
 
             $this->recordDecision($userId, $action, AuditLogInterface::RESULT_ERROR, $requestId, $approvalId, 'account_decide:' . $e->getKind() . ':' . $e->getSdpMessage());
@@ -909,11 +925,22 @@ final class ApprovalService
             throw $e;
         }
 
-        // The decision is recorded. Remove the approver's own pending entries on this level (the one
-        // decided on, and any duplicate entry for the same person) so only the decision remains.
+        // The decision is recorded. When the level is complete with it, nothing else is touched.
+        // Otherwise the approver's own pending entries on this level (the one decided on, and any
+        // duplicate entry for the same person) are removed so only the decision remains, except
+        // on purchase orders: there, removing an entry makes ServiceDesk Plus restart the whole
+        // approval (status back to Open, entries back to "To Be Sent"), undoing the decision.
         $originalRemoved = true;
+        $levelPending    = $this->levelStillPending($requestId, $levelId, $module);
+        $ownIds          = $levelPending && self::entriesRemovable($module)
+            ? $this->ownPendingIds($identity, $requestId, $levelId, $approvalId, $module)
+            : [];
 
-        foreach ($this->ownPendingIds($identity, $requestId, $levelId, $approvalId, $module) as $ownId) {
+        if ($levelPending && !self::entriesRemovable($module)) {
+            $this->logger->info(\sprintf('Decision recorded on %s %s; the approver\'s own entry is left as it is (removing entries restarts the approval in ServiceDesk Plus).', $module, $requestId));
+        }
+
+        foreach ($ownIds as $ownId) {
             try {
                 $client->deleteApproval($requestId, $levelId, $ownId, $module);
             } catch (SdpException $e) {
@@ -932,7 +959,7 @@ final class ApprovalService
 
         $outcome = match (true) {
             !$originalRemoved                              => self::OUTCOME_ORIGINAL_LEFT,
-            $this->levelStillPending($requestId, $levelId, $module) => self::OUTCOME_LEVEL_PENDING,
+            $levelPending && $this->levelStillPending($requestId, $levelId, $module) => self::OUTCOME_LEVEL_PENDING,
             default                                        => self::OUTCOME_CONFIRMED,
         };
 

@@ -3,6 +3,12 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.27.1] - 2026-11-19
+
+### Fixed
+- **Purchase order approvals were undone right after they were recorded.** After the decision was recorded under the API technician (and shown as *Approved*), the portal removed the approver's own pending entry, as it does for requests. On a purchase order ServiceDesk Plus answers a removed entry by restarting the whole approval: status back to *Open*, entries back to *To Be Sent*. The portal no longer removes any approval entry on purchase orders.
+- For every module, when the approval level is complete after the decision, no entry is removed at all.
+
 ## [1.27.0] - 2026-11-19
 
 ### Changed

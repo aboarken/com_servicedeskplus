@@ -54,7 +54,17 @@ $field = static fn (string $labelKey, string $html): string => '<div><dt>' . Tex
 
         <section class="sdp-panel">
             <div class="sdp-panel-head"><h2 class="sdp-panel-title"><?php echo Text::_('COM_SERVICEDESKPLUS_DESCRIPTION'); ?></h2></div>
-            <div class="sdp-panel-body sdp-text sdp-prose"><?php echo nl2br($this->escape($item->description !== '' ? $item->description : '—')); ?></div>
+            <?php if ($item->purchaseOrder !== null) : ?>
+                <?php // A purchase order has no description: its remarks and its terms, each under its own label. ?>
+                <dl class="sdp-fields sdp-fields--stacked">
+                    <?php
+                    echo $field('COM_SERVICEDESKPLUS_PO_REMARKS', '<div class="sdp-text sdp-prose">' . nl2br($this->escape($item->purchaseOrder->remarks !== '' ? $item->purchaseOrder->remarks : '—')) . '</div>');
+                    echo $field('COM_SERVICEDESKPLUS_PO_TERMS', '<div class="sdp-text sdp-prose">' . nl2br($this->escape($item->purchaseOrder->terms !== '' ? $item->purchaseOrder->terms : '—')) . '</div>');
+                    ?>
+                </dl>
+            <?php else : ?>
+                <div class="sdp-panel-body sdp-text sdp-prose"><?php echo nl2br($this->escape($item->description !== '' ? $item->description : '—')); ?></div>
+            <?php endif; ?>
         </section>
 
         <?php if ($item->purchaseOrder !== null) : $po = $item->purchaseOrder; ?>

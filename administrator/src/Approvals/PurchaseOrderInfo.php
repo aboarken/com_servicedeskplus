@@ -32,7 +32,10 @@ final class PurchaseOrderInfo
         public readonly array $fields,
         public readonly array $items,
         public readonly array $totals,
-        public readonly string $currency
+        public readonly string $currency,
+        /** Free text of the purchase order, '' when not filled in */
+        public readonly string $remarks = '',
+        public readonly string $terms = ''
     ) {
     }
 
@@ -58,7 +61,6 @@ final class PurchaseOrderInfo
             ['COM_SERVICEDESKPLUS_PO_COST_CENTER', $text('cost_center')],
             ['COM_SERVICEDESKPLUS_PO_GL_CODE', $text('gl_code')],
             ['COM_SERVICEDESKPLUS_PO_SHIPPING_ADDRESS', $text('shipping_address')],
-            ['COM_SERVICEDESKPLUS_PO_TERMS', $text('terms')],
         ], static fn (array $f): bool => $f[1] !== ''));
 
         $items = [];
@@ -98,7 +100,7 @@ final class PurchaseOrderInfo
             }
         }
 
-        return new self($fields, $items, $totals, $symbol);
+        return new self($fields, $items, $totals, $symbol, $text('remarks'), $text('terms'));
     }
 
     private static function number(mixed $value): ?float

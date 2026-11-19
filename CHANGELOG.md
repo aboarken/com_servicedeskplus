@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.28.1] - 2026-11-19
+
+### Changed
+- **Purchase order approval page: the Description section is divided into Remarks and Terms**, each under its own label ("—" when not filled in). Terms moved there from the Purchase Order section.
+
 ## [1.28.0] - 2026-11-19
 
 ### Added

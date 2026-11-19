@@ -1153,3 +1153,7 @@
 .com-servicedeskplus .sdp-po-items tfoot th { font-weight: 500; color: var(--sdp-text-muted); }
 .com-servicedeskplus .sdp-po-items .sdp-po-total th,
 .com-servicedeskplus .sdp-po-items .sdp-po-total td { font-weight: 700; color: var(--sdp-text); }
+
+/* Long texts under their labels, one below the other (remarks and terms of a purchase order) */
+.com-servicedeskplus .sdp-fields--stacked { grid-template-columns: minmax(0, 1fr); }
+.com-servicedeskplus .sdp-fields--stacked dd { font-weight: 400; }

@@ -121,10 +121,49 @@ final class ApprovalController extends BaseController
             return;
         }
 
-        $this->sendFile($file['name'], $file['content']);
+        $this->sendFile($file['name'], $file['content'], $this->input->getBool('inline', false));
     }
 
-    private function sendFile(string $name, string $content): void
+    /**
+     * Types that may be shown in the browser (the attachment popup) instead of downloaded: images
+     * and PDF only, and only when the content really is of that type. They cannot run as a page
+     * of this site; everything else (HTML, SVG, office files, ...) is always a download.
+     */
+    private const INLINE_TYPES = [
+        'pdf'  => 'application/pdf',
+        'png'  => 'image/png',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif'  => 'image/gif',
+        'webp' => 'image/webp',
+    ];
+
+    /** Whether a file of this name can be offered in the popup (the content is checked when sent). */
+    public static function previewKind(string $name): string
+    {
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+        return match (true) {
+            $extension === 'pdf'                   => 'pdf',
+            isset(self::INLINE_TYPES[$extension]) => 'image',
+            default                                => '',
+        };
+    }
+
+    /** The content starts as a file of the type its name says. */
+    private static function contentIs(string $type, string $content): bool
+    {
+        return match ($type) {
+            'application/pdf' => str_starts_with(ltrim(substr($content, 0, 1024)), '%PDF-'),
+            'image/png'       => str_starts_with($content, "\x89PNG\r\n\x1a\n"),
+            'image/jpeg'      => str_starts_with($content, "\xFF\xD8\xFF"),
+            'image/gif'       => str_starts_with($content, 'GIF87a') || str_starts_with($content, 'GIF89a'),
+            'image/webp'      => str_starts_with($content, 'RIFF') && substr($content, 8, 4) === 'WEBP',
+            default           => false,
+        };
+    }
+
+    private function sendFile(string $name, string $content, bool $inline = false): void
     {
         // A plain file name: no path, no control or quote characters.
         $name      = trim(preg_replace('/[\x00-\x1F\x7F"\\\\\/:*?<>|]+/u', '_', basename(str_replace('\\', '/', $name))) ?? '', " ._");
@@ -136,12 +175,24 @@ final class ApprovalController extends BaseController
             ob_end_clean();
         }
 
+        // Shown in the browser only when asked for, the type allows it and the content matches it.
+        $inlineType = $inline ? (self::INLINE_TYPES[$extension] ?? null) : null;
+        $inline     = $inlineType !== null && self::contentIs($inlineType, $content);
+
         $this->app->clearHeaders();
-        $this->app->setHeader('Content-Type', self::DOWNLOAD_TYPES[$extension] ?? 'application/octet-stream', true);
-        $this->app->setHeader('Content-Disposition', 'attachment; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($name), true);
+        $this->app->setHeader('Content-Type', $inline ? $inlineType : (self::DOWNLOAD_TYPES[$extension] ?? 'application/octet-stream'), true);
+        $this->app->setHeader('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($name), true);
         $this->app->setHeader('Content-Length', (string) \strlen($content), true);
         $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
-        $this->app->setHeader('Content-Security-Policy', "default-src 'none'; sandbox", true);
+        // Nothing in the file may load or run anything; a PDF is left to the browser's own viewer
+        // (which a sandbox would block), framed by this site only.
+        $this->app->setHeader(
+            'Content-Security-Policy',
+            $inline && $inlineType === 'application/pdf'
+                ? "default-src 'none'; object-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'self'"
+                : "default-src 'none'; sandbox" . ($inline ? "; frame-ancestors 'self'" : ''),
+            true
+        );
         $this->app->setHeader('Cache-Control', 'private, no-store', true);
         $this->app->setHeader('X-Robots-Tag', 'noindex, nofollow', true);
         $this->app->sendHeaders();

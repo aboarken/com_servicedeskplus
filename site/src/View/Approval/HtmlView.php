@@ -64,7 +64,7 @@ final class HtmlView extends BaseHtmlView
 
         $wa = $document->getWebAssetManager();
         $wa->getRegistry()->addExtensionRegistryFile('com_servicedeskplus');
-        $wa->useScript('com_servicedeskplus.submit-once');
+        $wa->useScript('com_servicedeskplus.submit-once')->useScript('com_servicedeskplus.preview');
 
         parent::display($tpl);
     }

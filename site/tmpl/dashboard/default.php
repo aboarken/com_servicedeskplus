@@ -109,12 +109,21 @@ $tiles = [
         $pct = static fn (int $value, int $total): float => $total > 0 ? round(100 * $value / $total, 2) : 0.0;
 
         // Open and on-hold requests by category: vertical bars, the most frequent first, then the
-        // rest added up and those without a category. One series: one colour; each bar has its
-        // count above and its name below.
+        // rest added up and those without a category. Each named category has its own colour from
+        // the validated palette, chosen from its name (so it keeps it when counts change; a clash
+        // takes the next free colour); each bar has its count above and its name below.
         $catRows = [];
+        $catUsed = [];
 
         foreach ($r->category['named'] ?? [] as $c) {
-            $catRows[] = ['label' => $c['name'], 'count' => $c['count'], 'tone' => 'named'];
+            $slot = crc32(mb_strtolower($c['name'])) % 6;
+
+            while (isset($catUsed[$slot]) && count($catUsed) < 6) {
+                $slot = ($slot + 1) % 6;
+            }
+
+            $catUsed[$slot] = true;
+            $catRows[]      = ['label' => $c['name'], 'count' => $c['count'], 'tone' => 'c' . ($slot + 1)];
         }
 
         if (($r->category['other'] ?? 0) > 0) {

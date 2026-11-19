@@ -706,7 +706,8 @@
 
 /*
  * Dashboard: the user's details and the request charts.
- * Colours: categories in the portal's chart blue (one series); age of open requests in one
+ * Colours: each category one of the six validated categorical colours below, with its name
+ * under the bar; age of open requests in one
  * warm ramp whose lightness falls with age; priorities low blue, normal yellow, medium aqua, high orange, urgent violet, critical magenta:
  * no two neighbours below CVD ΔE 9.1 or normal-vision ΔE 22.9);
  * every chart also has a legend or labels with the figures (and a table for screen readers), so
@@ -870,6 +871,12 @@
   border-radius: 4px 4px 0 0;
 }
 
+.com-servicedeskplus .sdp-vbar--c1 .sdp-vbar-fill { background: var(--sdp-cat-1); }
+.com-servicedeskplus .sdp-vbar--c2 .sdp-vbar-fill { background: var(--sdp-cat-2); }
+.com-servicedeskplus .sdp-vbar--c3 .sdp-vbar-fill { background: var(--sdp-cat-3); }
+.com-servicedeskplus .sdp-vbar--c4 .sdp-vbar-fill { background: var(--sdp-cat-4); }
+.com-servicedeskplus .sdp-vbar--c5 .sdp-vbar-fill { background: var(--sdp-cat-5); }
+.com-servicedeskplus .sdp-vbar--c6 .sdp-vbar-fill { background: var(--sdp-cat-6); }
 .com-servicedeskplus .sdp-vbar--other .sdp-vbar-fill { background: var(--sdp-cat-other); }
 .com-servicedeskplus .sdp-vbar--none .sdp-vbar-fill { background: var(--sdp-series-none); }
 

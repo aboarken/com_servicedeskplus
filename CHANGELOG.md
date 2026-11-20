@@ -3,6 +3,12 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.31.2] - 2026-11-20
+
+### Changed
+- **Cards above the lists fit on one row:** up to 8 cards share the row in equal columns on screens 768 px and wider (more than 8 wrap, so they stay readable); two per row on phones. Long names are shortened with "…".
+- Announcement types: ServiceDesk Plus offers no list of announcement types (`/api/v3/announcement_types`, `/api/v3/announcementtypes` and `/api/v3/announcements/_metainfo` return nothing), so the cards show the types used by current announcements.
+
 ## [1.31.1] - 2026-11-20
 
 ### Fixed

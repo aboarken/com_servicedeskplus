@@ -1303,3 +1303,24 @@ dialog.sdp-preview .sdp-preview-body iframe {
 .com-servicedeskplus .sdp-share-legend--key {
   margin-top: 1rem;
 }
+
+/* Wide tables (Returned loans): each cell on one line, the table scrolls sideways in its box
+   instead of squeezing its columns; long comments still wrap within a fixed width */
+.com-servicedeskplus .sdp-table--wide {
+  min-width: 1100px;
+}
+
+.com-servicedeskplus .sdp-table--wide th,
+.com-servicedeskplus .sdp-table--wide td {
+  white-space: nowrap;
+}
+
+.com-servicedeskplus .sdp-table--wide td:last-child {
+  min-width: 14rem;
+  white-space: normal;
+}
+
+.com-servicedeskplus .sdp-table-wrap:focus-visible {
+  outline: 2px solid var(--sdp-primary);
+  outline-offset: -2px;
+}

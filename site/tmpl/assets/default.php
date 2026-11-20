@@ -89,8 +89,8 @@ $sorts = [
             <?php if ($this->pastLoans === []) : ?>
                 <p class="sdp-panel-body sdp-empty"><?php echo Text::_('COM_SERVICEDESKPLUS_LOANS_PREVIOUS_NONE'); ?></p>
             <?php else : ?>
-                <div class="sdp-table-wrap">
-                    <table class="sdp-table">
+                <div class="sdp-table-wrap" tabindex="0" role="region" aria-label="<?php echo $this->escape(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_PREVIOUS')); ?>">
+                    <table class="sdp-table sdp-table--wide">
                         <caption class="visually-hidden"><?php echo Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_PREVIOUS'); ?></caption>
                         <thead>
                             <tr>

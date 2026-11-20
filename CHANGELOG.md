@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.31.5] - 2026-11-20
+
+### Fixed
+- **My Loans → Returned: the table did not fit.** Its columns were squeezed and names broke over several lines. Each cell now stays on one line (comments still wrap) and the table scrolls sideways inside its box on narrow pages; it can also be scrolled with the keyboard.
+
 ## [1.31.4] - 2026-11-20
 
 ### Added

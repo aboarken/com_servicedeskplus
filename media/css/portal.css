@@ -1260,6 +1260,25 @@ dialog.sdp-preview .sdp-preview-body iframe {
   margin: 0 0 1.25rem;
 }
 
+/* One row on wider screens: as many equal columns as cards; two per row on phones */
+@media (min-width: 768px) {
+  .com-servicedeskplus .sdp-stats--one-row {
+    grid-template-columns: repeat(var(--sdp-cards, 4), minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .com-servicedeskplus .sdp-stats--filter {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.com-servicedeskplus .sdp-stats--filter .sdp-stat-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .com-servicedeskplus .sdp-stats-note {
   margin: 0 0 0.5rem;
   font-size: 0.8125rem;

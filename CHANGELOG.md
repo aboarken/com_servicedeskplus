@@ -3,6 +3,15 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.31.1] - 2026-11-20
+
+### Fixed
+- **My Requests showed no category cards.** The per-category counts asked from ServiceDesk Plus gave nothing on some servers. The cards now show the **open and on-hold requests per category**, from the same figures as the Dashboard's category chart (no extra calls when the Dashboard was opened), with *All categories* and *No category*; a card shows that category in the list.
+
+### Changed
+- **Cards above the lists fill the whole row**, however many there are.
+- **Open Requests by Priority:** no names under the bars (the colour key below names them) and no line above the key.
+
 ## [1.31.0] - 2026-11-20
 
 ### Added

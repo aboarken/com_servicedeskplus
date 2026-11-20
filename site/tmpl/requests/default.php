@@ -83,7 +83,8 @@ $types       = [
     </form>
 
     <?php
-    // A card per category with the number of requests for the status, type and search above.
+    // A card per category with its number of open and on-hold requests (as on the Dashboard);
+    // a card shows that category in the list, with the status and type chosen above.
     $tones = ['blue', 'purple', 'teal', 'amber', 'green', 'red'];
     $cards = [];
 
@@ -93,6 +94,13 @@ $types       = [
 
         foreach ($this->categoryTotals as $category => $count) {
             if ($category === '') {
+                continue;
+            }
+
+            // Requests without a category: counted, but the list cannot filter on "no category".
+            if ($category === "\0none") {
+                $cards[] = ['label' => Text::_('COM_SERVICEDESKPLUS_CHART_CATEGORY_NONE'), 'count' => $count, 'url' => $this->categoryUrl(''), 'tone' => 'muted', 'active' => false];
+
                 continue;
             }
 
@@ -106,7 +114,7 @@ $types       = [
         }
     }
 
-    echo (new \Joomla\CMS\Layout\FileLayout('summary', null, ['component' => 'com_servicedeskplus', 'client' => 0]))->render(['cards' => $cards, 'label' => Text::_('COM_SERVICEDESKPLUS_CATEGORY')]);
+    echo (new \Joomla\CMS\Layout\FileLayout('summary', null, ['component' => 'com_servicedeskplus', 'client' => 0]))->render(['cards' => $cards, 'label' => Text::_('COM_SERVICEDESKPLUS_CATEGORY'), 'note' => Text::_('COM_SERVICEDESKPLUS_REQUESTS_CARDS_NOTE')]);
     ?>
 
     <?php if ($this->error !== '') : ?>

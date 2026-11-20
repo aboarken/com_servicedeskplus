@@ -33,7 +33,7 @@ final class HtmlView extends BaseHtmlView
 
     public string $error = '';
 
-    /** @var array<string, int> Cards above the list: category => requests ('' = all categories) */
+    /** @var array<string, int> Cards above the list: category => open and on-hold requests ('' = all) */
     public array $categoryTotals = [];
 
     public bool $canCreate = false;
@@ -55,7 +55,11 @@ final class HtmlView extends BaseHtmlView
 
         // The cards never block the list: without counts there are no cards.
         if ($this->error === '') {
-            $this->categoryTotals = $model->getCategoryTotals();
+            try {
+                $this->categoryTotals = $model->getCategoryTotals();
+            } catch (SdpException) {
+                $this->categoryTotals = [];
+            }
         }
 
         $this->prepareMenuPage('requests', 'COM_SERVICEDESKPLUS_REQUESTS_TITLE');

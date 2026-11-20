@@ -292,6 +292,17 @@ $tiles = [
                                 </li>
                             <?php endforeach; ?>
                         </ul>
+                        <?php // Colour key: each priority's colour, name, count and share. ?>
+                        <ul class="sdp-share-legend sdp-share-legend--key">
+                            <?php foreach ($priorities as $pr) : ?>
+                                <li>
+                                    <span class="sdp-swatch sdp-cat-<?php echo $pr['tone']; ?>" aria-hidden="true"></span>
+                                    <span class="sdp-share-label"><?php echo $e($pr['label']); ?></span>
+                                    <span class="sdp-share-value"><?php echo $num($pr['count']); ?></span>
+                                    <span class="sdp-share-pct"><?php echo round($pct($pr['count'], $priorityTotal)); ?>%</span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
                     <?php endif; ?>
                 </div>
             </section>
@@ -367,8 +378,9 @@ $tiles = [
                 <?php else : ?>
                     <ul class="sdp-list">
                         <?php echo $row(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_ALL'), $this->loansTotal, $this->url('assets'), 'blue'); ?>
-                        <?php echo $row(Text::_('COM_SERVICEDESKPLUS_DASHBOARD_LOANS_TO_RETURN'), $this->loansDueSoon, $this->url('assets&show=due_soon'), 'amber'); ?>
+                        <?php echo $row(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_DUE_SOON'), $this->loansDueSoon, $this->url('assets&show=due_soon'), 'amber'); ?>
                         <?php echo $row(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_OVERDUE'), $this->loansOverdue, $this->url('assets&show=overdue'), $this->loansOverdue > 0 ? 'red' : 'green'); ?>
+                        <?php echo $row(Text::_('COM_SERVICEDESKPLUS_LOANS_SHOW_PREVIOUS'), $this->loansReturned, $this->url('assets&show=previous'), 'slate'); ?>
                     </ul>
                 <?php endif; ?>
             </section>

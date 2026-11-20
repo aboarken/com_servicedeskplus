@@ -34,8 +34,8 @@ final class AssetsModel extends BaseModel
      *
      * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
      */
-    public function getPastLoans(): array
+    public function getPastLoans(bool $withAssetDetails = true): array
     {
-        return $this->sdp()->getAssetService()->pastLoansForUser($this->identity());
+        return $this->sdp()->getAssetService()->pastLoansForUser($this->identity(), $withAssetDetails);
     }
 }

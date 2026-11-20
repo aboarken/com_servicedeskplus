@@ -36,6 +36,7 @@ final class RequestQuery
     public readonly string $sort;
     public readonly string $direction;
     public readonly string $type;
+    public readonly string $category;
 
     /**
      * @param  list<string>  $allowedStatuses
@@ -48,7 +49,8 @@ final class RequestQuery
         string $direction = 'desc',
         array $allowedStatuses = [],
         public readonly int $limit = self::PAGE_SIZE,
-        string $type = ''
+        string $type = '',
+        string $category = ''
     ) {
         $this->page      = max(1, min(self::MAX_PAGE, $page));
         $search          = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $search) ?? '');
@@ -57,6 +59,8 @@ final class RequestQuery
         $this->sort      = isset(self::SORTS[$sort]) ? $sort : 'created';
         $this->direction = $direction === 'asc' ? 'asc' : 'desc';
         $this->type      = \in_array($type, self::TYPES, true) ? $type : '';
+        $category        = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $category) ?? '');
+        $this->category  = mb_substr($category, 0, 100);
     }
 
     /**
@@ -104,6 +108,12 @@ final class RequestQuery
         return '';
     }
 
+    /** The same query for another category ('' = all categories), on page 1. */
+    public function withCategory(string $category): self
+    {
+        return new self(1, $this->search, $this->status, $this->sort, $this->direction, $this->status !== '' ? [$this->status] : [], $this->limit, $this->type, $category);
+    }
+
     public function sortField(): string
     {
         return self::SORTS[$this->sort];
@@ -126,6 +136,6 @@ final class RequestQuery
 
     public function cacheKey(): string
     {
-        return 'requests:' . hash('sha256', json_encode([$this->page, $this->search, $this->status, $this->sort, $this->direction, $this->limit, $this->type]));
+        return 'requests:' . hash('sha256', json_encode([$this->page, $this->search, $this->status, $this->sort, $this->direction, $this->limit, $this->type, $this->category]));
     }
 }

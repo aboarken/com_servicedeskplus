@@ -63,6 +63,9 @@ final class HtmlView extends BaseHtmlView
 
     public int $loansOverdue = 0;
 
+    /** Returned loans; null when the loan history could not be read */
+    public ?int $loansReturned = null;
+
     public string $loansError = '';
 
     /** The user's own ServiceDesk Plus record (department, job title, employee ID, name). */
@@ -121,6 +124,15 @@ final class HtmlView extends BaseHtmlView
                 }
             } catch (SdpException $e) {
                 $this->loansError = Text::_($e->getLanguageKey());
+            }
+
+            // The loan history is a separate read: if it fails, the card shows "—" for it only.
+            if ($this->loansError === '') {
+                try {
+                    $this->loansReturned = $model->getReturnedLoanCount();
+                } catch (SdpException) {
+                    $this->loansReturned = null;
+                }
             }
         }
 

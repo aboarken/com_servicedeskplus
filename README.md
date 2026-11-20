@@ -16,7 +16,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 
 ### Dashboard
 - **Employee Information:** a panel with the user's department, job title, employee ID and name (each label above its value), from their own ServiceDesk Plus record; empty fields are left out, and the Joomla name is used when ServiceDesk Plus has none.
-- **Summary cards:** open requests, on-hold requests, waiting for my approval, loans to return within 30 days.
+- **Summary cards:** open requests, on-hold requests, waiting for my approval, loans due within 30 days.
 - **Charts** of the user's requests, in the same grid as the My Requests, My Approvals and My Loans cards below them, two cards per row (one per row on small screens), made from the requests already read for the figures (no extra ServiceDesk Plus calls), each with a legend or labels and a tooltip on hover (screen readers get the figures as a table):
   - *Open Requests by Category:* a donut of the user's open and on-hold requests over every category (most requests first, then *No category*), with the total in the middle and a legend of names, counts and shares; neighbouring slices always have different colours.
   - *Open Requests by Age:* a donut of open and on-hold requests created under 1 week, 1–4 weeks, 1–3 months and over 3 months ago, from light gold (newest) to deep red (oldest), with the total in the middle.
@@ -25,7 +25,7 @@ By integrating Joomla with ServiceDesk Plus, organizations can offer a unified p
 - **My Requests, My Approvals, My Loans** cards, after the charts in the same two-per-row grid:
   - *My Requests:* open and on-hold service requests and incidents with totals. Only open and on-hold requests are read from ServiceDesk Plus (up to 500 of each), so the Dashboard stays fast for users with many closed requests.
   - *My Approvals:* waiting approvals by type, approved by me and rejected by me (decisions made through the portal).
-  - *My Loans:* all loans, to return within 30 days (including overdue), overdue.
+  - *My Loans:* on loan, due within 30 days (including overdue), overdue, returned.
 - Coloured cards, panels and counts (green for good, amber and red for what needs attention), styled by the component so the Dashboard looks the same on any site template. All other portal pages use the same design.
 - List filters apply as soon as an option is chosen; the search is applied with Enter (no Search button).
 - Every figure opens its page with the matching filter. Each part is shown only to users with the permission for its page.
@@ -66,7 +66,7 @@ ServiceDesk Plus only accepts an approval decision from the assigned approver, w
 - View assets associated with the user.
 - Access assigned equipment information.
 - View equipment and loan records in read-only mode.
-- *My Loans* works like My Requests: search, *Show* (all, to return within 30 days, overdue, previous loans), sort and pages. *Previous loans* lists the user's returned loans from ServiceDesk Plus's loan history (`/api/v3/asset_loans`): one row per asset with its name, type, model and serial number, then loan start, due date, return date (*Late* when after the due date) and comments.
+- *My Loans* works like My Requests: search, *Show* (on loan, due within 30 days, overdue, returned), with a card per choice and its total above the list, sort and pages. *Returned* lists the user's returned loans from ServiceDesk Plus's loan history (`/api/v3/asset_loans`): one row per asset with its name, type, model and serial number, then loan start, due date, return date (*Late* when after the due date) and comments.
 - A loan's page shows type, product, serial number, state, purchase date, warranty expiry date, department, the user it is loaned to, loan start and due date.
 
 ### Site templates

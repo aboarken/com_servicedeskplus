@@ -1272,3 +1272,35 @@ dialog.sdp-preview .sdp-preview-body iframe {
 
 /* Previous loans: further assets of the same loan, without a line between them */
 .com-servicedeskplus .sdp-table tr.sdp-row-cont td { border-top: 0; padding-top: 0; }
+
+/* Summary cards above a list: the selected group is outlined in its colour */
+.com-servicedeskplus .sdp-stats--filter {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  margin: 0 0 1.25rem;
+}
+
+.com-servicedeskplus .sdp-stats--filter .sdp-stat {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.com-servicedeskplus .sdp-stats--filter .sdp-stat-value {
+  font-size: 1.5rem;
+}
+
+.com-servicedeskplus .sdp-stats--filter .sdp-stat.is-active {
+  border-color: var(--sdp-tone);
+  box-shadow: 0 0 0 1px var(--sdp-tone), var(--sdp-card-shadow);
+}
+
+.com-servicedeskplus .sdp-stats--filter .sdp-stat.is-active .sdp-stat-label {
+  color: var(--sdp-text);
+  font-weight: 600;
+}
+
+/* Colour key under a bar chart */
+.com-servicedeskplus .sdp-share-legend--key {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sdp-chart-grid);
+}

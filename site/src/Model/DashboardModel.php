@@ -80,6 +80,16 @@ final class DashboardModel extends BaseModel
     }
 
     /**
+     * Number of the user's returned loans (the loans only, without reading their assets).
+     *
+     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
+     */
+    public function getReturnedLoanCount(): int
+    {
+        return \count($this->sdp()->getAssetService()->pastLoansForUser($this->identity(), false));
+    }
+
+    /**
      * The user's own name, employee ID, department and job title; null when not available.
      */
     public function getProfile(): ?UserProfile

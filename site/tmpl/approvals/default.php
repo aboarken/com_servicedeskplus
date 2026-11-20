@@ -84,6 +84,28 @@ $isPending = $this->show === 'pending';
         </div>
     </form>
 
+    <?php
+    // A card per type with its total for the current "Show"; the selected one is marked.
+    $tones = [ApprovalModule::REQUEST => 'blue', ApprovalModule::CHANGE => 'purple', ApprovalModule::RELEASE => 'teal', ApprovalModule::PURCHASE_ORDER => 'amber'];
+    $cards = [];
+
+    if ($this->totals !== []) {
+        $cards[] = ['label' => Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_ALL_TYPES'), 'count' => $this->totals[''], 'url' => $this->typeUrl(''), 'tone' => 'slate', 'active' => $this->type === ''];
+
+        foreach ($this->modules as $module) {
+            $cards[] = [
+                'label'  => Text::_('COM_SERVICEDESKPLUS_MODULES_' . strtoupper($module)),
+                'count'  => $this->totals[$module] ?? 0,
+                'url'    => $this->typeUrl($module),
+                'tone'   => $tones[$module] ?? 'blue',
+                'active' => $this->type === $module,
+            ];
+        }
+    }
+
+    echo (new FileLayout('summary', null, $layoutOptions))->render(['cards' => $cards, 'label' => Text::_('COM_SERVICEDESKPLUS_APPROVAL_TYPE')]);
+    ?>
+
     <?php if ($this->error !== '') : ?>
         <div class="sdp-alert sdp-tone-red" role="alert"><?php echo $this->escape($this->error); ?></div>
     <?php else : ?>

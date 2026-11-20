@@ -35,8 +35,11 @@ final class HtmlView extends BaseHtmlView
     /** @var list<LoanAsset> Current page */
     public array $items = [];
 
-    /** @var list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\PastLoan> Current page of "Previous loans" */
+    /** @var list<\SdpPortal\Component\ServiceDeskPlus\Administrator\Assets\PastLoan> Current page of "Returned" */
     public array $pastLoans = [];
+
+    /** @var array<string, ?int> Totals for the cards: show => count (null when unknown) */
+    public array $totals = [];
 
     public string $error = '';
 
@@ -51,6 +54,8 @@ final class HtmlView extends BaseHtmlView
         $this->readListInput(self::SHOWS, self::SORTS);
 
         try {
+            $this->countTotals($model);
+
             if ($this->show === 'previous') {
                 $this->showPrevious($model);
             } else {
@@ -104,6 +109,28 @@ final class HtmlView extends BaseHtmlView
         });
 
         $this->pastLoans = $this->pageOf($loans);
+    }
+
+    /**
+     * Totals of the cards above the list (the search is not applied to them). The returned loans
+     * are counted without reading their assets; a failure there leaves that card without a number.
+     */
+    private function countTotals(AssetsModel $model): void
+    {
+        $current = $model->getItems();
+
+        $this->totals = [
+            'all'      => \count($current),
+            'due_soon' => \count(array_filter($current, fn (LoanAsset $a): bool => $a->isDueSoon($this->now))),
+            'overdue'  => \count(array_filter($current, fn (LoanAsset $a): bool => $a->isOverdue($this->now))),
+            'previous' => null,
+        ];
+
+        try {
+            $this->totals['previous'] = \count($model->getPastLoans(false));
+        } catch (SdpException) {
+            // Shown as "—"; the list itself reports the error when it is opened.
+        }
     }
 
     public function pageUrl(int $page): string

@@ -76,7 +76,38 @@ $types       = [
                 <?php endforeach; ?>
             </select>
         </div>
+        <?php if ($q->category !== '') : ?>
+            <?php // The chosen category card stays selected when another filter changes. ?>
+            <input type="hidden" name="category" value="<?php echo $this->escape($q->category); ?>">
+        <?php endif; ?>
     </form>
+
+    <?php
+    // A card per category with the number of requests for the status, type and search above.
+    $tones = ['blue', 'purple', 'teal', 'amber', 'green', 'red'];
+    $cards = [];
+
+    if ($this->categoryTotals !== []) {
+        $cards[] = ['label' => Text::_('COM_SERVICEDESKPLUS_ALL_CATEGORIES'), 'count' => $this->categoryTotals[''], 'url' => $this->categoryUrl(''), 'tone' => 'slate', 'active' => $q->category === ''];
+        $i       = 0;
+
+        foreach ($this->categoryTotals as $category => $count) {
+            if ($category === '') {
+                continue;
+            }
+
+            $cards[] = [
+                'label'  => (string) $category,
+                'count'  => $count,
+                'url'    => $this->categoryUrl((string) $category),
+                'tone'   => $tones[$i++ % \count($tones)],
+                'active' => strcasecmp($q->category, (string) $category) === 0,
+            ];
+        }
+    }
+
+    echo (new \Joomla\CMS\Layout\FileLayout('summary', null, ['component' => 'com_servicedeskplus', 'client' => 0]))->render(['cards' => $cards, 'label' => Text::_('COM_SERVICEDESKPLUS_CATEGORY')]);
+    ?>
 
     <?php if ($this->error !== '') : ?>
         <div class="sdp-alert sdp-tone-red" role="alert"><?php echo $this->escape($this->error); ?></div>

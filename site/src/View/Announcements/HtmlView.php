@@ -13,6 +13,7 @@ namespace SdpPortal\Component\ServiceDeskPlus\Site\View\Announcements;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
+use Joomla\CMS\Router\Route;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Announcements\Announcement;
 use SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException;
 use SdpPortal\Component\ServiceDeskPlus\Site\Model\AnnouncementsModel;
@@ -34,6 +35,9 @@ final class HtmlView extends BaseHtmlView
 
     public string $type = '';
 
+    /** @var array<string, int> Cards above the list: type => announcements (search applied, '' = all types) */
+    public array $totals = [];
+
     public string $error = '';
 
     public function display($tpl = null): void
@@ -50,6 +54,16 @@ final class HtmlView extends BaseHtmlView
 
             $this->types = array_values(array_unique(array_filter(array_map(static fn (Announcement $a) => $a->type, $all))));
             sort($this->types, SORT_NATURAL | SORT_FLAG_CASE);
+
+            // The cards count the search's matches per type; the list also applies the type.
+            $searched     = $this->searched($all);
+            $this->totals = ['' => \count($searched)] + array_fill_keys($this->types, 0);
+
+            foreach ($searched as $a) {
+                if ($a->type !== '' && isset($this->totals[$a->type])) {
+                    $this->totals[$a->type]++;
+                }
+            }
 
             $this->items = $this->pageOf($this->sorted($this->filtered($all)));
         } catch (SdpException $e) {
@@ -80,8 +94,29 @@ final class HtmlView extends BaseHtmlView
      */
     private function filtered(array $items): array
     {
-        return array_values(array_filter($items, fn (Announcement $a): bool => ($this->type === '' || strcasecmp($a->type, $this->type) === 0)
-            && ($this->search === '' || $a->id === $this->search || self::matches($this->search, $a->title, $a->content))));
+        return array_values(array_filter($this->searched($items), fn (Announcement $a): bool => $this->type === '' || strcasecmp($a->type, $this->type) === 0));
+    }
+
+    /**
+     * @param  list<Announcement>  $items
+     *
+     * @return list<Announcement>
+     */
+    private function searched(array $items): array
+    {
+        return array_values(array_filter($items, fn (Announcement $a): bool => $this->search === '' || $a->id === $this->search || self::matches($this->search, $a->title, $a->content)));
+    }
+
+    /** Link to the list with the current search and sort, and the given type. */
+    public function typeUrl(string $type): string
+    {
+        $params = array_filter([
+            'search' => $this->search,
+            'sort'   => $this->sort !== 'date_desc' ? $this->sort : '',
+            'type'   => $type,
+        ], static fn (string $v): bool => $v !== '');
+
+        return Route::_('index.php?option=com_servicedeskplus&view=announcements' . ($params !== [] ? '&' . http_build_query($params) : ''));
     }
 
     /**

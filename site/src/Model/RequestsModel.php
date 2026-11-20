@@ -48,7 +48,8 @@ final class RequestsModel extends BaseModel
             $direction,
             $statuses,
             RequestQuery::PAGE_SIZE,
-            $input->getCmd('type', '')
+            $input->getCmd('type', ''),
+            $input->getString('category', '')
         );
     }
 
@@ -58,6 +59,16 @@ final class RequestsModel extends BaseModel
     public function getResult(): RequestListResult
     {
         return $this->sdp()->getRequestService()->listForUser($this->identity(), $this->getQuery());
+    }
+
+    /**
+     * Requests per category for the cards ('' = all); empty when they cannot be counted.
+     *
+     * @return array<string, int>
+     */
+    public function getCategoryTotals(): array
+    {
+        return $this->sdp()->getRequestService()->categoryTotals($this->identity(), $this->getQuery());
     }
 
     /** @return list<string> */

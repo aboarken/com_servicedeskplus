@@ -64,6 +64,23 @@ $sorts = [
         </div>
     </form>
 
+    <?php
+    $tones = ['all' => 'blue', 'due_soon' => 'amber', 'overdue' => 'red', 'previous' => 'slate'];
+    $cards = [];
+
+    foreach ($shows as $value => $label) {
+        $cards[] = [
+            'label'  => Text::_($label),
+            'count'  => $this->totals[$value] ?? null,
+            'url'    => Route::_('index.php?option=com_servicedeskplus&view=assets' . ($value !== 'all' ? '&show=' . $value : '')),
+            'tone'   => $value === 'overdue' && ($this->totals['overdue'] ?? 0) === 0 ? 'green' : $tones[$value],
+            'active' => $value === $this->show,
+        ];
+    }
+
+    echo (new FileLayout('summary', null, $layoutOptions))->render(['cards' => $cards, 'label' => Text::_('COM_SERVICEDESKPLUS_SHOW')]);
+    ?>
+
     <?php if ($this->error !== '') : ?>
         <div class="sdp-alert sdp-tone-red" role="alert"><?php echo $this->escape($this->error); ?></div>
     <?php elseif ($this->show === 'previous') : ?>

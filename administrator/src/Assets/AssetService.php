@@ -106,14 +106,23 @@ final class AssetService
      *
      * @throws SdpException
      */
-    public function pastLoansForUser(Identity $identity): array
+    public function pastLoansForUser(Identity $identity, bool $withAssetDetails = true): array
     {
         $sdpUserId = $identity->sdpUserId();
-        $cacheKey  = 'assets:' . self::CACHE_VERSION . ':past2';
+        // Two entries: the loans as ServiceDesk Plus lists them (enough to count them), and the
+        // same loans with the type, model and serial number of their assets (the list page).
+        $cacheKey  = 'assets:' . self::CACHE_VERSION . ($withAssetDetails ? ':past2' : ':past1');
         $cached    = $this->cache->get($identity, $cacheKey);
 
         if ($cached !== null) {
             return array_map(static fn (array $a) => PastLoan::fromArray($a), $cached);
+        }
+
+        if ($withAssetDetails) {
+            $loans = $this->withAssetDetails($this->pastLoansForUser($identity, false));
+            $this->cache->set($identity, $cacheKey, array_map(static fn (PastLoan $l) => $l->toArray(), $loans));
+
+            return $loans;
         }
 
         $items = ($this->clientFactory)()->listAllAssetLoans(
@@ -138,7 +147,6 @@ final class AssetService
         }
 
         usort($loans, static fn (PastLoan $a, PastLoan $b): int => [$b->returned ?? $b->due ?? 0, $b->start ?? 0] <=> [$a->returned ?? $a->due ?? 0, $a->start ?? 0]);
-        $loans = $this->withAssetDetails($loans);
 
         $this->cache->set($identity, $cacheKey, array_map(static fn (PastLoan $l) => $l->toArray(), $loans));
 

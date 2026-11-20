@@ -60,6 +60,28 @@ $sorts = [
         </div>
     </form>
 
+    <?php
+    // A card per type with its number of announcements; the selected one is marked.
+    $tones = ['blue', 'purple', 'teal', 'amber', 'green', 'red'];
+    $cards = [];
+
+    if ($this->totals !== []) {
+        $cards[] = ['label' => Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENTS_ALL_TYPES'), 'count' => $this->totals[''], 'url' => $this->typeUrl(''), 'tone' => 'slate', 'active' => $this->type === ''];
+
+        foreach (array_values($this->types) as $i => $type) {
+            $cards[] = [
+                'label'  => $type,
+                'count'  => $this->totals[$type] ?? 0,
+                'url'    => $this->typeUrl($type),
+                'tone'   => $tones[$i % \count($tones)],
+                'active' => strcasecmp($this->type, $type) === 0,
+            ];
+        }
+    }
+
+    echo (new FileLayout('summary', null, $layoutOptions))->render(['cards' => $cards, 'label' => Text::_('COM_SERVICEDESKPLUS_ANNOUNCEMENT_TYPE')]);
+    ?>
+
     <?php if ($this->error !== '') : ?>
         <div class="sdp-alert sdp-tone-red" role="alert"><?php echo $this->escape($this->error); ?></div>
     <?php else : ?>

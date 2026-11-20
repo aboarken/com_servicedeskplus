@@ -3,6 +3,20 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.31.0] - 2026-11-20
+
+### Added
+- **Summary cards above the lists**, one per group with its total; a card shows that group, the selected one is outlined:
+  - *My Requests:* a card per category with the number of requests for the chosen status, type and search (counted by ServiceDesk Plus; categories without requests are left out), and *All categories*. A card filters the list to its category.
+  - *My Approvals:* *All types*, *Requests*, *Changes*, *Releases*, *Purchase orders* (the modules checked in Integration Settings) for the chosen *Show*.
+  - *My Loans:* *On loan*, *Due within 30 days*, *Overdue*, *Returned*.
+  - *Announcements:* *All types* and a card per announcement type.
+- **Dashboard → My Loans card:** a *Returned* row with the number of returned loans.
+- **Dashboard → Open Requests by Priority:** a colour key under the bars: each priority's colour, name, count and share.
+
+### Changed
+- **Loan names, everywhere:** *All my loans* → **On loan**, *To return within 30 days* / *Loans to return* → **Due within 30 days**, *Previous loans* → **Returned** (*Overdue* stays).
+
 ## [1.30.1] - 2026-11-19
 
 ### Changed

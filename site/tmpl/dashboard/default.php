@@ -287,7 +287,6 @@ $tiles = [
                                         <span class="sdp-vbar-value"><?php echo $num($pr['count']); ?></span>
                                         <span class="sdp-vbar-fill sdp-cat-<?php echo $pr['tone']; ?>" style="height: <?php echo max(2, $pct($pr['count'], $prioMax)); ?>%"></span>
                                     </span>
-                                    <span class="sdp-vbar-label" title="<?php echo $e($pr['label']); ?>"><?php echo $e($pr['label']); ?></span>
                                     <span class="visually-hidden">: <?php echo $num($pr['count']); ?> (<?php echo round($pct($pr['count'], $priorityTotal)); ?>%)</span>
                                 </li>
                             <?php endforeach; ?>

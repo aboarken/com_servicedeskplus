@@ -62,13 +62,28 @@ final class RequestsModel extends BaseModel
     }
 
     /**
-     * Requests per category for the cards ('' = all); empty when they cannot be counted.
+     * Open and on-hold requests per category for the cards ('' = all of them), from the same
+     * figures as the Dashboard (shared cache); categories without such requests are left out.
      *
      * @return array<string, int>
+     *
+     * @throws \SdpPortal\Component\ServiceDeskPlus\Administrator\Api\SdpException
      */
     public function getCategoryTotals(): array
     {
-        return $this->sdp()->getRequestService()->categoryTotals($this->identity(), $this->getQuery());
+        $category = $this->sdp()->getRequestService()->statsForUser($this->identity())->category;
+        $totals   = [];
+
+        foreach ($category['named'] ?? [] as $c) {
+            $totals[(string) $c['name']] = (int) $c['count'];
+        }
+
+        $other = (int) ($category['other'] ?? 0);
+        $none  = (int) ($category['none'] ?? 0);
+        $all   = array_sum($totals) + $other + $none;
+
+        // Requests without a category get their own card (key "\0none", not a category name).
+        return $category === [] ? [] : ['' => $all] + $totals + ($none > 0 ? ["\0none" => $none] : []);
     }
 
     /** @return list<string> */

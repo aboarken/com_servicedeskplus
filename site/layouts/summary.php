@@ -7,7 +7,6 @@
  * $displayData['cards']: list of ['label' => string, 'count' => ?int (null: unknown),
  *                         'url' => string, 'tone' => string, 'active' => bool]
  * $displayData['label']: name of the group of cards, for screen readers
- * $displayData['note']:  optional line above the cards (what they count)
  *
  * @license GNU General Public License version 2 or later
  */
@@ -20,9 +19,6 @@ if ($cards === []) {
     return;
 }
 ?>
-<?php if (($displayData['note'] ?? '') !== '') : ?>
-    <p class="sdp-stats-note"><?php echo htmlspecialchars((string) $displayData['note'], ENT_QUOTES, 'UTF-8'); ?></p>
-<?php endif; ?>
 <?php // Up to 8 cards share one row (their number sets the columns); more wrap. ?>
 <nav class="sdp-stats sdp-stats--filter<?php echo \count($cards) <= 8 ? ' sdp-stats--one-row' : ''; ?>" style="--sdp-cards: <?php echo \count($cards); ?>" aria-label="<?php echo htmlspecialchars((string) ($displayData['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
     <?php foreach ($cards as $card) : ?>

@@ -84,13 +84,13 @@ $types       = [
 
     <?php
     // A card per category with its number of open and on-hold requests (as on the Dashboard);
-    // a card shows that category in the list, with the status and type chosen above.
+    // a card shows that category in the list, with the status and type chosen above; the
+    // selected card again shows all categories.
     $tones = ['blue', 'purple', 'teal', 'amber', 'green', 'red'];
     $cards = [];
 
     if ($this->categoryTotals !== []) {
-        $cards[] = ['label' => Text::_('COM_SERVICEDESKPLUS_ALL_CATEGORIES'), 'count' => $this->categoryTotals[''], 'url' => $this->categoryUrl(''), 'tone' => 'slate', 'active' => $q->category === ''];
-        $i       = 0;
+        $i = 0;
 
         foreach ($this->categoryTotals as $category => $count) {
             if ($category === '') {
@@ -107,14 +107,14 @@ $types       = [
             $cards[] = [
                 'label'  => (string) $category,
                 'count'  => $count,
-                'url'    => $this->categoryUrl((string) $category),
+                'url'    => $this->categoryUrl(strcasecmp($q->category, (string) $category) === 0 ? '' : (string) $category),
                 'tone'   => $tones[$i++ % \count($tones)],
                 'active' => strcasecmp($q->category, (string) $category) === 0,
             ];
         }
     }
 
-    echo (new \Joomla\CMS\Layout\FileLayout('summary', null, ['component' => 'com_servicedeskplus', 'client' => 0]))->render(['cards' => $cards, 'label' => Text::_('COM_SERVICEDESKPLUS_CATEGORY'), 'note' => Text::_('COM_SERVICEDESKPLUS_REQUESTS_CARDS_NOTE')]);
+    echo (new \Joomla\CMS\Layout\FileLayout('summary', null, ['component' => 'com_servicedeskplus', 'client' => 0]))->render(['cards' => $cards, 'label' => Text::_('COM_SERVICEDESKPLUS_CATEGORY')]);
     ?>
 
     <?php if ($this->error !== '') : ?>

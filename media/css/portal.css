@@ -1279,11 +1279,6 @@ dialog.sdp-preview .sdp-preview-body iframe {
   text-overflow: ellipsis;
 }
 
-.com-servicedeskplus .sdp-stats-note {
-  margin: 0 0 0.5rem;
-  font-size: 0.8125rem;
-  color: var(--sdp-text-muted);
-}
 
 .com-servicedeskplus .sdp-stats--filter .sdp-stat {
   padding-top: 0.75rem;

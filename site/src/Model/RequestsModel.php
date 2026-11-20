@@ -86,6 +86,33 @@ final class RequestsModel extends BaseModel
         return $category === [] ? [] : ['' => $all] + $totals + ($none > 0 ? ["\0none" => $none] : []);
     }
 
+    /**
+     * Categories for the category filter: those of ServiceDesk Plus, else those of the cards;
+     * the chosen one is always included.
+     *
+     * @param  array<string, int>  $totals  the cards' categories (keys)
+     *
+     * @return list<string>
+     */
+    public function getCategoryNames(array $totals): array
+    {
+        $names = $this->sdp()->getRequestService()->categoryNames($this->identity());
+
+        if ($names === []) {
+            $names = array_values(array_filter(array_map('strval', array_keys($totals)), static fn (string $n): bool => $n !== '' && $n !== "\0none"));
+        }
+
+        $chosen = $this->getQuery()->category;
+
+        if ($chosen !== '' && !\in_array($chosen, $names, true)) {
+            $names[] = $chosen;
+        }
+
+        sort($names, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $names;
+    }
+
     /** @return list<string> */
     public function getStatuses(): array
     {

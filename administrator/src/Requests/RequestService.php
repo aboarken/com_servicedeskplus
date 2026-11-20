@@ -259,6 +259,58 @@ final class RequestService
         return $result;
     }
 
+    /** Most categories offered in the category filter of My Requests. */
+    public const MAX_CATEGORY_NAMES = 200;
+
+    /**
+     * Names of the categories in ServiceDesk Plus (GET /api/v3/categories, deleted ones left
+     * out), sorted, for the category filter; empty when ServiceDesk Plus does not give them.
+     *
+     * @return list<string>
+     */
+    public function categoryNames(Identity $identity): array
+    {
+        $cacheKey = 'requests:category-names';
+        $cached   = $this->cache->get($identity, $cacheKey);
+
+        if ($cached !== null) {
+            return array_values(array_map('strval', $cached));
+        }
+
+        try {
+            $data = ($this->clientFactory)()->get('/api/v3/categories', ['list_info' => ['row_count' => 100, 'start_index' => 1]]);
+        } catch (SdpException $e) {
+            $this->logger->info('Request categories could not be read for the filter: ' . $e->getKind());
+
+            return [];
+        }
+
+        $rows  = \is_array($data['categories'] ?? null) ? $data['categories'] : (\is_array($data['category'] ?? null) ? $data['category'] : []);
+        $names = [];
+
+        foreach ($rows as $row) {
+            if (!\is_array($row) || filter_var($row['deleted'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                continue;
+            }
+
+            $name = mb_substr(trim(SdpFields::string($row, 'name')), 0, 100);
+
+            if ($name !== '') {
+                $names[$name] = true;
+            }
+        }
+
+        $names = \array_slice(array_keys($names), 0, self::MAX_CATEGORY_NAMES);
+        sort($names, SORT_NATURAL | SORT_FLAG_CASE);
+        $names = array_map('strval', $names);
+
+        if ($names !== []) {
+            $this->cache->set($identity, $cacheKey, $names);
+        }
+
+        return $names;
+    }
+
     /**
      * @throws RequestNotFound|SdpException
      */

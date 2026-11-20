@@ -60,6 +60,15 @@ $types       = [
             </select>
         </div>
         <div>
+            <label class="sdp-label" for="sdp-category"><?php echo Text::_('COM_SERVICEDESKPLUS_CATEGORY'); ?></label>
+            <select class="sdp-input" id="sdp-category" name="category">
+                <option value="" <?php echo $q->category === '' ? 'selected' : ''; ?>><?php echo Text::_('COM_SERVICEDESKPLUS_ALL_CATEGORIES'); ?></option>
+                <?php foreach ($this->categories as $category) : ?>
+                    <option value="<?php echo $this->escape($category); ?>" <?php echo strcasecmp($category, $q->category) === 0 ? 'selected' : ''; ?>><?php echo $this->escape($category); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
             <label class="sdp-label" for="sdp-status"><?php echo Text::_('COM_SERVICEDESKPLUS_STATUS'); ?></label>
             <select class="sdp-input" id="sdp-status" name="status">
                 <option value="<?php echo RequestQuery::ALL_STATUSES; ?>" <?php echo $q->status === '' ? 'selected' : ''; ?>><?php echo Text::_('COM_SERVICEDESKPLUS_ALL_STATUSES'); ?></option>
@@ -76,10 +85,6 @@ $types       = [
                 <?php endforeach; ?>
             </select>
         </div>
-        <?php if ($q->category !== '') : ?>
-            <?php // The chosen category card stays selected when another filter changes. ?>
-            <input type="hidden" name="category" value="<?php echo $this->escape($q->category); ?>">
-        <?php endif; ?>
     </form>
 
     <?php

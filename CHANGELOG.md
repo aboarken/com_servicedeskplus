@@ -3,6 +3,14 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.31.4] - 2026-11-20
+
+### Added
+- **My Requests: a Category filter** next to *Type*: *All categories* and the categories of ServiceDesk Plus (`/api/v3/categories`, deleted ones left out, cached); when ServiceDesk Plus does not give them, the categories of the user's open and on-hold requests. It works with the category cards: choosing a card selects it here and the other way round.
+
+### Changed
+- *Request type* is now just **Type**.
+
 ## [1.31.3] - 2026-11-20
 
 ### Changed

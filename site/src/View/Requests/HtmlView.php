@@ -36,6 +36,9 @@ final class HtmlView extends BaseHtmlView
     /** @var array<string, int> Cards above the list: category => open and on-hold requests ('' = all) */
     public array $categoryTotals = [];
 
+    /** @var list<string> Categories of the category filter */
+    public array $categories = [];
+
     public bool $canCreate = false;
 
     public function display($tpl = null): void
@@ -61,6 +64,8 @@ final class HtmlView extends BaseHtmlView
                 $this->categoryTotals = [];
             }
         }
+
+        $this->categories = $model->getCategoryNames($this->categoryTotals);
 
         $this->prepareMenuPage('requests', 'COM_SERVICEDESKPLUS_REQUESTS_TITLE');
         $this->getDocument()->setMetaData('robots', 'noindex, nofollow');

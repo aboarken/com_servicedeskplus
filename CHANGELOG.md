@@ -3,6 +3,11 @@
 All notable changes to `com_servicedeskplus` are documented in this file.
 Versions follow the component manifest (`servicedeskplus.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.31.3] - 2026-11-20
+
+### Changed
+- **My Requests:** the category cards no longer have an *All categories* card or the line "Open and on-hold requests by category." above them. Clicking the selected category card again shows all categories.
+
 ## [1.31.2] - 2026-11-20
 
 ### Changed
